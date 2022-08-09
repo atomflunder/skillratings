@@ -4,7 +4,7 @@ Calculate a player's skill level using [Elo](https://en.wikipedia.org/wiki/Elo_r
 
 ## Usage
 
-For a detailed guide on how to use this crate, head over to the documentation.
+For a detailed guide on how to use this crate, head over [to the documentation](https://docs.rs/skillratings/).
 
 ### Elo rating system
 ```rust
