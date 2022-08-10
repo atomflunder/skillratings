@@ -6,6 +6,15 @@
 
 Calculate a player's skill level using [Elo](https://en.wikipedia.org/wiki/Elo_rating_system) and [Glicko-2](https://en.wikipedia.org/wiki/Glicko_rating_system#Glicko-2_algorithm) algorithms known from their usage in chess and other games.  
 
+## Installation
+
+Add the following to your `Cargo.toml` file:
+
+```toml
+[dependencies]
+skillratings = "0.1.0"
+```
+
 ## Usage
 
 For a detailed guide on how to use this crate, head over [to the documentation](https://docs.rs/skillratings/).
@@ -56,6 +65,6 @@ assert_eq!(player_two_new.rating.round(), 1338.0);
 assert_eq!(player_two_new.deviation.round(), 290.0);
 ```
 
-# License
+## License
 
 This project is licensed under the [MIT License](/LICENSE).
