@@ -1,13 +1,13 @@
 [package]
 name = "skillratings"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Calculate a player's skill level using elo and glicko-2 algorithms."
 readme= "README.md"
 repository = "https://github.com/atomflunder/skillratings"
 license = "MIT"
 keywords = ["elo", "glicko-2", "glicko", "skill", "rating"]
-categories = ["game-development", "algorithms"]
+categories = ["game-development", "algorithms", "mathematics"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

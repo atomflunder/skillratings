@@ -160,6 +160,33 @@ pub fn expected_score(player_one: GlickoRating, player_two: GlickoRating) -> (f6
     )
 }
 
+/// Decays a Rating Deviation Value for a player, if they missed playing in a certain rating period.
+///
+/// The length of the rating period and thus the number of missed periods per player is something to decide and track yourself.
+///
+/// Takes in a player and returns the player with the Rating Deviation Value adjusted.
+///
+/// # Example
+/// ```
+/// use skillratings;
+///
+/// let player_one = skillratings::rating::GlickoRating { rating: 2720.0, deviation: 41.3, volatility: 0.06};
+///
+/// let player_one_decay = skillratings::glicko2::decay_deviation(player_one);
+///
+/// assert_eq!(player_one_decay.deviation.round(), 43.0);
+/// ```
+pub fn decay_deviation(player: GlickoRating) -> GlickoRating {
+    let player_deviation = player.deviation / 173.7178;
+    let new_player_deviation = (player_deviation.powf(2.0) + player.volatility.powf(2.0)).sqrt();
+
+    GlickoRating {
+        rating: player.rating,
+        deviation: new_player_deviation * 173.7178,
+        volatility: player.volatility,
+    }
+}
+
 /// The g value of the glicko-2 calculation.
 /// For more information, see: http://www.glicko.net/glicko/glicko2.pdf
 fn g_value(deviation: f64) -> f64 {
@@ -416,5 +443,40 @@ mod tests {
 
         assert_eq!((exp_three * 100.0).round(), 76.0);
         assert_eq!((exp_four * 100.0).round(), 24.0);
+    }
+
+    #[test]
+    fn test_decay() {
+        let player_one = GlickoRating {
+            rating: 1500.0,
+            deviation: 350.0,
+            volatility: 0.06,
+        };
+
+        let player_two = GlickoRating {
+            rating: 1250.0,
+            deviation: 95.0,
+            volatility: 0.06,
+        };
+
+        let player_three = GlickoRating {
+            rating: 2250.0,
+            deviation: 35.0,
+            volatility: 0.059998,
+        };
+
+        let player_one_decayed = decay_deviation(player_one);
+        let player_one_decayed_2 = decay_deviation(player_one_decayed);
+
+        let player_two_decayed = decay_deviation(player_two);
+
+        let player_three_decayed = decay_deviation(player_three);
+        let player_three_decayed_2 = decay_deviation(player_three_decayed);
+
+        assert_eq!(player_one_decayed.deviation.round(), 350.0);
+        assert_eq!(player_one_decayed_2.deviation.round(), 350.0);
+        assert_eq!(player_two_decayed.deviation.round(), 96.0);
+        assert_eq!(player_three_decayed.deviation.round(), 37.0);
+        assert_eq!(player_three_decayed_2.deviation.round(), 38.0);
     }
 }
