@@ -6,7 +6,7 @@ description = "Calculate a player's skill level using elo and glicko-2 algorithm
 readme= "README.md"
 repository = "https://github.com/atomflunder/skillratings"
 license = "MIT"
-keywords = ["elo", "glicko-2", "glicko2", "skill", "rating"]
+keywords = ["elo", "glicko-2", "glicko", "skill", "rating"]
 categories = ["game-development", "algorithms"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

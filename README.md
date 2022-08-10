@@ -38,6 +38,8 @@ assert_eq!(player_two_new.rating, 984.0);
 
 ### Glicko-2 rating system
 
+Instead of the traditional way of calculating the Glicko-2 for only one player only using a list of results, we are calculating the Glicko-2 rating for two players at once, like in the Elo calculation, to make it easier to see instant results.
+
 ```rust
 extern crate skillratings;
 

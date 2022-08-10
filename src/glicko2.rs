@@ -5,6 +5,10 @@ use std::f64::consts::PI;
 ///
 /// Takes in two players, the outcome of the game and a tau constant.
 ///
+/// Instead of the traditional way of calculating the Glicko-2 for only one player only using a list of results,
+/// we are calculating the Glicko-2 rating for two players at once, like in the Elo calculation,
+/// to make it easier to see instant results.
+///
 /// The outcome of the match is in the perspective of player_one.
 /// This means `Outcomes::WIN` is a win for player_one and `Outcomes::LOSS` is a win for player_two.
 ///
