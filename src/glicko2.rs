@@ -39,7 +39,7 @@ use std::f64::consts::PI;
 /// ```
 ///
 /// # More
-/// [Wikipedia Article on the Glicko-2 system](https://en.wikipedia.org/wiki/Glicko-2).
+/// [Wikipedia Article on the Glicko-2 system](https://en.wikipedia.org/wiki/Glicko-2).  
 /// [Example of the Glicko-2 system](http://www.glicko.net/glicko/glicko2.pdf).
 pub fn glicko2(
     player_one: GlickoRating,
