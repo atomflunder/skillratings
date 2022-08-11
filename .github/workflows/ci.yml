@@ -1,15 +1,15 @@
-name: Cargo Build & Test
+name: Rust Project CI
 
 on:
   push:
   pull_request:
 
-env: 
+env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build_and_test:
-    name: Rust project - latest
+  ci:
+    name: CI
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -19,6 +19,25 @@ jobs:
           - nightly
     steps:
       - uses: actions/checkout@v3
-      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-      - run: cargo build --verbose
-      - run: cargo test --verbose
+      - name: Update rust
+        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+
+      - name: Build crate
+        run: cargo build --release --verbose
+
+      - name: Test crate
+        run: cargo test --verbose
+
+      - name: Build docs
+        run: cargo doc --verbose
+
+      - name: Publish dry run
+        run: |
+          cargo check --verbose
+          cargo package --verbose
+          cargo publish --dry-run --verbose
+
+      - name: Run clippy
+        run: |
+          rustup component add clippy
+          cargo clippy --workspace

@@ -14,6 +14,12 @@ impl EloRating {
     }
 }
 
+impl Default for EloRating {
+    fn default() -> Self {
+        EloRating::new()
+    }
+}
+
 /// The glicko-2 rating of a player.
 ///
 /// The default rating is 1500.0.  
@@ -37,5 +43,11 @@ impl GlickoRating {
             deviation: 350.0,
             volatility: 0.06,
         }
+    }
+}
+
+impl Default for GlickoRating {
+    fn default() -> Self {
+        Self::new()
     }
 }

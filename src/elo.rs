@@ -14,14 +14,15 @@ use crate::rating::EloRating;
 ///
 /// # Example
 /// ```
-/// use skillratings;
+/// use skillratings::{elo::elo, outcomes::Outcomes, rating::EloRating};
 ///
-/// let player_one = skillratings::rating::EloRating { rating: 1000.0 };
-/// let player_two = skillratings::rating::EloRating { rating: 1000.0 };
+/// let player_one = EloRating { rating: 1000.0 };
+/// let player_two = EloRating { rating: 1000.0 };
 ///
-/// let outcome = skillratings::outcomes::Outcomes::WIN;
+/// let outcome = Outcomes::WIN;
 ///
-/// let (player_one_new, player_two_new) = skillratings::elo::elo(player_one, player_two, outcome, 32.0);
+/// let (player_one_new, player_two_new) = elo(player_one, player_two, outcome, 32.0);
+///
 /// assert_eq!(player_one_new.rating, 1016.0);
 /// assert_eq!(player_two_new.rating, 984.0);
 /// ```
@@ -34,7 +35,7 @@ pub fn elo(
     outcome: Outcomes,
     k: f64,
 ) -> (EloRating, EloRating) {
-    let (one_expected, two_expected) = expected_score(player_one.rating, player_two.rating);
+    let (one_expected, two_expected) = expected_score(player_one, player_two);
 
     let o = match outcome {
         Outcomes::WIN => 1.0,
@@ -63,16 +64,20 @@ pub fn elo(
 ///
 /// #Example
 /// ```
-/// use skillratings;
+/// use skillratings::{elo::expected_score, rating::EloRating};
 ///
-/// let (exp_one, exp_two) = skillratings::elo::expected_score(1500.0, 1210.0);
-/// assert_eq!((exp_one * 100.0).round(), 84.0);
-/// assert_eq!((exp_two * 100.0).round(), 16.0);
+/// let player_one = EloRating { rating: 1320.0 };
+/// let player_two = EloRating { rating: 1217.0 };
+///
+/// let (winner_exp, loser_exp) = expected_score(player_one, player_two);
+///
+/// assert_eq!((winner_exp * 100.0).round(), 64.0);
+/// assert_eq!((loser_exp * 100.0).round(), 36.0);
 /// ```
-pub fn expected_score(player_one_elo: f64, player_two_elo: f64) -> (f64, f64) {
+pub fn expected_score(player_one: EloRating, player_two: EloRating) -> (f64, f64) {
     (
-        1.0 / (1.0 + 10_f64.powf((player_two_elo - player_one_elo) / 400.0)),
-        1.0 / (1.0 + 10_f64.powf((player_one_elo - player_two_elo) / 400.0)),
+        1.0 / (1.0 + 10_f64.powf((player_two.rating - player_one.rating) / 400.0)),
+        1.0 / (1.0 + 10_f64.powf((player_one.rating - player_two.rating) / 400.0)),
     )
 }
 
@@ -121,8 +126,22 @@ mod tests {
 
     #[test]
     fn test_expected_score() {
-        let (winner_expected, loser_expected) = expected_score(1000.0, 1000.0);
+        let player_one = EloRating { rating: 1000.0 };
+        let player_two = EloRating { rating: 1000.0 };
+
+        let (winner_expected, loser_expected) = expected_score(player_one, player_two);
+
         assert_eq!(winner_expected, 0.5);
         assert_eq!(loser_expected, 0.5);
+
+        let player_one = EloRating { rating: 2251.0 };
+        let player_two = EloRating { rating: 1934.0 };
+
+        let (winner_expected, loser_expected) = expected_score(player_one, player_two);
+
+        assert_eq!((winner_expected * 100.0).round(), 86.0);
+        assert_eq!((loser_expected * 100.0).round(), 14.0);
+
+        assert_eq!(winner_expected + loser_expected, 1.0);
     }
 }

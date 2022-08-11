@@ -20,14 +20,22 @@ use std::f64::consts::PI;
 ///
 /// # Example
 /// ```
-/// use skillratings;
+/// use skillratings::{glicko2::glicko2, outcomes::Outcomes, rating::GlickoRating};
 ///
-/// let player_one = skillratings::rating::GlickoRating { rating: 1500.0, deviation: 350.0, volatility: 0.06 };
-/// let player_two = skillratings::rating::GlickoRating { rating: 1500.0, deviation: 350.0, volatility: 0.06 };
+/// let player_one = GlickoRating {
+///     rating: 1500.0,
+///     deviation: 350.0,
+///     volatility: 0.06,
+/// };
+/// let player_two = GlickoRating {
+///     rating: 1500.0,
+///     deviation: 350.0,
+///     volatility: 0.06,
+/// };
 ///
-/// let outcome = skillratings::outcomes::Outcomes::WIN;
+/// let outcome = Outcomes::WIN;
 ///
-/// let (player_one_new, player_two_new) = skillratings::glicko2::glicko2(player_one, player_two, outcome, 0.5);
+/// let (player_one_new, player_two_new) = glicko2(player_one, player_two, outcome, 0.5);
 ///
 /// assert_eq!(player_one_new.rating.round(), 1662.0);
 /// assert_eq!(player_one_new.deviation.round(), 290.0);
@@ -122,13 +130,19 @@ pub fn glicko2(
 ///
 /// # Example
 /// ```
-/// use skillratings;
+/// use skillratings::{glicko2::expected_score, rating::GlickoRating};
 ///
-/// let player_one = skillratings::rating::GlickoRating { rating: 2500.0, deviation: 41.0, volatility: 0.06 };
-/// let player_two = skillratings::rating::GlickoRating { rating: 1950.0, deviation: 320.0, volatility: 0.06 };
-///
-/// let (exp_one, exp_two) = skillratings::glicko2::expected_score(player_one, player_two);
-///
+/// let player_one = GlickoRating {
+///     rating: 2500.0,
+///     deviation: 41.0,
+///     volatility: 0.06,
+/// };
+/// let player_two = GlickoRating {
+///     rating: 1950.0,
+///     deviation: 320.0,
+///     volatility: 0.06,
+/// };
+/// let (exp_one, exp_two) = expected_score(player_one, player_two);
 /// assert_eq!((exp_one * 100.0).round(), 90.0);
 /// assert_eq!((exp_two * 100.0).round(), 10.0);
 /// ```
@@ -168,11 +182,15 @@ pub fn expected_score(player_one: GlickoRating, player_two: GlickoRating) -> (f6
 ///
 /// # Example
 /// ```
-/// use skillratings;
+/// use skillratings::{glicko2::decay_deviation, rating::GlickoRating};
 ///
-/// let player_one = skillratings::rating::GlickoRating { rating: 2720.0, deviation: 41.3, volatility: 0.06};
+/// let player_one = GlickoRating {
+///     rating: 2720.0,
+///     deviation: 41.3,
+///     volatility: 0.06,
+/// };
 ///
-/// let player_one_decay = skillratings::glicko2::decay_deviation(player_one);
+/// let player_one_decay = decay_deviation(player_one);
 ///
 /// assert_eq!(player_one_decay.deviation.round(), 43.0);
 /// ```
