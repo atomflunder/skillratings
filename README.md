@@ -23,15 +23,15 @@ For a detailed guide on how to use this crate, head over [to the documentation](
 ```rust
 extern crate skillratings;
 
-use skillratings;
+use skillratings::{elo::elo, outcomes::Outcomes, rating::EloRating};
 
-let player_one = skillratings::rating::EloRating { rating: 1000.0 };
-let player_two = skillratings::rating::EloRating { rating: 1000.0 };
+let player_one = EloRating { rating: 1000.0 };
+let player_two = EloRating { rating: 1000.0 };
 
 // The outcome is from the perspective of player one.
-let outcome = skillratings::outcomes::Outcomes::WIN;
+let outcome = Outcomes::WIN;
 
-let (player_one_new, player_two_new) = skillratings::elo::elo(player_one, player_two, outcome, 32.0);
+let (player_one_new, player_two_new) = elo(player_one, player_two, outcome, 32.0);
 assert_eq!(player_one_new.rating, 1016.0);
 assert_eq!(player_two_new.rating, 984.0);
 ```
@@ -43,22 +43,22 @@ Instead of the traditional way of calculating the Glicko-2 for only one player o
 ```rust
 extern crate skillratings;
 
-use skillratings;
+use skillratings::{glicko2::glicko2, outcomes::Outcomes, rating::GlickoRating};
 
-let player_one = skillratings::rating::GlickoRating { 
+let player_one = GlickoRating { 
     rating: 1500.0, 
     deviation: 350.0, 
     volatility: 0.06 
 };
-let player_two = skillratings::rating::GlickoRating { 
+let player_two = GlickoRating { 
     rating: 1500.0, 
     deviation: 350.0, 
     volatility: 0.06 
 };
 
-let outcome = skillratings::outcomes::Outcomes::WIN;
+let outcome = Outcomes::WIN;
 
-let (player_one_new, player_two_new) = skillratings::glicko2::glicko2(player_one, player_two, outcome, 0.5);
+let (player_one_new, player_two_new) = glicko2(player_one, player_two, outcome, 0.5);
 
 assert_eq!(player_one_new.rating.round(), 1662.0);
 assert_eq!(player_one_new.deviation.round(), 290.0);
