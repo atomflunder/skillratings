@@ -314,7 +314,7 @@ mod tests {
             player = decay_deviation(player, 63.2);
         }
 
-        assert!((player.deviation - 349.753_055_740_761_4).abs() < f64::EPSILON);
+        assert!(((player.deviation * 1000.0).round() - 349_753.0).abs() < f64::EPSILON);
 
         player = decay_deviation(player, 63.2);
 
