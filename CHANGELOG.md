@@ -2,6 +2,13 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.4.0 - 2022-08-13
+
+- Added Glicko (1) calculations
+- Renamed old GlickoRating to Glicko2Rating
+    - New GlickoRating is for the Glicko System now
+- Added confidence_interval function to Glicko2 and Glicko
+
 ## v0.3.1 - 2022-08-12
 
 - Fix some clippy issues

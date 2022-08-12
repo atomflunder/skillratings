@@ -1,4 +1,4 @@
-use crate::{outcomes::Outcomes, rating::GlickoRating};
+use crate::{outcomes::Outcomes, rating::Glicko2Rating};
 use std::f64::consts::PI;
 
 /// Calculates the glicko-2 scores of two players based on their ratings, deviations, and the outcome of the game.
@@ -20,14 +20,14 @@ use std::f64::consts::PI;
 ///
 /// # Example
 /// ```
-/// use skillratings::{glicko2::glicko2, outcomes::Outcomes, rating::GlickoRating};
+/// use skillratings::{glicko2::glicko2, outcomes::Outcomes, rating::Glicko2Rating};
 ///
-/// let player_one = GlickoRating {
+/// let player_one = Glicko2Rating {
 ///     rating: 1500.0,
 ///     deviation: 350.0,
 ///     volatility: 0.06,
 /// };
-/// let player_two = GlickoRating {
+/// let player_two = Glicko2Rating {
 ///     rating: 1500.0,
 ///     deviation: 350.0,
 ///     volatility: 0.06,
@@ -51,11 +51,11 @@ use std::f64::consts::PI;
 /// [Example of the Glicko-2 system](http://www.glicko.net/glicko/glicko2.pdf).
 #[must_use]
 pub fn glicko2(
-    player_one: GlickoRating,
-    player_two: GlickoRating,
+    player_one: Glicko2Rating,
+    player_two: Glicko2Rating,
     outcome: Outcomes,
     tau: f64,
-) -> (GlickoRating, GlickoRating) {
+) -> (Glicko2Rating, Glicko2Rating) {
     // First we need to convert the ratings into the glicko-2 scale.
     let player_one_rating = (player_one.rating - 1500.0) / 173.7178;
     let player_two_rating = (player_two.rating - 1500.0) / 173.7178;
@@ -108,12 +108,12 @@ pub fn glicko2(
     let new_rating1 = new_rating(player_one_rating, new_deviation1, outcome1, g1, e1);
     let new_rating2 = new_rating(player_two_rating, new_deviation2, outcome2, g2, e2);
 
-    let player_one_new = GlickoRating {
+    let player_one_new = Glicko2Rating {
         rating: new_rating1.mul_add(173.7178, 1500.0),
         deviation: new_deviation1 * 173.7178,
         volatility: player_one_new_volatility,
     };
-    let player_two_new = GlickoRating {
+    let player_two_new = Glicko2Rating {
         rating: new_rating2.mul_add(173.7178, 1500.0),
         deviation: new_deviation2 * 173.7178,
         volatility: player_two_new_volatility,
@@ -122,23 +122,22 @@ pub fn glicko2(
     (player_one_new, player_two_new)
 }
 
-/// Calculates the expected outcome of two players based on glicko-2, assuming no draws.
+/// Calculates the expected outcome of two players based on glicko-2.
 ///
-/// Takes in two players and returns the probability of victory for each player,
-/// again, without taking draws into calculation.  
+/// Takes in two players and returns the probability of victory for each player.  
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
 /// # Example
 /// ```
-/// use skillratings::{glicko2::expected_score, rating::GlickoRating};
+/// use skillratings::{glicko2::expected_score, rating::Glicko2Rating};
 ///
-/// let player_one = GlickoRating {
+/// let player_one = Glicko2Rating {
 ///     rating: 2500.0,
 ///     deviation: 41.0,
 ///     volatility: 0.06,
 /// };
-/// let player_two = GlickoRating {
+/// let player_two = Glicko2Rating {
 ///     rating: 1950.0,
 ///     deviation: 320.0,
 ///     volatility: 0.06,
@@ -148,7 +147,7 @@ pub fn glicko2(
 /// assert!(((exp_two * 100.0).round() - 10.0).abs() < f64::EPSILON);
 /// ```
 #[must_use]
-pub fn expected_score(player_one: GlickoRating, player_two: GlickoRating) -> (f64, f64) {
+pub fn expected_score(player_one: Glicko2Rating, player_two: Glicko2Rating) -> (f64, f64) {
     // First we need to convert the ratings into the glicko-2 scale.
     let player_one_rating = (player_one.rating - 1500.0) / 173.7178;
     let player_two_rating = (player_two.rating - 1500.0) / 173.7178;
@@ -184,9 +183,9 @@ pub fn expected_score(player_one: GlickoRating, player_two: GlickoRating) -> (f6
 ///
 /// # Example
 /// ```
-/// use skillratings::{glicko2::decay_deviation, rating::GlickoRating};
+/// use skillratings::{glicko2::decay_deviation, rating::Glicko2Rating};
 ///
-/// let player_one = GlickoRating {
+/// let player_one = Glicko2Rating {
 ///     rating: 2720.0,
 ///     deviation: 41.3,
 ///     volatility: 0.06,
@@ -197,15 +196,43 @@ pub fn expected_score(player_one: GlickoRating, player_two: GlickoRating) -> (f6
 /// assert!((player_one_decay.deviation.round() - 43.0).abs() < f64::EPSILON);
 /// ```
 #[must_use]
-pub fn decay_deviation(player: GlickoRating) -> GlickoRating {
+pub fn decay_deviation(player: Glicko2Rating) -> Glicko2Rating {
     let player_deviation = player.deviation / 173.7178;
     let new_player_deviation = player_deviation.hypot(player.volatility);
 
-    GlickoRating {
+    Glicko2Rating {
         rating: player.rating,
         deviation: new_player_deviation * 173.7178,
         volatility: player.volatility,
     }
+}
+
+#[must_use]
+/// The 95% confidence interval of the lowest to highest rating.
+///
+/// The system is 95% sure that the "true skill" of the player is inbetween these values.
+///
+/// # Example
+/// ```rust
+/// use skillratings::{rating::Glicko2Rating, glicko2::confidence_interval};
+///
+/// let player = Glicko2Rating {
+///     rating: 2250.0,
+///     deviation: 79.0,
+///     volatility: 0.0598,
+/// };
+///
+/// let (interval_low, interval_high) = confidence_interval(player);
+///
+/// assert!(interval_low.round() - 2095.0 < f64::EPSILON);
+/// assert!(interval_high.round() - 2405.0 < f64::EPSILON);
+/// ```
+pub fn confidence_interval(player: Glicko2Rating) -> (f64, f64) {
+    (
+        // Seems like there is no mul_sub function.
+        player.rating - 1.96 * player.deviation,
+        1.96f64.mul_add(player.deviation, player.rating),
+    )
 }
 
 /// The g value of the glicko-2 calculation.
@@ -339,13 +366,13 @@ mod tests {
 
     #[test]
     fn test_equal_glicko2() {
-        let player1 = GlickoRating {
+        let player1 = Glicko2Rating {
             rating: 1520.0,
             deviation: 350.0,
             volatility: 0.06,
         };
 
-        let player2 = GlickoRating {
+        let player2 = Glicko2Rating {
             rating: 1420.0,
             deviation: 350.0,
             volatility: 0.06,
@@ -362,13 +389,13 @@ mod tests {
 
     #[test]
     fn not_equal_deviation_draw() {
-        let player1 = GlickoRating {
+        let player1 = Glicko2Rating {
             rating: 1600.0,
             deviation: 350.0,
             volatility: 0.06,
         };
 
-        let player2 = GlickoRating {
+        let player2 = Glicko2Rating {
             rating: 1500.0,
             deviation: 50.0,
             volatility: 0.06,
@@ -387,13 +414,13 @@ mod tests {
     /// This test is taken directly from the official glicko2 example.  
     /// <http://www.glicko.net/glicko/glicko2.pdf>
     fn test_glicko2() {
-        let player = GlickoRating {
+        let player = Glicko2Rating {
             rating: 1500.0,
             deviation: 200.0,
             volatility: 0.06,
         };
 
-        let opponent_one = GlickoRating {
+        let opponent_one = Glicko2Rating {
             rating: 1400.0,
             deviation: 30.0,
             volatility: 0.06,
@@ -407,7 +434,7 @@ mod tests {
         assert!((opponent_one.rating.round() - 1398.0).abs() < f64::EPSILON);
         assert!((opponent_one.deviation.round() - 32.0).abs() < f64::EPSILON);
 
-        let opponent_two = GlickoRating {
+        let opponent_two = Glicko2Rating {
             rating: 1550.0,
             deviation: 100.0,
             volatility: 0.06,
@@ -415,7 +442,7 @@ mod tests {
 
         let (player, _) = glicko2(player, opponent_two, Outcomes::LOSS, 0.5);
 
-        let opponent_three = GlickoRating {
+        let opponent_three = Glicko2Rating {
             rating: 1700.0,
             deviation: 300.0,
             volatility: 0.06,
@@ -430,13 +457,13 @@ mod tests {
 
     #[test]
     fn test_expected_score() {
-        let player_one = GlickoRating {
+        let player_one = Glicko2Rating {
             rating: 1500.0,
             deviation: 350.0,
             volatility: 0.06,
         };
 
-        let player_two = GlickoRating {
+        let player_two = Glicko2Rating {
             rating: 1500.0,
             deviation: 350.0,
             volatility: 0.06,
@@ -447,13 +474,13 @@ mod tests {
         assert!((exp_one * 100.0 - 50.0).abs() < f64::EPSILON);
         assert!((exp_two * 100.0 - 50.0).abs() < f64::EPSILON);
 
-        let player_three = GlickoRating {
+        let player_three = Glicko2Rating {
             rating: 2000.0,
             deviation: 50.0,
             volatility: 0.06,
         };
 
-        let player_four = GlickoRating {
+        let player_four = Glicko2Rating {
             rating: 1780.0,
             deviation: 150.0,
             volatility: 0.06,
@@ -467,19 +494,19 @@ mod tests {
 
     #[test]
     fn test_decay() {
-        let player_one = GlickoRating {
+        let player_one = Glicko2Rating {
             rating: 1500.0,
             deviation: 350.0,
             volatility: 0.06,
         };
 
-        let player_two = GlickoRating {
+        let player_two = Glicko2Rating {
             rating: 1250.0,
             deviation: 95.0,
             volatility: 0.06,
         };
 
-        let player_three = GlickoRating {
+        let player_three = Glicko2Rating {
             rating: 2250.0,
             deviation: 35.0,
             volatility: 0.059_998,
@@ -498,5 +525,19 @@ mod tests {
         assert!((player_two_decayed.deviation.round() - 96.0).abs() < f64::EPSILON);
         assert!((player_three_decayed.deviation.round() - 37.0).abs() < f64::EPSILON);
         assert!((player_three_decayed_2.deviation.round() - 38.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_confidence_interval() {
+        let player = Glicko2Rating {
+            rating: 1500.0,
+            deviation: 30.0,
+            volatility: 0.06,
+        };
+
+        let ci = confidence_interval(player);
+
+        assert!((ci.0.round() - 1441.0).abs() < f64::EPSILON);
+        assert!((ci.1.round() - 1559.0).abs() < f64::EPSILON);
     }
 }

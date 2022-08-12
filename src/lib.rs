@@ -9,11 +9,14 @@
 #![allow(clippy::module_name_repetitions)]
 
 //! skillratings provides functions on calculating a player's skill rating in 1v1 games.  
-//! Currently we support the two major skill rating systems:
-//! [Elo](https://en.wikipedia.org/wiki/Elo_rating_system) and [Glicko-2](https://en.wikipedia.org/wiki/Glicko-2).
+//! Currently we support the major skill rating systems:
+//! [Elo](https://en.wikipedia.org/wiki/Elo_rating_system), [Glicko](https://en.wikipedia.org/wiki/Glicko_rating_system) and [Glicko-2](https://en.wikipedia.org/wiki/Glicko-2).
 
 /// Module for calculating a player's skill rating using Elo.
 pub mod elo;
+
+/// Module for calculating a player's skill rating using Glicko.
+pub mod glicko;
 
 /// Module for calculating a player's skill rating using Glicko-2.
 pub mod glicko2;
