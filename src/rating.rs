@@ -8,15 +8,16 @@ pub struct EloRating {
 }
 
 impl EloRating {
-    /// Initialise a new EloRating with a rating of 1000.0.
-    pub fn new() -> Self {
-        EloRating { rating: 1000.0 }
+    /// Initialise a new `EloRating` with a rating of 1000.0.
+    #[must_use]
+    pub const fn new() -> Self {
+        Self { rating: 1000.0 }
     }
 }
 
 impl Default for EloRating {
     fn default() -> Self {
-        EloRating::new()
+        Self::new()
     }
 }
 
@@ -36,9 +37,10 @@ pub struct GlickoRating {
 }
 
 impl GlickoRating {
-    /// Initialise a new GlickoRating with a rating of 1500.0, a deviation of 350.0 and a volatility of 0.06.
-    pub fn new() -> Self {
-        GlickoRating {
+    /// Initialise a new `GlickoRating` with a rating of 1500.0, a deviation of 350.0 and a volatility of 0.06.
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
             rating: 1500.0,
             deviation: 350.0,
             volatility: 0.06,

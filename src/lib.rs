@@ -1,4 +1,12 @@
 #![warn(missing_docs)]
+#![warn(
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::as_conversions
+)]
+#![allow(clippy::module_name_repetitions)]
 
 //! skillratings provides functions on calculating a player's skill rating in 1v1 games.  
 //! Currently we support the two major skill rating systems:

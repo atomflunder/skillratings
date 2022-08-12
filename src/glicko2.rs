@@ -9,8 +9,8 @@ use std::f64::consts::PI;
 /// we are calculating the Glicko-2 rating for two players at once, like in the Elo calculation,
 /// to make it easier to see instant results.
 ///
-/// The outcome of the match is in the perspective of player_one.
-/// This means `Outcomes::WIN` is a win for player_one and `Outcomes::LOSS` is a win for player_two.
+/// The outcome of the match is in the perspective of `player_one`.
+/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
 ///
 /// The tau constant constrains the change in volatility over time.
 /// To cite Mark Glickman himself: "Reasonable choices are between 0.3 and 1.2".
@@ -37,18 +37,19 @@ use std::f64::consts::PI;
 ///
 /// let (player_one_new, player_two_new) = glicko2(player_one, player_two, outcome, 0.5);
 ///
-/// assert_eq!(player_one_new.rating.round(), 1662.0);
-/// assert_eq!(player_one_new.deviation.round(), 290.0);
-/// assert_eq!(player_one_new.volatility, 0.05999578094735206);
+/// assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
+/// assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// assert!((player_one_new.volatility - 0.05999578094735206).abs() < f64::EPSILON);
 ///
-/// assert_eq!(player_two_new.rating.round(), 1338.0);
-/// assert_eq!(player_two_new.deviation.round(), 290.0);
-/// assert_eq!(player_two_new.volatility, 0.05999578094735206);
+/// assert!((player_two_new.rating.round() - 1338.0).abs() < f64::EPSILON);
+/// assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// assert!((player_two_new.volatility - 0.05999578094735206).abs() < f64::EPSILON);
 /// ```
 ///
 /// # More
 /// [Wikipedia Article on the Glicko-2 system](https://en.wikipedia.org/wiki/Glicko-2).  
 /// [Example of the Glicko-2 system](http://www.glicko.net/glicko/glicko2.pdf).
+#[must_use]
 pub fn glicko2(
     player_one: GlickoRating,
     player_two: GlickoRating,
@@ -108,12 +109,12 @@ pub fn glicko2(
     let new_rating2 = new_rating(player_two_rating, new_deviation2, outcome2, g2, e2);
 
     let player_one_new = GlickoRating {
-        rating: (new_rating1 * 173.7178) + 1500.0,
+        rating: new_rating1.mul_add(173.7178, 1500.0),
         deviation: new_deviation1 * 173.7178,
         volatility: player_one_new_volatility,
     };
     let player_two_new = GlickoRating {
-        rating: (new_rating2 * 173.7178) + 1500.0,
+        rating: new_rating2.mul_add(173.7178, 1500.0),
         deviation: new_deviation2 * 173.7178,
         volatility: player_two_new_volatility,
     };
@@ -143,9 +144,10 @@ pub fn glicko2(
 ///     volatility: 0.06,
 /// };
 /// let (exp_one, exp_two) = expected_score(player_one, player_two);
-/// assert_eq!((exp_one * 100.0).round(), 90.0);
-/// assert_eq!((exp_two * 100.0).round(), 10.0);
+/// assert!(((exp_one * 100.0).round() - 90.0).abs() < f64::EPSILON);
+/// assert!(((exp_two * 100.0).round() - 10.0).abs() < f64::EPSILON);
 /// ```
+#[must_use]
 pub fn expected_score(player_one: GlickoRating, player_two: GlickoRating) -> (f64, f64) {
     // First we need to convert the ratings into the glicko-2 scale.
     let player_one_rating = (player_one.rating - 1500.0) / 173.7178;
@@ -192,11 +194,12 @@ pub fn expected_score(player_one: GlickoRating, player_two: GlickoRating) -> (f6
 ///
 /// let player_one_decay = decay_deviation(player_one);
 ///
-/// assert_eq!(player_one_decay.deviation.round(), 43.0);
+/// assert!((player_one_decay.deviation.round() - 43.0).abs() < f64::EPSILON);
 /// ```
+#[must_use]
 pub fn decay_deviation(player: GlickoRating) -> GlickoRating {
     let player_deviation = player.deviation / 173.7178;
-    let new_player_deviation = (player_deviation.powf(2.0) + player.volatility.powf(2.0)).sqrt();
+    let new_player_deviation = player_deviation.hypot(player.volatility);
 
     GlickoRating {
         rating: player.rating,
@@ -206,33 +209,33 @@ pub fn decay_deviation(player: GlickoRating) -> GlickoRating {
 }
 
 /// The g value of the glicko-2 calculation.
-/// For more information, see: http://www.glicko.net/glicko/glicko2.pdf
+/// For more information, see: <http://www.glicko.net/glicko/glicko2.pdf>
 fn g_value(deviation: f64) -> f64 {
-    (1.0 + ((3.0 * deviation.powf(2.0)) / (PI.powf(2.0))))
+    (1.0 + ((3.0 * deviation.powi(2)) / (PI.powi(2))))
         .sqrt()
         .recip()
 }
 
 /// The E value of the glicko-2 calculation.
-/// For more information, see: http://www.glicko.net/glicko/glicko2.pdf
+/// For more information, see: <http://www.glicko.net/glicko/glicko2.pdf>
 fn e_value(rating: f64, opponent_rating: f64, g: f64) -> f64 {
     (1.0 + (-1.0 * g * (rating - opponent_rating)).exp()).recip()
 }
 
 /// The v value of the glicko-2 calculation.
-/// For more information, see: http://www.glicko.net/glicko/glicko2.pdf
+/// For more information, see: <http://www.glicko.net/glicko/glicko2.pdf>
 fn v_value(g: f64, e: f64) -> f64 {
-    (g.powf(2.0) * e * (1.0 - e)).recip()
+    (g.powi(2) * e * (1.0 - e)).recip()
 }
 
 /// The ∆ value of the glicko-2 calculation.
-/// For more information, see: http://www.glicko.net/glicko/glicko2.pdf
+/// For more information, see: <http://www.glicko.net/glicko/glicko2.pdf>
 fn delta_value(outcome: f64, v: f64, g: f64, e: f64) -> f64 {
     v * (g * (outcome - e))
 }
 
 /// The f(x) value of the glicko-2 calculation.
-/// For more information, see: http://www.glicko.net/glicko/glicko2.pdf
+/// For more information, see: <http://www.glicko.net/glicko/glicko2.pdf>
 fn f_value(
     x: f64,
     delta_square: f64,
@@ -248,28 +251,27 @@ fn f_value(
     };
 
     let two = {
-        let i = x - volatility.powf(2.0).ln();
-        let j = tau.powf(2.0);
+        let i = x - volatility.powi(2).ln();
+        let j = tau.powi(2);
         i / j
     };
 
     one - two
 }
 
-/// The A value of the expected_outcome function, based on glicko-2,
+/// The A value of the expected outcome function, based on glicko-2,
 /// slightly modified to produce an expected outcome score.  
 /// Not found in the original paper.
 fn a_value(deviation: f64, opponent_deviation: f64, rating: f64, opponent_rating: f64) -> f64 {
-    g_value((opponent_deviation.powf(2.0) + deviation.powf(2.0)).sqrt())
-        * (rating - opponent_rating)
+    g_value(opponent_deviation.hypot(deviation)) * (rating - opponent_rating)
 }
 
 /// The σ' value of the glicko-2 calculation.
-/// For more information, see: http://www.glicko.net/glicko/glicko2.pdf
+/// For more information, see: <http://www.glicko.net/glicko/glicko2.pdf>
 fn new_volatility(old_volatility: f64, delta: f64, deviation: f64, v: f64, tau: f64) -> f64 {
-    let mut a = old_volatility.powf(2.0).ln();
-    let delta_squared = delta.powf(2.0);
-    let deviation_squared = deviation.powf(2.0);
+    let mut a = old_volatility.powi(2).ln();
+    let delta_squared = delta.powi(2);
+    let deviation_squared = deviation.powi(2);
     let mut b = if delta_squared > deviation_squared + v {
         delta_squared - deviation_squared - v
     } else {
@@ -292,7 +294,7 @@ fn new_volatility(old_volatility: f64, delta: f64, deviation: f64, v: f64, tau: 
     let mut fb = f_value(b, delta_squared, deviation_squared, v, old_volatility, tau);
 
     // 0.000001 is the convergence tolerance suggested by Mark Glickman.
-    while (b - a).abs() > 0.000001 {
+    while (b - a).abs() > 0.000_001 {
         let c = a + ((a - b) * fa / (fb - fa));
         let fc = f_value(c, delta_squared, deviation_squared, v, old_volatility, tau);
 
@@ -311,23 +313,23 @@ fn new_volatility(old_volatility: f64, delta: f64, deviation: f64, v: f64, tau: 
 }
 
 /// The φ* value of the glicko-2 calculation.
-/// For more information, see: http://www.glicko.net/glicko/glicko2.pdf
+/// For more information, see: <http://www.glicko.net/glicko/glicko2.pdf>
 fn new_pre_deviation(deviation: f64, new_volatility: f64) -> f64 {
-    (deviation.powf(2.0) + new_volatility.powf(2.0)).sqrt()
+    deviation.hypot(new_volatility)
 }
 
 /// The φ' value of the glicko-2 calculation.
-/// For more information, see: http://www.glicko.net/glicko/glicko2.pdf
+/// For more information, see: <http://www.glicko.net/glicko/glicko2.pdf>
 fn new_deviation(pre_deviation: f64, v: f64) -> f64 {
-    ((pre_deviation.powf(2.0).recip()) + (v.recip()))
+    ((pre_deviation.powi(2).recip()) + (v.recip()))
         .sqrt()
         .recip()
 }
 
 /// The µ' value of the glicko-2 calculation.
-/// For more information, see: http://www.glicko.net/glicko/glicko2.pdf
+/// For more information, see: <http://www.glicko.net/glicko/glicko2.pdf>
 fn new_rating(rating: f64, new_deviation: f64, outcome: f64, g_value: f64, e_value: f64) -> f64 {
-    rating + (new_deviation.powf(2.0) * g_value * (outcome - e_value))
+    (new_deviation.powi(2) * g_value).mul_add(outcome - e_value, rating)
 }
 
 #[cfg(test)]
@@ -351,11 +353,11 @@ mod tests {
 
         let (player1new, player2new) = glicko2(player1, player2, Outcomes::WIN, 0.5);
 
-        assert_eq!(player1new.rating.round(), 1653.0);
-        assert_eq!(player1new.deviation.round(), 292.0);
+        assert!((player1new.rating.round() - 1653.0).abs() < f64::EPSILON);
+        assert!((player1new.deviation.round() - 292.0).abs() < f64::EPSILON);
 
-        assert_eq!(player2new.rating.round(), 1287.0);
-        assert_eq!(player2new.deviation.round(), 292.0);
+        assert!((player2new.rating.round() - 1287.0).abs() < f64::EPSILON);
+        assert!((player2new.deviation.round() - 292.0).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -374,16 +376,16 @@ mod tests {
 
         let (player1new, player2new) = glicko2(player1, player2, Outcomes::DRAW, 0.5);
 
-        assert_eq!(player1new.rating.round(), 1550.0);
-        assert_eq!(player1new.deviation.round(), 253.0);
+        assert!((player1new.rating.round() - 1550.0).abs() < f64::EPSILON);
+        assert!((player1new.deviation.round() - 253.0).abs() < f64::EPSILON);
 
-        assert_eq!(player2new.rating.round(), 1501.0);
-        assert_eq!(player2new.deviation.round(), 51.0);
+        assert!((player2new.rating.round() - 1501.0).abs() < f64::EPSILON);
+        assert!((player2new.deviation.round() - 51.0).abs() < f64::EPSILON);
     }
 
     #[test]
-    /// This test is taken directly from the official glicko2 example.
-    /// http://www.glicko.net/glicko/glicko2.pdf
+    /// This test is taken directly from the official glicko2 example.  
+    /// <http://www.glicko.net/glicko/glicko2.pdf>
     fn test_glicko2() {
         let player = GlickoRating {
             rating: 1500.0,
@@ -399,11 +401,11 @@ mod tests {
 
         let (player, opponent_one) = glicko2(player, opponent_one, Outcomes::WIN, 0.5);
 
-        assert_eq!(player.rating.round(), 1564.0);
-        assert_eq!(player.deviation.round(), 175.0);
+        assert!((player.rating.round() - 1564.0).abs() < f64::EPSILON);
+        assert!((player.deviation.round() - 175.0).abs() < f64::EPSILON);
 
-        assert_eq!(opponent_one.rating.round(), 1398.0);
-        assert_eq!(opponent_one.deviation.round(), 32.0);
+        assert!((opponent_one.rating.round() - 1398.0).abs() < f64::EPSILON);
+        assert!((opponent_one.deviation.round() - 32.0).abs() < f64::EPSILON);
 
         let opponent_two = GlickoRating {
             rating: 1550.0,
@@ -421,9 +423,9 @@ mod tests {
 
         let (player, _) = glicko2(player, opponent_three, Outcomes::LOSS, 0.5);
 
-        assert_eq!(player.rating.round(), 1464.0);
-        assert_eq!(player.deviation.round(), 152.0);
-        assert_eq!(player.volatility, 0.059982355058921626);
+        assert!((player.rating.round() - 1464.0).abs() < f64::EPSILON);
+        assert!((player.deviation.round() - 152.0).abs() < f64::EPSILON);
+        assert!((player.volatility - 0.059_982_355_058_921_626).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -442,8 +444,8 @@ mod tests {
 
         let (exp_one, exp_two) = expected_score(player_one, player_two);
 
-        assert_eq!(exp_one * 100.0, 50.0);
-        assert_eq!(exp_two * 100.0, 50.0);
+        assert!((exp_one * 100.0 - 50.0).abs() < f64::EPSILON);
+        assert!((exp_two * 100.0 - 50.0).abs() < f64::EPSILON);
 
         let player_three = GlickoRating {
             rating: 2000.0,
@@ -459,8 +461,8 @@ mod tests {
 
         let (exp_three, exp_four) = expected_score(player_three, player_four);
 
-        assert_eq!((exp_three * 100.0).round(), 76.0);
-        assert_eq!((exp_four * 100.0).round(), 24.0);
+        assert!(((exp_three * 100.0).round() - 76.0).abs() < f64::EPSILON);
+        assert!(((exp_four * 100.0).round() - 24.0).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -480,7 +482,7 @@ mod tests {
         let player_three = GlickoRating {
             rating: 2250.0,
             deviation: 35.0,
-            volatility: 0.059998,
+            volatility: 0.059_998,
         };
 
         let player_one_decayed = decay_deviation(player_one);
@@ -491,10 +493,10 @@ mod tests {
         let player_three_decayed = decay_deviation(player_three);
         let player_three_decayed_2 = decay_deviation(player_three_decayed);
 
-        assert_eq!(player_one_decayed.deviation.round(), 350.0);
-        assert_eq!(player_one_decayed_2.deviation.round(), 350.0);
-        assert_eq!(player_two_decayed.deviation.round(), 96.0);
-        assert_eq!(player_three_decayed.deviation.round(), 37.0);
-        assert_eq!(player_three_decayed_2.deviation.round(), 38.0);
+        assert!((player_one_decayed.deviation.round() - 350.0).abs() < f64::EPSILON);
+        assert!((player_one_decayed_2.deviation.round() - 350.0).abs() < f64::EPSILON);
+        assert!((player_two_decayed.deviation.round() - 96.0).abs() < f64::EPSILON);
+        assert!((player_three_decayed.deviation.round() - 37.0).abs() < f64::EPSILON);
+        assert!((player_three_decayed_2.deviation.round() - 38.0).abs() < f64::EPSILON);
     }
 }

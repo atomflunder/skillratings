@@ -12,7 +12,7 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-skillratings = "0.3.0"
+skillratings = "0.3.1"
 ```
 
 ## Usage
@@ -32,8 +32,8 @@ let player_two = EloRating { rating: 1000.0 };
 let outcome = Outcomes::WIN;
 
 let (player_one_new, player_two_new) = elo(player_one, player_two, outcome, 32.0);
-assert_eq!(player_one_new.rating, 1016.0);
-assert_eq!(player_two_new.rating, 984.0);
+assert!((player_one_new.rating - 1016.0).abs() < f64::EPSILON);
+assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
 ```
 
 ### Glicko-2 rating system
@@ -60,11 +60,11 @@ let outcome = Outcomes::WIN;
 
 let (player_one_new, player_two_new) = glicko2(player_one, player_two, outcome, 0.5);
 
-assert_eq!(player_one_new.rating.round(), 1662.0);
-assert_eq!(player_one_new.deviation.round(), 290.0);
+assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
+assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 
-assert_eq!(player_two_new.rating.round(), 1338.0);
-assert_eq!(player_two_new.deviation.round(), 290.0);
+assert!((player_two_new.rating.round() - 1338.0).abs() < f64::EPSILON);
+assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 ```
 
 ## License

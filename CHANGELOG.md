@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.3.1 - 2022-08-12
+
+- Fix some clippy issues
+
 ## v0.3.0 - 2022-08-12
 
 - elo::expected_score now takes in two EloRatings instead of f64
