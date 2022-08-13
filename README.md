@@ -2,6 +2,7 @@
 
 [![](https://img.shields.io/crates/v/skillratings)](https://crates.io/crates/skillratings)
 [![](https://img.shields.io/docsrs/skillratings)](https://docs.rs/skillratings/)
+[![](https://codecov.io/gh/atomflunder/skillratings/branch/master/graph/badge.svg?token=JFSA86GAX1)](https://codecov.io/gh/atomflunder/skillratings)
 [![](https://img.shields.io/crates/d/skillratings)](https://crates.io/crates/skillratings)
 
 Calculate a player's skill level using [Elo](https://en.wikipedia.org/wiki/Elo_rating_system), [Glicko](https://en.wikipedia.org/wiki/Glicko_rating_system) and [Glicko-2](https://en.wikipedia.org/wiki/Glicko-2) algorithms known from their usage in chess and other games.  
