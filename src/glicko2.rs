@@ -542,10 +542,30 @@ mod tests {
     }
 
     #[test]
+    fn negative_tau() {
+        let mut player = Glicko2Rating {
+            rating: 2250.0,
+            deviation: 3100.0,
+            volatility: 0.07,
+        };
+
+        let mut opponent = Glicko2Rating {
+            rating: 2250.0,
+            deviation: 41.0,
+            volatility: 0.1,
+        };
+
+        (player, opponent) = glicko2(player, opponent, Outcomes::WIN, -10.0);
+
+        assert!((player.rating.round() - 2596.0).abs() < f64::EPSILON);
+        assert!((opponent.rating.round() - 2249.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
     fn test_lose_streak() {
         let mut player = Glicko2Rating::new();
 
-        let mut opponent = Glicko2Rating::new();
+        let mut opponent = Glicko2Rating::default();
 
         for _ in 0..6 {
             (player, opponent) = glicko2(player, opponent, Outcomes::LOSS, 0.5);
@@ -560,5 +580,23 @@ mod tests {
         assert!((opponent.rating.round() - 1603.0).abs() < f64::EPSILON);
         assert!((opponent.deviation.round() - 212.0).abs() < f64::EPSILON);
         assert!(((opponent.volatility * 100_000.0).round() - 6_016.0).abs() < f64::EPSILON);
+
+        let mut player = Glicko2Rating::new();
+
+        let mut opponent = Glicko2Rating::new();
+
+        for _ in 0..25 {
+            (player, opponent) = glicko2(player, opponent, Outcomes::LOSS, 0.5);
+        }
+
+        (player, opponent) = glicko2(player, opponent, Outcomes::WIN, 0.5);
+
+        assert!((player.rating.round() - 1248.0).abs() < f64::EPSILON);
+        assert!((player.deviation.round() - 176.0).abs() < f64::EPSILON);
+        assert!(((player.volatility * 100_000.0).round() - 6_046.0).abs() < f64::EPSILON);
+
+        assert!((opponent.rating.round() - 1752.0).abs() < f64::EPSILON);
+        assert!((opponent.deviation.round() - 176.0).abs() < f64::EPSILON);
+        assert!(((opponent.volatility * 100_000.0).round() - 6_046.0).abs() < f64::EPSILON);
     }
 }

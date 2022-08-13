@@ -128,8 +128,8 @@ mod tests {
 
     #[test]
     fn test_expected_score() {
-        let player_one = EloRating { rating: 1000.0 };
-        let player_two = EloRating { rating: 1000.0 };
+        let player_one = EloRating::new();
+        let player_two = EloRating::default();
 
         let (winner_expected, loser_expected) = expected_score(player_one, player_two);
 

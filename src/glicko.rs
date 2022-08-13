@@ -320,4 +320,31 @@ mod tests {
 
         assert!((player.deviation - 350.0).abs() < f64::EPSILON);
     }
+
+    #[test]
+    fn test_unequal_draws() {
+        let mut player = GlickoRating::new();
+
+        let mut opponent = GlickoRating {
+            rating: 2230.0,
+            deviation: 41.0,
+        };
+
+        (player, opponent) = glicko(player, opponent, Outcomes::DRAW);
+
+        assert!((player.rating.round() - 1820.0).abs() < f64::EPSILON);
+        assert!((player.deviation.round() - 340.0).abs() < f64::EPSILON);
+
+        assert!((opponent.rating.round() - 2227.0).abs() < f64::EPSILON);
+        assert!((opponent.deviation.round() - 41.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_default() {
+        let player_new = GlickoRating::new();
+        let player_default = GlickoRating::default();
+
+        assert!((player_new.rating - player_default.rating).abs() < f64::EPSILON);
+        assert!((player_new.deviation - player_new.deviation).abs() < f64::EPSILON);
+    }
 }
