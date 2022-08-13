@@ -1,6 +1,6 @@
 [package]
 name = "skillratings"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 description = "Calculate a player's skill level using elo, glicko and glicko-2 algorithms."
 readme= "README.md"

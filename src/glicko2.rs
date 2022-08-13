@@ -300,7 +300,7 @@ fn new_volatility(old_volatility: f64, delta: f64, deviation: f64, v: f64, tau: 
     let delta_squared = delta.powi(2);
     let deviation_squared = deviation.powi(2);
     let mut b = if delta_squared > deviation_squared + v {
-        delta_squared - deviation_squared - v
+        (delta_squared - deviation_squared - v).ln()
     } else {
         let mut k = 1.0;
         while f_value(
@@ -411,7 +411,7 @@ mod tests {
     }
 
     #[test]
-    /// This test is taken directly from the official glicko2 example.  
+    /// This test is taken directly from the official glicko2 example.
     /// <http://www.glicko.net/glicko/glicko2.pdf>
     fn test_glicko2() {
         let player = Glicko2Rating {
@@ -539,5 +539,26 @@ mod tests {
 
         assert!((ci.0.round() - 1441.0).abs() < f64::EPSILON);
         assert!((ci.1.round() - 1559.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_lose_streak() {
+        let mut player = Glicko2Rating::new();
+
+        let mut opponent = Glicko2Rating::new();
+
+        for _ in 0..6 {
+            (player, opponent) = glicko2(player, opponent, Outcomes::LOSS, 0.5);
+        }
+
+        (player, opponent) = glicko2(player, opponent, Outcomes::WIN, 0.5);
+
+        assert!((player.rating.round() - 1397.0).abs() < f64::EPSILON);
+        assert!((player.deviation.round() - 212.0).abs() < f64::EPSILON);
+        assert!(((player.volatility * 100_000.0).round() - 6_016.0).abs() < f64::EPSILON);
+
+        assert!((opponent.rating.round() - 1603.0).abs() < f64::EPSILON);
+        assert!((opponent.deviation.round() - 212.0).abs() < f64::EPSILON);
+        assert!(((opponent.volatility * 100_000.0).round() - 6_016.0).abs() < f64::EPSILON);
     }
 }

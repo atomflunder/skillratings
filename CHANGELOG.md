@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.4.1 - 2022-08-13
+
+- Fix major bug in glicko-2 volatility calculations
+    - This would yield a wildly incorrect solution when the players came back from a "losing streak"
+
 ## v0.4.0 - 2022-08-13
 
 - Added Glicko (1) calculations
