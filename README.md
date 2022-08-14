@@ -5,7 +5,7 @@
 [![](https://codecov.io/gh/atomflunder/skillratings/branch/master/graph/badge.svg?token=JFSA86GAX1)](https://codecov.io/gh/atomflunder/skillratings)
 [![](https://img.shields.io/crates/d/skillratings)](https://crates.io/crates/skillratings)
 
-Calculate a player's skill level using [Elo](https://en.wikipedia.org/wiki/Elo_rating_system), [Glicko](https://en.wikipedia.org/wiki/Glicko_rating_system) and [Glicko-2](https://en.wikipedia.org/wiki/Glicko-2) algorithms known from their usage in chess and other games.  
+Calculate a player's skill rating instantly using [Elo](https://en.wikipedia.org/wiki/Elo_rating_system), [DWZ](https://en.wikipedia.org/wiki/Deutsche_Wertungszahl), [Glicko](https://en.wikipedia.org/wiki/Glicko_rating_system) and [Glicko-2](https://en.wikipedia.org/wiki/Glicko-2) algorithms known from their usage in chess and other games.  
 
 ## Installation
 
@@ -13,7 +13,7 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-skillratings = "0.4.1"
+skillratings = "0.5.0"
 ```
 
 ## Usage
@@ -93,6 +93,35 @@ assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 
 assert!((player_two_new.rating.round() - 1338.0).abs() < f64::EPSILON);
 assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+```
+
+### DWZ rating system
+
+The statements above hold true here as well.
+
+```rust
+use skillratings::{dwz::dwz, outcomes::Outcomes, rating::DWZRating};
+
+let player_one = DWZRating {
+    rating: 1500.0,
+    index: 42,
+    age: 42,
+};
+let player_two = DWZRating {
+    rating: 1500.0,
+    index: 12,
+    age: 12,
+};
+
+let outcome = Outcomes::WIN;
+
+let (player_one_new, player_two_new) = dwz(player_one, player_two, outcome);
+
+assert!((player_one_new.rating.round() - 1519.0).abs() < f64::EPSILON);
+assert_eq!(player_one_new.index, 43);
+
+assert!((player_two_new.rating.round() - 1464.0).abs() < f64::EPSILON);
+assert_eq!(player_two_new.index, 13);
 ```
 
 ## License

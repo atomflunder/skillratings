@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.5.0 - 2022-08-14
+
+- Added DWZ calculations
+
 ## v0.4.1 - 2022-08-13
 
 - Fix major bug in glicko-2 volatility calculations

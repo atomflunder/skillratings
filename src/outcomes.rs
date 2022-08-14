@@ -2,7 +2,7 @@
 /// Note that this is always from the perspective of player one.
 /// So a win is a win for player one and a loss is a win for player two.
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Outcomes {
     /// A win, from player_one's perspective.
     WIN,

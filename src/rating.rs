@@ -21,7 +21,7 @@ impl Default for EloRating {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 /// The glicko rating for a player. **For the glicko-2 rating, please see [`Glicko2Rating`]**.
 ///
 /// The default rating is 1500.0.  
@@ -55,7 +55,7 @@ impl Default for GlickoRating {
 /// The default rating is 1500.0.  
 /// The default deviation is 350.0.  
 /// The default volatility is 0.06.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Glicko2Rating {
     /// The player's Glicko-2 rating number, by default 1500.0.
     pub rating: f64,
@@ -80,5 +80,34 @@ impl Glicko2Rating {
 impl Default for Glicko2Rating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The DWZ (Deutsche Wertungszahl) rating for a player.
+///
+/// Note there is no default value for this,
+/// you either have to convert an existing [`EloRating`]
+/// using `DWZRating::from(EloRating { ... })`,
+/// or use the [`crate::dwz::get_first_dwz`] function.
+///
+/// The age is the actual age of the player, if unsure or unavailable set this to `>25`.  
+/// Using `from` will set the age to 26.
+pub struct DWZRating {
+    /// The player's DWZ rating number.
+    pub rating: f64,
+    /// The player's DWZ index, how many "events" they have completed.
+    pub index: usize,
+    /// The age of the player, if uncertain or unavailable set this to `>25`.
+    pub age: usize,
+}
+
+impl From<EloRating> for DWZRating {
+    fn from(e: EloRating) -> Self {
+        Self {
+            rating: e.rating,
+            index: 6,
+            age: 26,
+        }
     }
 }

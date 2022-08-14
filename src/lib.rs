@@ -15,6 +15,9 @@
 /// Module for calculating a player's skill rating using Elo.
 pub mod elo;
 
+/// Module for calculating a player's skill rating using DWZ.
+pub mod dwz;
+
 /// Module for calculating a player's skill rating using Glicko.
 pub mod glicko;
 
