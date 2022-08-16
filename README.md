@@ -120,8 +120,6 @@ assert!(((p2.uncertainty * 100.0).round() - 120.0).abs() < f64::EPSILON);
 
 ### DWZ rating system
 
-The statements above hold true here as well.
-
 ```rust
 use skillratings::{dwz::dwz, outcomes::Outcomes, rating::DWZRating};
 
