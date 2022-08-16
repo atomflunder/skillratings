@@ -1,4 +1,4 @@
-/// The elo rating of a player.
+/// The Elo rating of a player.
 ///
 /// The default rating is 1000.0.
 #[derive(Copy, Clone, Debug)]
@@ -21,8 +21,16 @@ impl Default for EloRating {
     }
 }
 
+impl From<IngoRating> for EloRating {
+    fn from(i: IngoRating) -> Self {
+        Self {
+            rating: 2840.0 - 8.0 * i.rating,
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
-/// The glicko rating for a player. **For the glicko-2 rating, please see [`Glicko2Rating`]**.
+/// The Glicko rating for a player. **For the glicko-2 rating, please see [`Glicko2Rating`]**.
 ///
 /// The default rating is 1500.0.  
 /// The default deviation is 350.0.
@@ -50,7 +58,7 @@ impl Default for GlickoRating {
     }
 }
 
-/// The glicko-2 rating of a player.
+/// The Glicko-2 rating of a player.
 ///
 /// The default rating is 1500.0.  
 /// The default deviation is 350.0.  
@@ -138,5 +146,46 @@ impl TrueSkillRating {
 impl Default for TrueSkillRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The Ingo rating of a player.
+///
+/// Note that unlike in the other systems, a lower score is better than a higher score.
+/// Negative values are possible.
+///
+/// The default rating is 230.0.
+pub struct IngoRating {
+    /// The rating value for a player, by default 230.0.
+    /// Note that a lower rating is more desirable.
+    pub rating: f64,
+    /// The age of the player, if uncertain or unavailable set this to `>25`.
+    pub age: usize,
+}
+
+impl IngoRating {
+    #[must_use]
+    /// Initialise a new `IngoRating` with a rating of 230.0
+    pub const fn new() -> Self {
+        Self {
+            rating: 230.0,
+            age: 26,
+        }
+    }
+}
+
+impl Default for IngoRating {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<EloRating> for IngoRating {
+    fn from(e: EloRating) -> Self {
+        Self {
+            rating: 355.0 - (e.rating / 8.0),
+            age: 26,
+        }
     }
 }

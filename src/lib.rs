@@ -9,14 +9,25 @@
 #![allow(clippy::module_name_repetitions)]
 
 //! skillratings provides functions on calculating a player's skill rating in 1v1 games.  
-//! Currently we support the major skill rating systems:
-//! [Elo](https://en.wikipedia.org/wiki/Elo_rating_system), [Glicko](https://en.wikipedia.org/wiki/Glicko_rating_system) and [Glicko-2](https://en.wikipedia.org/wiki/Glicko-2).
+//!
+//! We calculate the result instantly instead of after a certain rating period, and only for player-vs-player matches, no teams.
+//!
+//! Currently we support these skill rating systems:
+//! [`Elo`](https://en.wikipedia.org/wiki/Elo_rating_system),
+//! [`DWZ`](https://en.wikipedia.org/wiki/Deutsche_Wertungszahl),
+//! [`Ingo`](https://de.wikipedia.org/wiki/Ingo-Zahl),
+//! [`TrueSkill`](https://en.wikipedia.org/wiki/TrueSkill),
+//! [`Glicko`](https://en.wikipedia.org/wiki/Glicko_rating_system)
+//! and [`Glicko-2`](https://en.wikipedia.org/wiki/Glicko-2).
 
 /// Module for calculating a player's skill rating using `Elo`.
 pub mod elo;
 
 /// Module for calculating a player's skill rating using `DWZ (Deutsche Wertungszahl)`.
 pub mod dwz;
+
+/// Module for calculating a player's skill rating using `Ingo`.
+pub mod ingo;
 
 /// Module for calculating a player's skill rating using `Glicko`.
 pub mod glicko;

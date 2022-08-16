@@ -5,9 +5,20 @@
 [![](https://codecov.io/gh/atomflunder/skillratings/branch/master/graph/badge.svg?token=JFSA86GAX1)](https://codecov.io/gh/atomflunder/skillratings)
 [![](https://img.shields.io/crates/d/skillratings)](https://crates.io/crates/skillratings)
 
-Calculate a player's skill rating **in 1v1 matches** instantly using [Elo](https://en.wikipedia.org/wiki/Elo_rating_system), [TrueSkill](https://en.wikipedia.org/wiki/TrueSkill), [DWZ](https://en.wikipedia.org/wiki/Deutsche_Wertungszahl), [Glicko](https://en.wikipedia.org/wiki/Glicko_rating_system) and [Glicko-2](https://en.wikipedia.org/wiki/Glicko-2) algorithms known from their usage in chess and online games.  
+Skillratings allows you to calculate the player's skill in 1v1 matches instantly.  
+Only player-versus-player matches are currently supported, no teams. 
+Instead of calculating results at the end of rating periods, we deliver the result instantly after a match.
 
-Skillratings is only for calculating 1v1 matches, teams are not supported. Also we calculate the results instantly, instead of at the end of every rating period.
+Currently supported algorithms:
+
+- [Elo](#elo-rating-system)
+- [Glicko](#glicko-rating-system)
+- [Glicko-2](#glicko-2-rating-system)
+- [TrueSkill](#trueskill-rating-system)
+- [DWZ (Deutsche Wertungszahl)](#dwz-deutsche-wertungszahl-rating-system)
+- [Ingo](#ingo-rating-system)
+
+These are mainly known from their usage in chess and online games.
 
 ## Installation
 
@@ -15,7 +26,7 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-skillratings = "0.6.0"
+skillratings = "0.7.0"
 ```
 
 ## Usage
@@ -23,6 +34,9 @@ skillratings = "0.6.0"
 For a detailed guide on how to use this crate, head over [to the documentation](https://docs.rs/skillratings/).
 
 ### Elo rating system
+
+[Wikipedia article](https://en.wikipedia.org/wiki/Elo_rating_system)
+
 ```rust
 extern crate skillratings;
 
@@ -40,6 +54,8 @@ assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
 ```
 
 ### Glicko rating system
+
+[Wikipedia article](https://en.wikipedia.org/wiki/Glicko_rating_system)
 
 ```rust
 use skillratings::{glicko::glicko, outcomes::Outcomes, rating::GlickoRating};
@@ -65,6 +81,8 @@ assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 ```
 
 ### Glicko-2 rating system
+
+[Wikipedia article](https://en.wikipedia.org/wiki/Glicko-2)
 
 ```rust
 extern crate skillratings;
@@ -95,6 +113,8 @@ assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 
 ### TrueSkill rating system
 
+[Wikipedia article](https://en.wikipedia.org/wiki/TrueSkill)
+
 **Caution regarding usage of TrueSkill**: 
 Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill(TM). 
 If your project is commercial, you should use another rating system included here.
@@ -118,7 +138,9 @@ assert!(((p2.rating * 100.0).round() - 2983.0).abs() < f64::EPSILON);
 assert!(((p2.uncertainty * 100.0).round() - 120.0).abs() < f64::EPSILON);
 ```
 
-### DWZ rating system
+### DWZ (Deutsche Wertungszahl) rating system
+
+[Wikipedia article](https://en.wikipedia.org/wiki/Deutsche_Wertungszahl)
 
 ```rust
 use skillratings::{dwz::dwz, outcomes::Outcomes, rating::DWZRating};
@@ -143,6 +165,26 @@ assert_eq!(player_one_new.index, 43);
 
 assert!((player_two_new.rating.round() - 1464.0).abs() < f64::EPSILON);
 assert_eq!(player_two_new.index, 13);
+```
+
+### Ingo rating system
+
+```rust
+use skillratings::{ingo::ingo, outcomes::Outcomes, rating::IngoRating};
+
+let player_one = IngoRating {
+    rating: 130.0,
+    age: 40,
+};
+let player_two = IngoRating {
+    rating: 160.0,
+    age: 40,
+};
+
+let (p1, p2) = ingo(player_one, player_two, Outcomes::WIN);
+
+assert!((p1.rating.round() - 129.0).abs() < f64::EPSILON);
+assert!((p2.rating.round() - 161.0).abs() < f64::EPSILON);
 ```
 
 ## License

@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.7.0 - 2022-08-16
+
+- Add Ingo calculations
+
 ## v0.6.0 - 2022-08-16
 
 - Add TrueSkill calculations
