@@ -1,12 +1,12 @@
 [package]
 name = "skillratings"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2021"
-description = "Calculate a player's skill rating instantly using elo, dwz, glicko and glicko-2 algorithms."
+description = "Calculate a player's skill rating in 1v1 matches instantly using Elo, DWZ, TrueSkill, Glicko and Glicko-2 algorithms."
 readme= "README.md"
 repository = "https://github.com/atomflunder/skillratings"
 license = "MIT"
-keywords = ["elo", "glicko-2", "glicko", "skill", "rating"]
+keywords = ["elo", "glicko-2", "glicko", "dwz", "trueskill"]
 categories = ["game-development", "algorithms", "mathematics"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

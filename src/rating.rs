@@ -111,3 +111,32 @@ impl From<EloRating> for DWZRating {
         }
     }
 }
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The `TrueSkill` rating of a player.
+///
+/// The default rating is 25.0.  
+/// The default uncertainty is 25/3 ≈ 8.33.
+pub struct TrueSkillRating {
+    /// The rating value (mu) of the TrueSkilLRating, by default 25.0.
+    pub rating: f64,
+    /// The uncertainty value (sigma) of the TrueSkillRating, by default 25/3 ≈ 8.33.
+    pub uncertainty: f64,
+}
+
+impl TrueSkillRating {
+    #[must_use]
+    /// Initialise a new `TrueSkillRating` with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
+    pub fn new() -> Self {
+        Self {
+            rating: 25.0,
+            uncertainty: 25.0 / 3.0,
+        }
+    }
+}
+
+impl Default for TrueSkillRating {
+    fn default() -> Self {
+        Self::new()
+    }
+}

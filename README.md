@@ -5,7 +5,9 @@
 [![](https://codecov.io/gh/atomflunder/skillratings/branch/master/graph/badge.svg?token=JFSA86GAX1)](https://codecov.io/gh/atomflunder/skillratings)
 [![](https://img.shields.io/crates/d/skillratings)](https://crates.io/crates/skillratings)
 
-Calculate a player's skill rating instantly using [Elo](https://en.wikipedia.org/wiki/Elo_rating_system), [DWZ](https://en.wikipedia.org/wiki/Deutsche_Wertungszahl), [Glicko](https://en.wikipedia.org/wiki/Glicko_rating_system) and [Glicko-2](https://en.wikipedia.org/wiki/Glicko-2) algorithms known from their usage in chess and other games.  
+Calculate a player's skill rating **in 1v1 matches** instantly using [Elo](https://en.wikipedia.org/wiki/Elo_rating_system), [TrueSkill](https://en.wikipedia.org/wiki/TrueSkill), [DWZ](https://en.wikipedia.org/wiki/Deutsche_Wertungszahl), [Glicko](https://en.wikipedia.org/wiki/Glicko_rating_system) and [Glicko-2](https://en.wikipedia.org/wiki/Glicko-2) algorithms known from their usage in chess and online games.  
+
+Skillratings is only for calculating 1v1 matches, teams are not supported. Also we calculate the results instantly, instead of at the end of every rating period.
 
 ## Installation
 
@@ -13,7 +15,7 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-skillratings = "0.5.0"
+skillratings = "0.6.0"
 ```
 
 ## Usage
@@ -38,8 +40,6 @@ assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
 ```
 
 ### Glicko rating system
-
-Instead of the traditional way of calculating the Glicko for only one player only using a list of results, we are calculating the Glicko rating for two players at once, like in the Elo calculation, to make it easier to see instant results.
 
 ```rust
 use skillratings::{glicko::glicko, outcomes::Outcomes, rating::GlickoRating};
@@ -66,8 +66,6 @@ assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 
 ### Glicko-2 rating system
 
-The same as above is true here, we calculate the results instantly for both players.
-
 ```rust
 extern crate skillratings;
 
@@ -93,6 +91,16 @@ assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 
 assert!((player_two_new.rating.round() - 1338.0).abs() < f64::EPSILON);
 assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+```
+
+### TrueSkill rating system
+
+**Caution regarding usage of TrueSkill**: 
+Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill(TM). 
+If your project is commercial, you should use another rating system included here.
+
+```rust
+todo!()
 ```
 
 ### DWZ rating system
