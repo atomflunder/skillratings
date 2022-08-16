@@ -169,10 +169,13 @@ assert_eq!(player_two_new.index, 13);
 
 ### Ingo rating system
 
+[Wikipedia article (in german, no english version available)](https://de.wikipedia.org/wiki/Ingo-Zahl)
+
 ```rust
 use skillratings::{ingo::ingo, outcomes::Outcomes, rating::IngoRating};
 
 let player_one = IngoRating {
+    // Note that a lower rating is more desirable.
     rating: 130.0,
     age: 40,
 };
