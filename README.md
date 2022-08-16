@@ -100,7 +100,22 @@ Microsoft permits only Xbox Live games or non-commercial projects to use TrueSki
 If your project is commercial, you should use another rating system included here.
 
 ```rust
-todo!()
+use skillratings::{trueskill::trueskill, outcomes::Outcomes, rating::TrueSkillRating};
+
+// Initialises a player with `rating` set to 25.0 and `uncertainty` set to (25.0 / 3).
+let player_one = TrueSkillRating::new();
+let player_two = TrueSkillRating {
+    rating: 30.0,
+    uncertainty: 1.2,
+};
+
+let (p1, p2) = trueskill(player_one, player_two, Outcomes::WIN);
+
+assert!(((p1.rating * 100.0).round() - 3300.0).abs() < f64::EPSILON);
+assert!(((p1.uncertainty * 100.0).round() - 597.0).abs() < f64::EPSILON);
+
+assert!(((p2.rating * 100.0).round() - 2983.0).abs() < f64::EPSILON);
+assert!(((p2.uncertainty * 100.0).round() - 120.0).abs() < f64::EPSILON);
 ```
 
 ### DWZ rating system
