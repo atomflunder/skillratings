@@ -198,27 +198,20 @@ pub fn get_first_dwz(player_age: usize, results: &Vec<(DWZRating, Outcomes)>) ->
         return None;
     }
 
-    let mut points: f64 = 0.0;
-
-    for r in results {
-        if r.1 == Outcomes::WIN {
-            points += 1.0;
-        } else if r.1 == Outcomes::DRAW {
-            points += 0.5;
-        }
-    }
+    let points = results
+        .iter()
+        .map(|r| match r.1 {
+            Outcomes::WIN => 1.0,
+            Outcomes::DRAW => 0.5,
+            Outcomes::LOSS => 0.0,
+        })
+        .sum::<f64>();
 
     if (points - results.len() as f64).abs() < f64::EPSILON || points == 0.0 {
         return None;
     }
 
-    let mut cumulative_ratings = 0.0;
-
-    for r in results {
-        cumulative_ratings += r.0.rating;
-    }
-
-    let rc = cumulative_ratings / results.len() as f64;
+    let average_rating = results.iter().map(|r| r.0.rating).sum::<f64>() / results.len() as f64;
 
     // We round the f64 before casting to i64, so this lint is unnecessary here.
     #[allow(clippy::cast_possible_truncation)]
@@ -285,9 +278,9 @@ pub fn get_first_dwz(player_age: usize, results: &Vec<(DWZRating, Outcomes)>) ->
     let mut new_rating = if p > 50 {
         let temp = probability_table.get(&(p - 100).abs())?;
 
-        f64::abs(*temp) + rc
+        f64::abs(*temp) + average_rating
     } else {
-        probability_table.get(&p)? + rc
+        probability_table.get(&p)? + average_rating
     };
 
     if new_rating <= 800.0 {
