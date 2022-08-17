@@ -542,6 +542,21 @@ mod tests {
         assert!((exp1.mul_add(100.0, exp2 * 100.0).round() - 100.0).abs() < f64::EPSILON);
     }
 
+    #[test]
+    fn test_get_rank() {
+        let new_player = TrueSkillRating::new();
+        let older_player = TrueSkillRating {
+            rating: 43.1,
+            uncertainty: 1.92,
+        };
+
+        let new_rank = get_rank(new_player);
+        let older_rank = get_rank(older_player);
+
+        assert!((new_rank.round() - 0.0).abs() < f64::EPSILON);
+        assert!((older_rank.round() - 37.0).abs() < f64::EPSILON);
+    }
+
     // Some tests to validate the math.
     #[test]
     fn test_erfc() {
@@ -555,6 +570,14 @@ mod tests {
         let err = inverse_erfc(0.5);
 
         assert!((err - 0.476_936).abs() < 0.000_001);
+
+        let err = inverse_erfc(3.0);
+
+        assert!((err + 100.0).abs() < f64::EPSILON);
+
+        let err = inverse_erfc(-1.0);
+
+        assert!((err - 100.0).abs() < f64::EPSILON);
     }
 
     #[test]
