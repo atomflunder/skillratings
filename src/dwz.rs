@@ -220,6 +220,7 @@ pub fn get_first_dwz(player_age: usize, results: &Vec<(DWZRating, Outcomes)>) ->
 
     let rc = cumulative_ratings / results.len() as f64;
 
+    // We round the f64 before casting to i64, so this lint is unnecessary here.
     #[allow(clippy::cast_possible_truncation)]
     let p = ((points / results.len() as f64) * 100.0).round() as i64;
 
@@ -282,11 +283,11 @@ pub fn get_first_dwz(player_age: usize, results: &Vec<(DWZRating, Outcomes)>) ->
     ]);
 
     let mut new_rating = if p > 50 {
-        let temp = probability_table.get(&(p - 100).abs()).unwrap_or(&0.0);
+        let temp = probability_table.get(&(p - 100).abs())?;
 
         f64::abs(*temp) + rc
     } else {
-        probability_table.get(&p).unwrap_or(&0.0) + rc
+        probability_table.get(&p)? + rc
     };
 
     if new_rating <= 800.0 {
