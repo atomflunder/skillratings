@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.7.2 - 2022-08-18
+
+- Implement eq for Outcomes
+- Refactor some loops
+
 ## v0.7.1 - 2022-08-17
 
 - Replace `.unwrap_or()` usage in DWZ calculations
