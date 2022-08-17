@@ -585,6 +585,14 @@ mod tests {
         let dist = cdf(5.5, 12.0, 5.0);
 
         assert!((dist - 0.096_800).abs() < 0.000_001);
+
+        let dist_inf = cdf(INFINITY, 0.0, 1.0);
+
+        assert!((dist_inf - 1.0).abs() < f64::EPSILON);
+
+        let dist_neg_inf = cdf(NEG_INFINITY, 0.0, 1.0);
+
+        assert!((dist_neg_inf - 0.0).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -599,5 +607,32 @@ mod tests {
         let prob = pdf(2.5, 0.0, 1.0);
 
         assert!((prob - 0.017_528).abs() < 0.000_001);
+    }
+
+    #[test]
+    fn test_wv_edge_cases() {
+        let w = w_non_draw(NEG_INFINITY, 0.0, 1.0);
+
+        assert!((w - 1.0).abs() < f64::EPSILON);
+
+        let v = v_non_draw(NEG_INFINITY, 0.0, 1.0);
+
+        assert!(v == INFINITY);
+
+        let w2 = w_draw(NEG_INFINITY, 0.0, 1.0);
+
+        assert!((w2 - 1.0).abs() < f64::EPSILON);
+
+        let v2 = v_draw(NEG_INFINITY, 0.0, 1.0);
+
+        assert!(v2 == INFINITY);
+
+        let w3 = w_non_draw(1.0, INFINITY, 1.0);
+
+        assert!((w3 - 0.0).abs() < f64::EPSILON);
+
+        let v3 = v_draw(INFINITY, f64::MAX, 1.0);
+
+        assert!(v3 == NEG_INFINITY);
     }
 }
