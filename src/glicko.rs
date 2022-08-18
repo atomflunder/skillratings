@@ -1,4 +1,4 @@
-use crate::{outcomes::Outcomes, rating::GlickoRating};
+use crate::{config::GlickoConfig, outcomes::Outcomes, rating::GlickoRating};
 use std::f64::consts::PI;
 
 #[must_use]
@@ -137,26 +137,25 @@ pub fn expected_score(player_one: GlickoRating, player_two: GlickoRating) -> (f6
 ///
 /// The length of the rating period and thus the number of missed periods per player is something to decide and track yourself.
 ///
-/// Takes in a player and a `c` value, that describes how much the rating should change.
-/// In [the paper](http://www.glicko.net/glicko/glicko.pdf) a value of 63.2 seems to be a suggested value.
-/// The higher the value, the more the rating deviation will decay.  
-/// Returns the player with the Rating Deviation Value adjusted.
+/// Takes in a player and a [`GlickoConfig`], that describes how much the rating should change.
 ///
 /// # Example
 /// ```
-/// use skillratings::{glicko::decay_deviation, rating::GlickoRating};
+/// use skillratings::{glicko::decay_deviation, rating::GlickoRating, config::GlickoConfig};
 ///
 /// let player_one = GlickoRating {
 ///     rating: 2720.0,
 ///     deviation: 41.3,
 /// };
 ///
-/// let player_one_decay = decay_deviation(player_one, 63.2);
+/// let config = GlickoConfig::new();
+///
+/// let player_one_decay = decay_deviation(player_one, &config);
 ///
 /// assert!((player_one_decay.deviation.round() - 75.0).abs() < f64::EPSILON);
 /// ```
-pub fn decay_deviation(player: GlickoRating, c: f64) -> GlickoRating {
-    let new_player_deviation = player.deviation.hypot(c).min(350.0);
+pub fn decay_deviation(player: GlickoRating, config: &GlickoConfig) -> GlickoRating {
+    let new_player_deviation = player.deviation.hypot(config.c).min(350.0);
 
     GlickoRating {
         rating: player.rating,
@@ -167,7 +166,7 @@ pub fn decay_deviation(player: GlickoRating, c: f64) -> GlickoRating {
 #[must_use]
 /// The 95% confidence interval of the lowest to highest rating.
 ///
-/// The system is 95% sure that the "true skill" of the player is inbetween these values.
+/// The system is 95% sure that the "true skill" of the player is in-between these values.
 ///
 /// # Example
 /// ```rust
@@ -191,34 +190,24 @@ pub fn confidence_interval(player: GlickoRating) -> (f64, f64) {
     )
 }
 
-/// The new rating deviation value of the glicko calculation.
-/// For more information, see: <http://www.glicko.net/glicko/glicko.pdf>
 fn new_deviation(old_deviation: f64, d: f64) -> f64 {
     (old_deviation.powi(2).recip() + d.recip()).recip().sqrt()
 }
 
-/// The new rating value of the glicko calculation.
-/// For more information, see: <http://www.glicko.net/glicko/glicko.pdf>
 fn new_rating(old_rating: f64, deviation: f64, score: f64, q: f64, g: f64, e: f64, d: f64) -> f64 {
     ((q / (deviation.powi(2).recip() + d.recip())) * g).mul_add(score - e, old_rating)
 }
 
-/// The g value of the glicko calculation.
-/// For more information, see: <http://www.glicko.net/glicko/glicko.pdf>
 fn g_value(q: f64, opponent_deviation: f64) -> f64 {
     (1.0 + ((3.0 * q.powi(2) * opponent_deviation.powi(2)) / (PI.powi(2))))
         .sqrt()
         .recip()
 }
 
-/// The e value of the glicko calculation.
-/// For more information, see: <http://www.glicko.net/glicko/glicko.pdf>
 fn e_value(g: f64, rating: f64, opponent_rating: f64) -> f64 {
     (1.0 + (10_f64.powf(-1.0 * g * (rating - opponent_rating) / 400.0))).recip()
 }
 
-/// The d value of the glicko calculation.
-/// For more information, see: <http://www.glicko.net/glicko/glicko.pdf>
 fn d_value(q: f64, g: f64, e: f64) -> f64 {
     (q.powi(2) * g.powi(2) * e * (1.0 - e)).powi(-1)
 }
@@ -306,17 +295,17 @@ mod tests {
             deviation: 50.0,
         };
 
-        let mut player = decay_deviation(player, 63.2);
+        let mut player = decay_deviation(player, &GlickoConfig::new());
 
         assert!((player.deviation - 80.586_847_562_117_73).abs() < f64::EPSILON);
 
         for _ in 0..29 {
-            player = decay_deviation(player, 63.2);
+            player = decay_deviation(player, &GlickoConfig::default());
         }
 
         assert!(((player.deviation * 1000.0).round() - 349_753.0).abs() < f64::EPSILON);
 
-        player = decay_deviation(player, 63.2);
+        player = decay_deviation(player, &GlickoConfig::new());
 
         assert!((player.deviation - 350.0).abs() < f64::EPSILON);
     }

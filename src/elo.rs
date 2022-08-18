@@ -1,27 +1,24 @@
-use crate::outcomes::Outcomes;
-use crate::rating::EloRating;
+use crate::{config::EloConfig, outcomes::Outcomes, rating::EloRating};
 
 /// Calculates the elo scores of two players based on their ratings and the outcome of the game.
 ///
-/// Takes in two players, the outcome of the game and the k-value.
+/// Takes in two players, the outcome of the game and an [`EloConfig`].
 ///
 /// The outcome of the match is in the perspective of `player_one`.
 /// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
 ///
-/// The k-value is the maximum amount of rating change from a single match.
-/// In chess, k-values from 40 to 10 are used, with the most common being 32, 24 or 16.
-/// The higher the number, the more volatile the ranking.
-///
 /// # Example
 /// ```
-/// use skillratings::{elo::elo, outcomes::Outcomes, rating::EloRating};
+/// use skillratings::{elo::elo, outcomes::Outcomes, rating::EloRating, config::EloConfig};
 ///
 /// let player_one = EloRating { rating: 1000.0 };
 /// let player_two = EloRating { rating: 1000.0 };
 ///
 /// let outcome = Outcomes::WIN;
 ///
-/// let (player_one_new, player_two_new) = elo(player_one, player_two, outcome, 32.0);
+/// let config = EloConfig::new();
+///
+/// let (player_one_new, player_two_new) = elo(player_one, player_two, outcome, &config);
 ///
 /// assert!((player_one_new.rating - 1016.0).abs() < f64::EPSILON);
 /// assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
@@ -34,7 +31,7 @@ pub fn elo(
     player_one: EloRating,
     player_two: EloRating,
     outcome: Outcomes,
-    k: f64,
+    config: &EloConfig,
 ) -> (EloRating, EloRating) {
     let (one_expected, two_expected) = expected_score(player_one, player_two);
 
@@ -44,8 +41,10 @@ pub fn elo(
         Outcomes::DRAW => 0.5,
     };
 
-    let one_new_elo = k.mul_add(o - one_expected, player_one.rating);
-    let two_new_elo = k.mul_add((1.0 - o) - two_expected, player_two.rating);
+    let one_new_elo = config.k.mul_add(o - one_expected, player_one.rating);
+    let two_new_elo = config
+        .k
+        .mul_add((1.0 - o) - two_expected, player_two.rating);
 
     (
         EloRating {
@@ -93,7 +92,7 @@ mod tests {
             EloRating { rating: 1000.0 },
             EloRating { rating: 1000.0 },
             Outcomes::WIN,
-            32.0,
+            &EloConfig::new(),
         );
         assert!((winner_new_elo.rating - 1016.0).abs() < f64::EPSILON);
         assert!((loser_new_elo.rating - 984.0).abs() < f64::EPSILON);
@@ -102,7 +101,7 @@ mod tests {
             EloRating { rating: 1000.0 },
             EloRating { rating: 1000.0 },
             Outcomes::LOSS,
-            32.0,
+            &EloConfig::new(),
         );
         assert!((winner_new_elo.rating - 984.0).abs() < f64::EPSILON);
         assert!((loser_new_elo.rating - 1016.0).abs() < f64::EPSILON);
@@ -111,7 +110,7 @@ mod tests {
             EloRating { rating: 1000.0 },
             EloRating { rating: 1000.0 },
             Outcomes::DRAW,
-            32.0,
+            &EloConfig::new(),
         );
         assert!((winner_new_elo.rating - 1000.0).abs() < f64::EPSILON);
         assert!((loser_new_elo.rating - 1000.0).abs() < f64::EPSILON);
@@ -120,7 +119,7 @@ mod tests {
             EloRating { rating: 500.0 },
             EloRating { rating: 1500.0 },
             Outcomes::WIN,
-            32.0,
+            &EloConfig::default(),
         );
         assert!((winner_new_elo.rating.round() - 532.0).abs() < f64::EPSILON);
         assert!((loser_new_elo.rating.round() - 1468.0).abs() < f64::EPSILON);

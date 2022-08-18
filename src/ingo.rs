@@ -52,6 +52,7 @@ pub fn ingo(
     let perf1 = performance(player_two, score1);
     let perf2 = performance(player_one, score2);
 
+    // Similar to the DWZ algorithm, we use the age of the player to get the development coefficient.
     let development1 = match player_one.age {
         usize::MIN..=20 => 10.0,
         21..=25 => 15.0,

@@ -20,26 +20,29 @@
 //! [`Glicko`](https://en.wikipedia.org/wiki/Glicko_rating_system)
 //! and [`Glicko-2`](https://en.wikipedia.org/wiki/Glicko-2).
 
-/// Module for calculating a player's skill rating using `Elo`.
+/// Contains structs to configure key variables used in the different rating algorithms.
+pub mod config;
+
+/// Calculate a player's skill rating using the `Elo` algorithm.
 pub mod elo;
 
-/// Module for calculating a player's skill rating using `DWZ (Deutsche Wertungszahl)`.
+/// Calculate a player's skill rating using the `DWZ (Deutsche Wertungszahl)` algorithm.
 pub mod dwz;
 
-/// Module for calculating a player's skill rating using `Ingo`.
+/// Calculate a player's skill rating using the `Ingo` algorithm.
 pub mod ingo;
 
-/// Module for calculating a player's skill rating using `Glicko`.
+/// Calculate a player's skill rating using the `Glicko` algorithm.
 pub mod glicko;
 
-/// Module for calculating a player's skill rating using `Glicko-2`.
+/// Calculate a player's skill rating using the `Glicko-2` algorithm.
 pub mod glicko2;
 
-/// Module for calculating a player's skill rating using `TrueSkill`.
+/// Calculate a player's skill rating using the `TrueSkill` algorithm.
 pub mod trueskill;
 
-/// Module for the outcome of the matches.
+/// Contains possible outcomes of a match.
 pub mod outcomes;
 
-/// Module for initialising a player's skill rating in the different rating methods.
+/// Contains structs to initialize player's ratings in the format of the different rating algorithms used.
 pub mod rating;

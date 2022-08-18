@@ -26,7 +26,7 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-skillratings = "0.7.2"
+skillratings = "0.8.0"
 ```
 
 ## Usage
@@ -40,7 +40,9 @@ For a detailed guide on how to use this crate, head over [to the documentation](
 ```rust
 extern crate skillratings;
 
-use skillratings::{elo::elo, outcomes::Outcomes, rating::EloRating};
+use skillratings::{
+    elo::elo, outcomes::Outcomes, rating::EloRating, config::EloConfig
+};
 
 let player_one = EloRating { rating: 1000.0 };
 let player_two = EloRating { rating: 1000.0 };
@@ -48,7 +50,10 @@ let player_two = EloRating { rating: 1000.0 };
 // The outcome is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
-let (player_one_new, player_two_new) = elo(player_one, player_two, outcome, 32.0);
+// The config allows you to change certain adjustable values in the algorithms.
+let config = EloConfig::new();
+
+let (player_one_new, player_two_new) = elo(player_one, player_two, outcome, &config);
 assert!((player_one_new.rating - 1016.0).abs() < f64::EPSILON);
 assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
 ```
@@ -58,7 +63,10 @@ assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
 [Wikipedia article](https://en.wikipedia.org/wiki/Glicko_rating_system)
 
 ```rust
-use skillratings::{glicko::glicko, outcomes::Outcomes, rating::GlickoRating};
+use skillratings::{
+    config::Glicko2Config, glicko::glicko, outcomes::Outcomes, rating::GlickoRating,
+};
+
 
 let player_one = GlickoRating {
     rating: 1500.0,
@@ -71,7 +79,10 @@ let player_two = GlickoRating {
 
 let outcome = Outcomes::WIN;
 
-let (player_one_new, player_two_new) = glicko(player_one, player_two, outcome);
+// The config allows you to change certain adjustable values in the algorithms.
+let config = GlickoConfig::new();
+
+let (player_one_new, player_two_new) = glicko(player_one, player_two, outcome, &config);
 
 assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
 assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
@@ -87,7 +98,9 @@ assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 ```rust
 extern crate skillratings;
 
-use skillratings::{glicko2::glicko2, outcomes::Outcomes, rating::Glicko2Rating};
+use skillratings::{
+    glicko2::glicko2, outcomes::Outcomes, rating::Glicko2Rating, config::Glicko2Config
+};
 
 let player_one = Glicko2Rating { 
     rating: 1500.0, 
@@ -102,7 +115,10 @@ let player_two = Glicko2Rating {
 
 let outcome = Outcomes::WIN;
 
-let (player_one_new, player_two_new) = glicko2(player_one, player_two, outcome, 0.5);
+// The config allows you to change certain adjustable values in the algorithms.
+let config = Glicko2Config::new();
+
+let (player_one_new, player_two_new) = glicko2(player_one, player_two, outcome, &config);
 
 assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
 assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
@@ -120,16 +136,20 @@ Microsoft permits only Xbox Live games or non-commercial projects to use TrueSki
 If your project is commercial, you should use another rating system included here.
 
 ```rust
-use skillratings::{trueskill::trueskill, outcomes::Outcomes, rating::TrueSkillRating};
+use skillratings::{
+    trueskill::trueskill, outcomes::Outcomes, rating::TrueSkillRating, config::TrueSkillConfig
+};
 
-// Initialises a player with `rating` set to 25.0 and `uncertainty` set to (25.0 / 3).
 let player_one = TrueSkillRating::new();
 let player_two = TrueSkillRating {
     rating: 30.0,
     uncertainty: 1.2,
 };
 
-let (p1, p2) = trueskill(player_one, player_two, Outcomes::WIN);
+// The config allows you to change certain adjustable values in the algorithms.
+let config = TrueSkillConfig::new();
+
+let (p1, p2) = trueskill(player_one, player_two, Outcomes::WIN, &config);
 
 assert!(((p1.rating * 100.0).round() - 3300.0).abs() < f64::EPSILON);
 assert!(((p1.uncertainty * 100.0).round() - 597.0).abs() < f64::EPSILON);
@@ -148,6 +168,8 @@ use skillratings::{dwz::dwz, outcomes::Outcomes, rating::DWZRating};
 let player_one = DWZRating {
     rating: 1500.0,
     index: 42,
+    // The actual age of the player, if unavailable set this to >25.
+    // The lower the age, the more the rating will fluctuate.
     age: 42,
 };
 let player_two = DWZRating {
@@ -177,6 +199,8 @@ use skillratings::{ingo::ingo, outcomes::Outcomes, rating::IngoRating};
 let player_one = IngoRating {
     // Note that a lower rating is more desirable.
     rating: 130.0,
+    // The actual age of the player, if unavailable set this to >25.
+    // The lower the age, the more the rating will fluctuate.
     age: 40,
 };
 let player_two = IngoRating {

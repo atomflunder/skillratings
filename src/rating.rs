@@ -8,7 +8,7 @@ pub struct EloRating {
 }
 
 impl EloRating {
-    /// Initialise a new `EloRating` with a rating of 1000.0.
+    /// Initialize a new `EloRating` with a rating of 1000.0.
     #[must_use]
     pub const fn new() -> Self {
         Self { rating: 1000.0 }
@@ -43,7 +43,7 @@ pub struct GlickoRating {
 
 impl GlickoRating {
     #[must_use]
-    /// Initialise a new `GlickoRating` with a rating of 1500.0 and a deviation of 350.0.
+    /// Initialize a new `GlickoRating` with a rating of 1500.0 and a deviation of 350.0.
     pub const fn new() -> Self {
         Self {
             rating: 1500.0,
@@ -74,7 +74,7 @@ pub struct Glicko2Rating {
 }
 
 impl Glicko2Rating {
-    /// Initialise a new `Glicko2Rating` with a rating of 1500.0, a deviation of 350.0 and a volatility of 0.06.
+    /// Initialize a new `Glicko2Rating` with a rating of 1500.0, a deviation of 350.0 and a volatility of 0.06.
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -134,7 +134,7 @@ pub struct TrueSkillRating {
 
 impl TrueSkillRating {
     #[must_use]
-    /// Initialise a new `TrueSkillRating` with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
+    /// Initialize a new `TrueSkillRating` with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
     pub fn new() -> Self {
         Self {
             rating: 25.0,
@@ -166,7 +166,7 @@ pub struct IngoRating {
 
 impl IngoRating {
     #[must_use]
-    /// Initialise a new `IngoRating` with a rating of 230.0
+    /// Initialize a new `IngoRating` with a rating of 230.0
     pub const fn new() -> Self {
         Self {
             rating: 230.0,
