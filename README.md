@@ -5,7 +5,7 @@
 [![](https://codecov.io/gh/atomflunder/skillratings/branch/master/graph/badge.svg?token=JFSA86GAX1)](https://codecov.io/gh/atomflunder/skillratings)
 [![](https://img.shields.io/crates/d/skillratings)](https://crates.io/crates/skillratings)
 
-Skillratings allows you to calculate the player's skill in 1v1 matches instantly.  
+Skillratings allows you to calculate the player's skill in 1v1 matches or from a list of results.  
 Only player-versus-player matches are currently supported, no teams. 
 
 Currently supported algorithms:
