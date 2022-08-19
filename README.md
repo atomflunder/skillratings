@@ -5,8 +5,7 @@
 [![](https://codecov.io/gh/atomflunder/skillratings/branch/master/graph/badge.svg?token=JFSA86GAX1)](https://codecov.io/gh/atomflunder/skillratings)
 [![](https://img.shields.io/crates/d/skillratings)](https://crates.io/crates/skillratings)
 
-Skillratings allows you to calculate the player's skill in 1v1 matches or from a list of results.  
-Only player-versus-player matches are currently supported, no teams. 
+Skillratings allows you to calculate the player's skill instantly in 1v1 matches or after tournaments/rating periods with a list of results using a variety of known and lesser known skill rating algorithms.
 
 Currently supported algorithms:
 
@@ -17,7 +16,7 @@ Currently supported algorithms:
 - [DWZ (Deutsche Wertungszahl)](#dwz-deutsche-wertungszahl-rating-system)
 - [Ingo](#ingo-rating-system)
 
-These are mainly known from their usage in chess and online games.
+They are mainly known from their usage in chess and online games.
 
 ## Installation
 
