@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.9.0 - 2022-08-20
+
+- Add `rating_period` functions, these allow to get a single rating from a list of results.
+    - The following functions have been added: `dwz::dwz_rating_period`, `elo::elo_rating_period`, `glicko::glicko_rating_period`, `glicko2::glicko2_rating_period`, `ingo::ingo_rating_period`, `trueskill::trueskill_rating_period`.
+
 ## v0.8.0 - 2022-08-19
 
 - Add config structs: `EloConfig`, `GlickoConfig`, `Glicko2Config`, `TrueSkillConfig`

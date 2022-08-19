@@ -7,7 +7,6 @@
 
 Skillratings allows you to calculate the player's skill in 1v1 matches instantly.  
 Only player-versus-player matches are currently supported, no teams. 
-Instead of calculating results at the end of rating periods, we deliver the result instantly after a match.
 
 Currently supported algorithms:
 
@@ -26,12 +25,15 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-skillratings = "0.8.0"
+skillratings = "0.9.0"
 ```
 
-## Usage
+## Basic Usage
 
-For a detailed guide on how to use this crate, head over [to the documentation](https://docs.rs/skillratings/).
+Below is the most basic use case for each supported algorithm, in a 1-vs-1 format.  
+Each rating algorithm has many more associated functions, for example getting a rating using a list of outcomes or getting expected scores.
+
+Head over [to the documentation](https://docs.rs/skillratings/) for more information.
 
 ### Elo rating system
 

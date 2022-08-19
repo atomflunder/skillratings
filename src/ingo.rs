@@ -49,8 +49,8 @@ pub fn ingo(
 
     let score2 = 1.0 - score1;
 
-    let perf1 = performance(player_two, score1);
-    let perf2 = performance(player_one, score2);
+    let perf1 = performance(player_two.rating, score1);
+    let perf2 = performance(player_one.rating, score2);
 
     // Similar to the DWZ algorithm, we use the age of the player to get the development coefficient.
     let development1 = match player_one.age {
@@ -78,6 +78,86 @@ pub fn ingo(
             age: player_two.age,
         },
     )
+}
+
+#[allow(clippy::as_conversions, clippy::cast_precision_loss)]
+#[must_use]
+/// The "traditional" way of calculating an Ingo Rating of a player in a rating period or tournament.
+///
+/// Takes in a player and their results as a Vec of tuples containing the opponent and the outcome.
+///
+/// All of the outcomes are from the perspective of `player_one`.
+/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+///
+/// # Example
+/// ```
+/// use skillratings::{ingo::ingo_rating_period, rating::IngoRating, outcomes::Outcomes};
+///
+/// let player_one = IngoRating {
+///     rating: 130.0,
+///     age: 40,
+/// };
+///
+/// let player_two = IngoRating {
+///     rating: 160.0,
+///     age: 40,
+/// };
+///
+/// let player_three = IngoRating {
+///     rating: 160.0,
+///     age: 40,
+/// };
+///
+/// let player_four = IngoRating {
+///     rating: 55.0,
+///     age: 40,
+/// };
+///
+/// let player_five = IngoRating {
+///     rating: 90.0,
+///     age: 40,
+/// };
+///
+/// let results = vec![
+///     (player_two, Outcomes::WIN),
+///     (player_three, Outcomes::DRAW),
+///     (player_four, Outcomes::WIN),
+///     (player_five, Outcomes::LOSS),
+/// ];
+///
+/// let p1 = ingo_rating_period(player_one, &results);
+///
+/// assert!((p1.rating.round() - 126.0).abs() < f64::EPSILON);
+/// ```
+pub fn ingo_rating_period(player: IngoRating, results: &Vec<(IngoRating, Outcomes)>) -> IngoRating {
+    let development = match player.age {
+        usize::MIN..=20 => 10.0,
+        21..=25 => 15.0,
+        _ => 20.0,
+    };
+
+    let average_points = results
+        .iter()
+        .map(|r| match r.1 {
+            Outcomes::WIN => 1.0,
+            Outcomes::DRAW => 0.5,
+            Outcomes::LOSS => 0.0,
+        })
+        .sum::<f64>()
+        / results.len() as f64;
+
+    let average_opponent_rating =
+        results.iter().map(|r| r.0.rating).sum::<f64>() / results.len() as f64;
+
+    let performance = performance(average_opponent_rating, average_points);
+
+    let new_rating = performance.mul_add(results.len() as f64, player.rating * development)
+        / (results.len() as f64 + development);
+
+    IngoRating {
+        rating: new_rating,
+        age: player.age,
+    }
 }
 
 #[must_use]
@@ -113,8 +193,8 @@ pub fn expected_score(player_one: IngoRating, player_two: IngoRating) -> (f64, f
     (exp_one, 1.0 - exp_one)
 }
 
-fn performance(opponent: IngoRating, score: f64) -> f64 {
-    opponent.rating - (100.0 * score - 50.0)
+fn performance(average_rating: f64, score: f64) -> f64 {
+    average_rating - (100.0 * score - 50.0)
 }
 
 #[allow(unused_imports)]
@@ -158,6 +238,55 @@ mod tests {
 
         assert!((yp.rating.round() - 219.0).abs() < f64::EPSILON);
         assert!((op.rating.round() - 115.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_ingo_rating_period() {
+        let player_one = IngoRating {
+            rating: 130.0,
+            age: 40,
+        };
+        let player_two = IngoRating {
+            rating: 160.0,
+            age: 40,
+        };
+
+        let results = vec![(player_two, Outcomes::WIN)];
+
+        let p1 = ingo_rating_period(player_one, &results);
+
+        assert!((p1.rating.round() - 129.0).abs() < f64::EPSILON);
+
+        let player_two = IngoRating {
+            rating: 160.0,
+            age: 40,
+        };
+
+        let player_three = IngoRating {
+            rating: 160.0,
+            age: 40,
+        };
+
+        let player_four = IngoRating {
+            rating: 55.0,
+            age: 40,
+        };
+
+        let player_five = IngoRating {
+            rating: 90.0,
+            age: 40,
+        };
+
+        let results = vec![
+            (player_two, Outcomes::WIN),
+            (player_three, Outcomes::DRAW),
+            (player_four, Outcomes::WIN),
+            (player_five, Outcomes::LOSS),
+        ];
+
+        let p1 = ingo_rating_period(player_one, &results);
+
+        assert!((p1.rating.round() - 126.0).abs() < f64::EPSILON);
     }
 
     #[test]

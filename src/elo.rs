@@ -56,13 +56,58 @@ pub fn elo(
     )
 }
 
+/// Calculates a Elo Rating in a non-traditional way using a rating period,
+/// for compatibility with the other algorithms.
+///
+/// Takes in a player and their results as a Vec of tuples containing the opponent and the outcome.
+///
+/// All of the outcomes are from the perspective of `player_one`.
+/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+///
+/// # Example
+/// ```
+/// use skillratings::{elo::elo_rating_period, outcomes::Outcomes, rating::EloRating, config::EloConfig};
+///
+/// let player = EloRating::new();
+///
+/// let opponent1 = EloRating::new();
+/// let opponent2 = EloRating::new();
+/// let opponent3 = EloRating::new();
+///
+/// let new_player = elo_rating_period(
+///     player,
+///     &vec![
+///         (opponent1, Outcomes::WIN),
+///         (opponent2, Outcomes::WIN),
+///         (opponent3, Outcomes::WIN),
+///     ],
+///     &EloConfig::new(),
+/// );
+///
+/// assert!((new_player.rating.round() - 1046.0).abs() < f64::EPSILON);
+/// ```
+#[must_use]
+pub fn elo_rating_period(
+    player: EloRating,
+    results: &Vec<(EloRating, Outcomes)>,
+    config: &EloConfig,
+) -> EloRating {
+    let mut player = player;
+
+    for (opponent, result) in results {
+        (player, _) = elo(player, *opponent, *result, config);
+    }
+
+    player
+}
+
 /// Calculates the expected score of two players based on their elo rating.
 /// Meant for usage in the elo function, but you can also use it to predict games yourself.
 ///
 /// Takes in two elo scores and returns the expected score of each player.
 /// A score of 1.0 means certain win, a score of 0.0 means certain loss, and a score of 0.5 is a draw.
 ///
-/// #Example
+/// # Example
 /// ```
 /// use skillratings::{elo::expected_score, rating::EloRating};
 ///
@@ -123,6 +168,27 @@ mod tests {
         );
         assert!((winner_new_elo.rating.round() - 532.0).abs() < f64::EPSILON);
         assert!((loser_new_elo.rating.round() - 1468.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_elo_rating_period() {
+        let player = EloRating::new();
+
+        let opponent1 = EloRating::new();
+        let opponent2 = EloRating::new();
+        let opponent3 = EloRating::new();
+
+        let new_player = elo_rating_period(
+            player,
+            &vec![
+                (opponent1, Outcomes::WIN),
+                (opponent2, Outcomes::WIN),
+                (opponent3, Outcomes::WIN),
+            ],
+            &EloConfig::new(),
+        );
+
+        assert!((new_player.rating.round() - 1046.0).abs() < f64::EPSILON);
     }
 
     #[test]

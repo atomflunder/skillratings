@@ -2,6 +2,7 @@ use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 
 use crate::{config::TrueSkillConfig, outcomes::Outcomes, rating::TrueSkillRating};
 #[allow(clippy::doc_markdown)]
+#[must_use]
 /// Calculates the TrueSkill rating of two players based on their ratings, uncertainties, and the outcome of the game.
 ///
 /// Takes in two players, outcome of the game and a [`TrueSkillConfig`].
@@ -43,7 +44,6 @@ use crate::{config::TrueSkillConfig, outcomes::Outcomes, rating::TrueSkillRating
 /// [Wikipedia Article about TrueSkill](https://en.wikipedia.org/wiki/TrueSkill).  
 /// [TrueSkill: A Bayesian Skill Rating System (PDF)](https://proceedings.neurips.cc/paper/2006/file/f44ee263952e65b3610b8ba51229d1f9-Paper.pdf).  
 /// [The math behind TrueSkill (PDF)](http://www.moserware.com/assets/computing-your-skill/The%20Math%20Behind%20TrueSkill.pdf).
-#[must_use]
 pub fn trueskill(
     player_one: TrueSkillRating,
     player_two: TrueSkillRating,
@@ -116,6 +116,68 @@ pub fn trueskill(
     );
 
     (player_one_new, player_two_new)
+}
+
+#[must_use]
+/// Calculates a `TrueSkill` Rating in a non-traditional way using a rating period,
+/// for compatibility with the other algorithms.
+///
+/// Takes in a player and their results as a Vec of tuples containing the opponent and the outcome.
+///
+/// All of the outcomes are from the perspective of `player_one`.
+/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+///
+/// # Example
+/// ```
+/// use skillratings::{
+///     rating::TrueSkillRating, trueskill::trueskill_rating_period, outcomes::Outcomes, config::TrueSkillConfig
+/// };
+///
+/// let player_one = TrueSkillRating::new();
+/// let player_two = TrueSkillRating {
+///     rating: 30.0,
+///     uncertainty: 1.2,
+/// };
+/// let player_three = TrueSkillRating {
+///     rating: 12.0,
+///     uncertainty: 1.9,
+/// };
+/// let player_four = TrueSkillRating {
+///     rating: 49.0,
+///     uncertainty: 1.2,
+/// };
+///
+/// let player = trueskill_rating_period(
+///     player_one,
+///     &vec![(player_two, Outcomes::WIN)],
+///     &TrueSkillConfig::new(),
+/// );
+///
+/// let player = trueskill_rating_period(
+///     player_one,
+///     &vec![
+///         (player_two, Outcomes::WIN),
+///         (player_three, Outcomes::WIN),
+///         (player_four, Outcomes::LOSS),
+///     ],
+///     &TrueSkillConfig::new(),
+/// );
+///
+/// assert!(((player.rating * 100.0).round() - 3277.0).abs() < f64::EPSILON);
+/// assert!(((player.uncertainty * 100.0).round() - 566.0).abs() < f64::EPSILON);
+/// ```
+pub fn trueskill_rating_period(
+    player: TrueSkillRating,
+    results: &Vec<(TrueSkillRating, Outcomes)>,
+    config: &TrueSkillConfig,
+) -> TrueSkillRating {
+    let mut player = player;
+
+    for (opponent, result) in results {
+        (player, _) = trueskill(player, *opponent, *result, config);
+    }
+
+    player
 }
 
 #[must_use]
@@ -488,6 +550,45 @@ mod tests {
 
         assert!((p2.rating.round() - 21.0).abs() < f64::EPSILON);
         assert!(((p2.uncertainty * 100.0).round() - 717.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_trueskill_rating_period() {
+        let player_one = TrueSkillRating::new();
+        let player_two = TrueSkillRating {
+            rating: 30.0,
+            uncertainty: 1.2,
+        };
+        let player_three = TrueSkillRating {
+            rating: 12.0,
+            uncertainty: 1.9,
+        };
+        let player_four = TrueSkillRating {
+            rating: 49.0,
+            uncertainty: 1.2,
+        };
+
+        let player = trueskill_rating_period(
+            player_one,
+            &vec![(player_two, Outcomes::WIN)],
+            &TrueSkillConfig::new(),
+        );
+
+        assert!(((player.rating * 100.0).round() - 3300.0).abs() < f64::EPSILON);
+        assert!(((player.uncertainty * 100.0).round() - 597.0).abs() < f64::EPSILON);
+
+        let player = trueskill_rating_period(
+            player_one,
+            &vec![
+                (player_two, Outcomes::WIN),
+                (player_three, Outcomes::WIN),
+                (player_four, Outcomes::LOSS),
+            ],
+            &TrueSkillConfig::new(),
+        );
+
+        assert!(((player.rating * 100.0).round() - 3277.0).abs() < f64::EPSILON);
+        assert!(((player.uncertainty * 100.0).round() - 566.0).abs() < f64::EPSILON);
     }
 
     #[test]

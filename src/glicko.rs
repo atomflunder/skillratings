@@ -12,6 +12,8 @@ use std::f64::consts::PI;
 /// we are calculating the Glicko rating for two players at once, like in the Elo calculation,
 /// to make it easier to see instant results.
 ///
+/// For the traditional way of calculating a Glicko rating please see [`glicko_rating_period`].
+///
 /// The outcome of the match is in the perspective of `player_one`.
 /// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
 ///
@@ -97,6 +99,92 @@ pub fn glicko(
             deviation: player_two_new_deviation,
         },
     )
+}
+
+/// The "traditional" way of calculating a Glicko Rating of a player in a rating period.
+///
+/// Takes in a player, their results as a Vec of tuples containing the opponent and the outcome, and a [`GlickoConfig`].
+///
+/// All of the outcomes are from the perspective of `player_one`.
+/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+///
+/// If the player's results are empty, the player's rating deviation will automatically be decayed using [`decay_deviation`].
+///
+/// # Example
+/// ```
+/// use skillratings::{glicko::glicko_rating_period, outcomes::Outcomes, rating::GlickoRating, config::GlickoConfig};
+///
+/// let player = GlickoRating {
+///     rating: 1500.0,
+///     deviation: 200.0,
+/// };
+///
+/// let opponent1 = GlickoRating {
+///     rating: 1400.0,
+///     deviation: 30.0,
+/// };
+///
+/// let opponent2 = GlickoRating {
+///     rating: 1550.0,
+///     deviation: 100.0,
+/// };
+///
+/// let opponent3 = GlickoRating {
+///     rating: 1700.0,
+///     deviation: 300.0,
+/// };
+///
+/// let results = vec![
+///     (opponent1, Outcomes::WIN),
+///     (opponent2, Outcomes::LOSS),
+///     (opponent3, Outcomes::LOSS),
+/// ];
+///
+/// let config = GlickoConfig::new();
+///
+/// let new_player = glicko_rating_period(player, &results, &config);
+///
+/// assert!((new_player.rating.round() - 1464.0).abs() < f64::EPSILON);
+/// assert!((new_player.deviation - 151.253_743_431_783_2).abs() < f64::EPSILON);
+/// ```
+#[must_use]
+pub fn glicko_rating_period(
+    player: GlickoRating,
+    results: &Vec<(GlickoRating, Outcomes)>,
+    config: &GlickoConfig,
+) -> GlickoRating {
+    let q = 10_f64.ln() / 400.0;
+
+    let mut player = player;
+
+    if results.is_empty() {
+        return decay_deviation(player, config);
+    }
+
+    for (opponent, outcome) in results {
+        let outcome = match outcome {
+            Outcomes::WIN => 1.0,
+            Outcomes::DRAW => 0.5,
+            Outcomes::LOSS => 0.0,
+        };
+
+        let g = g_value(q, opponent.deviation);
+
+        let e = e_value(g, player.rating, opponent.rating);
+
+        let d = d_value(q, g, e);
+
+        let new_rating = new_rating(player.rating, player.deviation, outcome, q, g, e, d);
+
+        let new_deviation = new_deviation(player.deviation, d);
+
+        player = GlickoRating {
+            rating: new_rating,
+            deviation: new_deviation,
+        };
+    }
+
+    player
 }
 
 #[must_use]
@@ -248,6 +336,51 @@ mod tests {
 
         assert!((player1.rating.round() - 1464.0).abs() < f64::EPSILON);
         assert!((player1.deviation - 151.253_743_431_783_2).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_glicko_rating_period() {
+        let player = GlickoRating {
+            rating: 1500.0,
+            deviation: 200.0,
+        };
+
+        let opponent1 = GlickoRating {
+            rating: 1400.0,
+            deviation: 30.0,
+        };
+
+        let opponent2 = GlickoRating {
+            rating: 1550.0,
+            deviation: 100.0,
+        };
+
+        let opponent3 = GlickoRating {
+            rating: 1700.0,
+            deviation: 300.0,
+        };
+
+        let results = vec![
+            (opponent1, Outcomes::WIN),
+            (opponent2, Outcomes::DRAW),
+            (opponent3, Outcomes::LOSS),
+        ];
+
+        let new_player = glicko_rating_period(player, &results, &GlickoConfig::new());
+
+        assert!((new_player.rating.round() - 1527.0).abs() < f64::EPSILON);
+        assert!((new_player.deviation - 150.607_779_021_875_13).abs() < f64::EPSILON);
+
+        let player = GlickoRating {
+            rating: 1500.0,
+            deviation: 50.0,
+        };
+
+        let results: Vec<(GlickoRating, Outcomes)> = Vec::new();
+
+        let new_player = glicko_rating_period(player, &results, &GlickoConfig::new());
+
+        assert!((new_player.deviation - 80.586_847_562_117_73).abs() < f64::EPSILON);
     }
 
     #[test]

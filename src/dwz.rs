@@ -11,6 +11,9 @@ use crate::{outcomes::Outcomes, rating::DWZRating};
 /// we are calculating the DWZ rating for two players at once, like in the Elo calculation,
 /// to make it easier to see instant results.
 ///
+/// For the traditional way for calculating DWZ in a rating period or tournament, please see [`dwz_rating_period`].  
+/// To get a first DWZ rating, please see [`get_first_dwz`].
+///
 /// The outcome of the match is in the perspective of `player_one`.
 /// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
 ///
@@ -67,6 +70,7 @@ pub fn dwz(
         ),
         outcome1,
         exp1,
+        1.0,
     );
     let r2 = new_rating(
         player_two.rating,
@@ -79,6 +83,7 @@ pub fn dwz(
         ),
         outcome2,
         exp2,
+        1.0,
     );
 
     (
@@ -95,6 +100,76 @@ pub fn dwz(
             }
         },
     )
+}
+
+#[must_use]
+/// The "traditional" way of calculating a DWZ Rating of a player in a rating period or tournament.
+///
+/// Takes in a player and their results as a Vec of tuples containing the opponent and the outcome.
+///
+/// All of the outcomes are from the perspective of `player_one`.
+/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+///
+/// # Example
+/// ```
+/// use skillratings::{dwz::dwz_rating_period, outcomes::Outcomes, rating::DWZRating};
+///
+/// let player = DWZRating {
+///     rating: 1530.0,
+///     index: 17,
+///     age: 9,
+/// };
+///
+/// let opponent1 = DWZRating {
+///     rating: 1930.0,
+///     index: 103,
+///     age: 39,
+/// };
+///
+/// let opponent2 = DWZRating {
+///     rating: 1930.0,
+///     index: 92,
+///     age: 14,
+/// };
+///
+/// let results = vec![(opponent1, Outcomes::WIN), (opponent2, Outcomes::DRAW)];
+///
+/// let new_player = dwz_rating_period(player, &results);
+///
+/// assert!((new_player.rating.round() - 1635.0).abs() < f64::EPSILON);
+/// assert_eq!(new_player.index, 18);
+/// ```
+pub fn dwz_rating_period(player: DWZRating, results: &Vec<(DWZRating, Outcomes)>) -> DWZRating {
+    let points = results
+        .iter()
+        .map(|r| match r.1 {
+            Outcomes::WIN => 1.0,
+            Outcomes::DRAW => 0.5,
+            Outcomes::LOSS => 0.0,
+        })
+        .sum::<f64>();
+
+    let expected_points = results
+        .iter()
+        .map(|r| expected_score(player, r.0).0)
+        .sum::<f64>();
+
+    #[allow(clippy::as_conversions, clippy::cast_precision_loss)]
+    let new_rating = (800.0
+        / (e_value(
+            player.rating,
+            player.age,
+            points,
+            expected_points,
+            player.index,
+        ) + results.len() as f64))
+        .mul_add(points - expected_points, player.rating);
+
+    DWZRating {
+        rating: new_rating,
+        index: player.index + 1,
+        age: player.age,
+    }
 }
 
 #[must_use]
@@ -127,8 +202,10 @@ pub fn dwz(
 /// ```
 pub fn expected_score(player_one: DWZRating, player_two: DWZRating) -> (f64, f64) {
     (
-        (1.0 + 10.0_f64.powf((player_two.rating - player_one.rating) / 400.0)).recip(),
-        (1.0 + 10.0_f64.powf((player_one.rating - player_two.rating) / 400.0)).recip(),
+        (1.0 + 10.0_f64.powf(-1.0 * (1.0 / 400.0) * (player_one.rating - player_two.rating)))
+            .recip(),
+        (1.0 + 10.0_f64.powf(-1.0 * (1.0 / 400.0) * (player_two.rating - player_one.rating)))
+            .recip(),
     )
 }
 
@@ -342,8 +419,14 @@ fn e_value(rating: f64, age: usize, score: f64, expected_score: f64, index: usiz
     e
 }
 
-fn new_rating(old_rating: f64, e: f64, score: f64, expected_score: f64) -> f64 {
-    (800.0 / (e + 1.0)).mul_add(score - expected_score, old_rating)
+fn new_rating(
+    old_rating: f64,
+    e: f64,
+    score: f64,
+    expected_score: f64,
+    matches_played: f64,
+) -> f64 {
+    (800.0 / (e + matches_played)).mul_add(score - expected_score, old_rating)
 }
 
 mod tests {
@@ -390,6 +473,38 @@ mod tests {
 
         assert!((player_two.rating.round() - 1901.0).abs() < f64::EPSILON);
         assert_eq!(player_two.index, 106);
+    }
+
+    #[test]
+    fn test_dwz_rating_period() {
+        let player = DWZRating {
+            rating: 1530.0,
+            index: 17,
+            age: 9,
+        };
+
+        let opponent1 = DWZRating {
+            rating: 1930.0,
+            index: 103,
+            age: 39,
+        };
+
+        let opponent2 = DWZRating {
+            rating: 1930.0,
+            index: 92,
+            age: 14,
+        };
+
+        let results = vec![
+            (opponent1, Outcomes::WIN),
+            (opponent2, Outcomes::DRAW),
+            (opponent1, Outcomes::LOSS),
+        ];
+
+        let new_player = dwz_rating_period(player, &results);
+
+        assert!((new_player.rating.round() - 1619.0).abs() < f64::EPSILON);
+        assert_eq!(new_player.index, 18);
     }
 
     #[test]
