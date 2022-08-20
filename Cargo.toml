@@ -1,6 +1,6 @@
 [package]
 name = "skillratings"
-version = "0.9.0"
+version = "0.9.1"
 edition = "2021"
 description = "Calculate a player's skill rating in 1v1 matches using Elo, DWZ, Ingo, TrueSkill, Glicko and Glicko-2 algorithms."
 readme= "README.md"

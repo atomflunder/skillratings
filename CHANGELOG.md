@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.9.1 - 2022-08-20
+
+- Improved performance of `rating_period` functions
+- Improved docs main page
+
 ## v0.9.0 - 2022-08-20
 
 - Add `rating_period` functions, these allow to get a single rating from a list of results.

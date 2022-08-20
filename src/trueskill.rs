@@ -149,12 +149,6 @@ pub fn trueskill(
 ///
 /// let player = trueskill_rating_period(
 ///     player_one,
-///     &vec![(player_two, Outcomes::WIN)],
-///     &TrueSkillConfig::new(),
-/// );
-///
-/// let player = trueskill_rating_period(
-///     player_one,
 ///     &vec![
 ///         (player_two, Outcomes::WIN),
 ///         (player_three, Outcomes::WIN),
@@ -173,8 +167,50 @@ pub fn trueskill_rating_period(
 ) -> TrueSkillRating {
     let mut player = player;
 
+    let draw_margin = draw_margin(config.draw_probability, config.beta);
+
     for (opponent, result) in results {
-        (player, _) = trueskill(player, *opponent, *result, config);
+        let c = 2.0f64
+            .mul_add(
+                config.beta.powi(2),
+                player
+                    .uncertainty
+                    .mul_add(player.uncertainty, opponent.uncertainty.powi(2)),
+            )
+            .sqrt();
+
+        let winning_rating = if result == &Outcomes::WIN || result == &Outcomes::DRAW {
+            player.rating
+        } else {
+            opponent.rating
+        };
+        let losing_rating = if result == &Outcomes::WIN || result == &Outcomes::DRAW {
+            opponent.rating
+        } else {
+            player.rating
+        };
+
+        let rating_delta = winning_rating - losing_rating;
+
+        let v = if result == &Outcomes::DRAW {
+            v_draw(rating_delta, draw_margin, c)
+        } else {
+            v_non_draw(rating_delta, draw_margin, c)
+        };
+
+        let w = if result == &Outcomes::DRAW {
+            w_draw(rating_delta, draw_margin, c)
+        } else {
+            w_non_draw(rating_delta, draw_margin, c)
+        };
+
+        let rank_multiplier = match *result {
+            Outcomes::WIN => 1.0,
+            Outcomes::DRAW => 0.0,
+            Outcomes::LOSS => -1.0,
+        };
+
+        player = update_rating(player, v, w, c, config.default_dynamics, rank_multiplier);
     }
 
     player
@@ -581,14 +617,14 @@ mod tests {
             player_one,
             &vec![
                 (player_two, Outcomes::WIN),
-                (player_three, Outcomes::WIN),
+                (player_three, Outcomes::DRAW),
                 (player_four, Outcomes::LOSS),
             ],
             &TrueSkillConfig::new(),
         );
 
-        assert!(((player.rating * 100.0).round() - 3277.0).abs() < f64::EPSILON);
-        assert!(((player.uncertainty * 100.0).round() - 566.0).abs() < f64::EPSILON);
+        assert!(((player.rating * 100.0).round() - 3288.0).abs() < f64::EPSILON);
+        assert!(((player.uncertainty * 100.0).round() - 423.0).abs() < f64::EPSILON);
     }
 
     #[test]

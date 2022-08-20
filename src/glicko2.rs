@@ -178,16 +178,15 @@ pub fn glicko2_rating_period(
     results: &Vec<(Glicko2Rating, Outcomes)>,
     config: &Glicko2Config,
 ) -> Glicko2Rating {
-    let mut player = player;
-
     if results.is_empty() {
         return decay_deviation(player);
     }
 
-    for (opponent, outcome) in results {
-        let player_rating = (player.rating - 1500.0) / 173.7178;
-        let player_deviation = player.deviation / 173.7178;
+    let mut player_rating = (player.rating - 1500.0) / 173.7178;
+    let mut player_deviation = player.deviation / 173.7178;
+    let mut player_volatility = player.volatility;
 
+    for (opponent, outcome) in results {
         let opponent_rating = (opponent.rating - 1500.0) / 173.7178;
         let opponent_deviation = opponent.deviation / 173.7178;
 
@@ -204,7 +203,7 @@ pub fn glicko2_rating_period(
         let v = v_value(g, e);
 
         let new_volatility = new_volatility(
-            player.volatility,
+            player_volatility,
             delta_value(outcome, v, g, e),
             player_deviation,
             v,
@@ -216,15 +215,16 @@ pub fn glicko2_rating_period(
 
         let new_rating = new_rating(player_rating, new_deviation, outcome, g, e);
 
-        // We return the new values, converted back to the original scale.
-        player = Glicko2Rating {
-            rating: new_rating.mul_add(173.7178, 1500.0),
-            deviation: new_deviation * 173.7178,
-            volatility: new_volatility,
-        };
+        player_rating = new_rating;
+        player_deviation = new_deviation;
+        player_volatility = new_volatility;
     }
 
-    player
+    Glicko2Rating {
+        rating: player_rating.mul_add(173.7178, 1500.0),
+        deviation: player_deviation * 173.7178,
+        volatility: player_volatility,
+    }
 }
 
 /// Calculates the expected outcome of two players based on glicko-2.

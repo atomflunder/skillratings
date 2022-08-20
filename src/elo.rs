@@ -95,7 +95,15 @@ pub fn elo_rating_period(
     let mut player = player;
 
     for (opponent, result) in results {
-        (player, _) = elo(player, *opponent, *result, config);
+        let (exp, _) = expected_score(player, *opponent);
+
+        let o = match result {
+            Outcomes::WIN => 1.0,
+            Outcomes::LOSS => 0.0,
+            Outcomes::DRAW => 0.5,
+        };
+
+        player.rating = config.k.mul_add(o - exp, player.rating);
     }
 
     player
@@ -182,13 +190,13 @@ mod tests {
             player,
             &vec![
                 (opponent1, Outcomes::WIN),
-                (opponent2, Outcomes::WIN),
-                (opponent3, Outcomes::WIN),
+                (opponent2, Outcomes::DRAW),
+                (opponent3, Outcomes::LOSS),
             ],
             &EloConfig::new(),
         );
 
-        assert!((new_player.rating.round() - 1046.0).abs() < f64::EPSILON);
+        assert!((new_player.rating.round() - 999.0).abs() < f64::EPSILON);
     }
 
     #[test]

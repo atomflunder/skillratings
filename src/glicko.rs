@@ -155,11 +155,12 @@ pub fn glicko_rating_period(
 ) -> GlickoRating {
     let q = 10_f64.ln() / 400.0;
 
-    let mut player = player;
-
     if results.is_empty() {
         return decay_deviation(player, config);
     }
+
+    let mut player_rating = player.rating;
+    let mut player_deviation = player.deviation;
 
     for (opponent, outcome) in results {
         let outcome = match outcome {
@@ -170,21 +171,22 @@ pub fn glicko_rating_period(
 
         let g = g_value(q, opponent.deviation);
 
-        let e = e_value(g, player.rating, opponent.rating);
+        let e = e_value(g, player_rating, opponent.rating);
 
         let d = d_value(q, g, e);
 
-        let new_rating = new_rating(player.rating, player.deviation, outcome, q, g, e, d);
+        let new_rating = new_rating(player_rating, player_deviation, outcome, q, g, e, d);
 
-        let new_deviation = new_deviation(player.deviation, d);
+        let new_deviation = new_deviation(player_deviation, d);
 
-        player = GlickoRating {
-            rating: new_rating,
-            deviation: new_deviation,
-        };
+        player_rating = new_rating;
+        player_deviation = new_deviation;
     }
 
-    player
+    GlickoRating {
+        rating: player_rating,
+        deviation: player_deviation,
+    }
 }
 
 #[must_use]
