@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.10.0 - 2022-08-24
+
+- Add team calculations for TrueSkill
+    - These include `trueskill::trueskill_teams`, `trueskill::expected_score_teams`, `trueskill::match_quality::teams`
+
 ## v0.9.2 - 2022-08-23
 
 - Fix major bug in TrueSkill draw calculations

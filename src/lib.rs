@@ -46,6 +46,7 @@ pub mod glicko2;
 
 /// Calculate a player's skill rating using the `TrueSkill` algorithm, developed by Microsoft for Halo 3.
 /// Used in the Halo games, the Forza Games, Tom Clancy's: Rainbow Six Siege, and most Xbox Live games.  
+/// Unlike the other rating algorithms, `TrueSkill` supports teams.  
 /// **Caution:** `TrueSkill` is patented, so if you have a commercial project, it is recommended to use another algorihm included here.
 pub mod trueskill;
 

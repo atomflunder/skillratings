@@ -5,7 +5,7 @@
 [![](https://codecov.io/gh/atomflunder/skillratings/branch/master/graph/badge.svg?token=JFSA86GAX1)](https://codecov.io/gh/atomflunder/skillratings)
 [![](https://img.shields.io/crates/d/skillratings)](https://crates.io/crates/skillratings)
 
-Skillratings allows you to calculate the player's skill instantly in 1v1 matches or after tournaments/rating periods with a list of results using a variety of known and lesser known skill rating algorithms.
+Skillratings allows you to calculate the player's skill instantly or after tournaments/rating periods with a list of results using a variety of known and lesser known skill rating algorithms.
 
 Currently supported algorithms:
 
@@ -24,7 +24,7 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-skillratings = "0.9.2"
+skillratings = "0.10.0"
 ```
 
 ## Basic Usage
@@ -78,6 +78,7 @@ let player_two = GlickoRating {
     deviation: 350.0,
 };
 
+// The outcome is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
 // The config allows you to change certain adjustable values in the algorithms.
@@ -114,6 +115,7 @@ let player_two = Glicko2Rating {
     volatility: 0.06 
 };
 
+// The outcome is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
 // The config allows you to change certain adjustable values in the algorithms.
@@ -150,7 +152,10 @@ let player_two = TrueSkillRating {
 // The config allows you to change certain adjustable values in the algorithms.
 let config = TrueSkillConfig::new();
 
-let (p1, p2) = trueskill(player_one, player_two, Outcomes::WIN, &config);
+// The outcome is from the perspective of player one.
+let outcome = Outcomes::WIN;
+
+let (p1, p2) = trueskill(player_one, player_two, outcome, &config);
 
 assert!(((p1.rating * 100.0).round() - 3300.0).abs() < f64::EPSILON);
 assert!(((p1.uncertainty * 100.0).round() - 597.0).abs() < f64::EPSILON);
@@ -179,6 +184,7 @@ let player_two = DWZRating {
     age: 12,
 };
 
+// The outcome is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
 let (player_one_new, player_two_new) = dwz(player_one, player_two, outcome);
@@ -209,7 +215,10 @@ let player_two = IngoRating {
     age: 40,
 };
 
-let (p1, p2) = ingo(player_one, player_two, Outcomes::WIN);
+// The outcome is from the perspective of player one.
+let outcome = Outcomes::WIN;
+
+let (p1, p2) = ingo(player_one, player_two, outcome);
 
 assert!((p1.rating.round() - 129.0).abs() < f64::EPSILON);
 assert!((p2.rating.round() - 161.0).abs() < f64::EPSILON);
