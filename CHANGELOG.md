@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.9.2 - 2022-08-23
+
+- Fix major bug in TrueSkill draw calculations
+    - Would just give you your old rating if you had a draw, works properly now
+
 ## v0.9.1 - 2022-08-20
 
 - Improved performance of `rating_period` functions

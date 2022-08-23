@@ -50,7 +50,7 @@ pub fn trueskill(
     outcome: Outcomes,
     config: &TrueSkillConfig,
 ) -> (TrueSkillRating, TrueSkillRating) {
-    let draw_margin = draw_margin(config.draw_probability, config.beta);
+    let draw_margin = draw_margin(config.draw_probability, config.beta, 2.0);
 
     let c = 2.0f64
         .mul_add(
@@ -87,14 +87,12 @@ pub fn trueskill(
     };
 
     let rank_multiplier1 = match outcome {
-        Outcomes::WIN => 1.0,
-        Outcomes::DRAW => 0.0,
+        Outcomes::DRAW | Outcomes::WIN => 1.0,
         Outcomes::LOSS => -1.0,
     };
 
     let rank_multiplier2 = match outcome {
-        Outcomes::WIN => -1.0,
-        Outcomes::DRAW => 0.0,
+        Outcomes::WIN | Outcomes::DRAW => -1.0,
         Outcomes::LOSS => 1.0,
     };
 
@@ -167,7 +165,7 @@ pub fn trueskill_rating_period(
 ) -> TrueSkillRating {
     let mut player = player;
 
-    let draw_margin = draw_margin(config.draw_probability, config.beta);
+    let draw_margin = draw_margin(config.draw_probability, config.beta, 2.0);
 
     for (opponent, result) in results {
         let c = 2.0f64
@@ -204,9 +202,8 @@ pub fn trueskill_rating_period(
             w_non_draw(rating_delta, draw_margin, c)
         };
 
-        let rank_multiplier = match *result {
-            Outcomes::WIN => 1.0,
-            Outcomes::DRAW => 0.0,
+        let rank_multiplier = match result {
+            Outcomes::DRAW | Outcomes::WIN => 1.0,
             Outcomes::LOSS => -1.0,
         };
 
@@ -347,8 +344,8 @@ pub fn get_rank(player: TrueSkillRating) -> f64 {
     player.rating - (player.uncertainty * 3.0)
 }
 
-fn draw_margin(draw_probability: f64, beta: f64) -> f64 {
-    inverse_cdf(0.5 * (draw_probability + 1.0), 0.0, 1.0) * SQRT_2 * beta
+fn draw_margin(draw_probability: f64, beta: f64, total_players: f64) -> f64 {
+    inverse_cdf(0.5 * (draw_probability + 1.0), 0.0, 1.0) * total_players.sqrt() * beta
 }
 
 fn v_non_draw(difference: f64, draw_margin: f64, c: f64) -> f64 {
@@ -393,6 +390,10 @@ fn v_draw(difference: f64, draw_margin: f64, c: f64) -> f64 {
     let x = pdf((-1.0 * (draw_margin / c)) - (difference_abs / c), 0.0, 1.0)
         - pdf((draw_margin / c) - (difference_abs / c), 0.0, 1.0);
 
+    if (difference / c) < 0.0 {
+        return (-1.0 * x) / norm;
+    }
+
     x / norm
 }
 
@@ -408,12 +409,13 @@ fn w_draw(difference: f64, draw_margin: f64, c: f64) -> f64 {
 
     let v = v_draw(difference, draw_margin, c);
 
+    let p1 = pdf((draw_margin / c) - (difference_abs / c), 0.0, 1.0);
+    let p2 = pdf((-1.0 * (draw_margin / c)) - (difference_abs / c), 0.0, 1.0);
+
     v.mul_add(
         v,
-        ((draw_margin / c - difference_abs / c)
-            * pdf((draw_margin / c) - (difference_abs / c), 0.0, 1.0)
-            - (-1.0 * (draw_margin / c) - (difference_abs / c))
-                * pdf(-1.0 * (draw_margin / c) - (difference_abs / c), 0.0, 1.0))
+        (((draw_margin / c) - (difference_abs / c)) * p1
+            - ((-1.0 * (draw_margin / c)) - (difference_abs / c)) * p2)
             / norm,
     )
 }
@@ -623,14 +625,17 @@ mod tests {
             &TrueSkillConfig::new(),
         );
 
-        assert!(((player.rating * 100.0).round() - 3288.0).abs() < f64::EPSILON);
-        assert!(((player.uncertainty * 100.0).round() - 423.0).abs() < f64::EPSILON);
+        assert!(((player.rating * 100.0).round() - 2291.0).abs() < f64::EPSILON);
+        assert!(((player.uncertainty * 100.0).round() - 430.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_draw() {
         let player_one = TrueSkillRating::new();
-        let player_two = TrueSkillRating::new();
+        let player_two = TrueSkillRating {
+            rating: 30.0,
+            uncertainty: 1.2,
+        };
 
         let (p1, p2) = trueskill(
             player_one,
@@ -639,11 +644,33 @@ mod tests {
             &TrueSkillConfig::new(),
         );
 
-        assert!((p1.rating.round() - 25.0).abs() < f64::EPSILON);
-        assert!(((p1.uncertainty * 100.0).round() - 646.0).abs() < f64::EPSILON);
+        assert!((p1.rating - 28.282_523_394_245_658).abs() < f64::EPSILON);
+        assert!(((p1.uncertainty * 100.0).round() - 488.0).abs() < f64::EPSILON);
 
-        assert!((p2.rating.round() - 25.0).abs() < f64::EPSILON);
-        assert!(((p2.uncertainty * 100.0).round() - 646.0).abs() < f64::EPSILON);
+        assert!((p2.rating - 29.931_612_181_339_364).abs() < f64::EPSILON);
+        assert!(((p2.uncertainty * 100.0).round() - 119.0).abs() < f64::EPSILON);
+
+        let (p2, p1) = trueskill(
+            player_two,
+            player_one,
+            Outcomes::DRAW,
+            &TrueSkillConfig::new(),
+        );
+
+        assert!((p1.rating - 28.282_523_394_245_658).abs() < f64::EPSILON);
+        assert!(((p1.uncertainty * 100.0).round() - 488.0).abs() < f64::EPSILON);
+
+        assert!((p2.rating - 29.931_612_181_339_364).abs() < f64::EPSILON);
+        assert!(((p2.uncertainty * 100.0).round() - 119.0).abs() < f64::EPSILON);
+
+        let p1 = trueskill_rating_period(
+            player_one,
+            &vec![(player_two, Outcomes::DRAW)],
+            &TrueSkillConfig::new(),
+        );
+
+        assert!((p1.rating - 28.282_523_394_245_658).abs() < f64::EPSILON);
+        assert!(((p1.uncertainty * 100.0).round() - 488.0).abs() < f64::EPSILON);
     }
 
     #[test]
