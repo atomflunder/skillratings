@@ -576,8 +576,8 @@ pub fn expected_score(
 /// assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
 ///
 /// // There is a 12% chance for team_one to win and an 88% for team two.
-/// assert!((exp1 * 100.0 - 12.0).abs() < f64::EPSILON);
-/// assert!((exp2 * 100.0 - 88.0).abs() < f64::EPSILON);
+/// assert!(((exp1 * 100.0).round() - 12.0).abs() < f64::EPSILON);
+/// assert!(((exp2 * 100.0).round() - 88.0).abs() < f64::EPSILON);
 /// ```
 ///
 /// # More
