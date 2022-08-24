@@ -24,7 +24,7 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-skillratings = "0.10.1"
+skillratings = "0.10.2"
 ```
 
 ## Basic Usage
@@ -36,7 +36,8 @@ Head over [to the documentation](https://docs.rs/skillratings/) for more informa
 
 ### Elo rating system
 
-[Wikipedia article](https://en.wikipedia.org/wiki/Elo_rating_system)
+- [Documentation](https://docs.rs/skillratings/latest/skillratings/elo/index.html)
+- [Wikipedia article](https://en.wikipedia.org/wiki/Elo_rating_system)
 
 ```rust
 extern crate skillratings;
@@ -61,7 +62,8 @@ assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
 
 ### Glicko rating system
 
-[Wikipedia article](https://en.wikipedia.org/wiki/Glicko_rating_system)
+- [Documentation](https://docs.rs/skillratings/latest/skillratings/glicko/index.html)
+- [Wikipedia article](https://en.wikipedia.org/wiki/Glicko_rating_system)
 
 ```rust
 use skillratings::{
@@ -95,7 +97,8 @@ assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 
 ### Glicko-2 rating system
 
-[Wikipedia article](https://en.wikipedia.org/wiki/Glicko-2)
+- [Documentation](https://docs.rs/skillratings/latest/skillratings/glicko2/index.html)
+- [Wikipedia article](https://en.wikipedia.org/wiki/Glicko-2)
 
 ```rust
 extern crate skillratings;
@@ -132,7 +135,8 @@ assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 
 ### TrueSkill rating system
 
-[Wikipedia article](https://en.wikipedia.org/wiki/TrueSkill)
+- [Documentation](https://docs.rs/skillratings/latest/skillratings/trueskill/index.html)
+- [Wikipedia article](https://en.wikipedia.org/wiki/TrueSkill)
 
 **Caution regarding usage of TrueSkill**: 
 Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill(TM). 
@@ -143,7 +147,10 @@ use skillratings::{
     trueskill::trueskill, outcomes::Outcomes, rating::TrueSkillRating, config::TrueSkillConfig
 };
 
-let player_one = TrueSkillRating::new();
+let player_one = TrueSkillRating{
+    rating: 25.0,
+    uncertainty: 8.333,
+};
 let player_two = TrueSkillRating {
     rating: 30.0,
     uncertainty: 1.2,
@@ -166,7 +173,8 @@ assert!(((p2.uncertainty * 100.0).round() - 120.0).abs() < f64::EPSILON);
 
 ### DWZ (Deutsche Wertungszahl) rating system
 
-[Wikipedia article](https://en.wikipedia.org/wiki/Deutsche_Wertungszahl)
+- [Documentation](https://docs.rs/skillratings/latest/skillratings/dwz/index.html)
+- [Wikipedia article](https://en.wikipedia.org/wiki/Deutsche_Wertungszahl)
 
 ```rust
 use skillratings::{dwz::dwz, outcomes::Outcomes, rating::DWZRating};
@@ -198,7 +206,8 @@ assert_eq!(player_two_new.index, 13);
 
 ### Ingo rating system
 
-[Wikipedia article (in german, no english version available)](https://de.wikipedia.org/wiki/Ingo-Zahl)
+- [Documentation](https://docs.rs/skillratings/latest/skillratings/ingo/index.html)
+- [Wikipedia article (in german, no english version available)](https://de.wikipedia.org/wiki/Ingo-Zahl)
 
 ```rust
 use skillratings::{ingo::ingo, outcomes::Outcomes, rating::IngoRating};

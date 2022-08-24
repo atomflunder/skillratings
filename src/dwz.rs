@@ -2,7 +2,7 @@
 //! DWZ continues to be enhanced over the years, while having similar scores to Elo.
 //!
 //! DWZ allows young players to rise and fall in the ranks more quickly, while more experienced players ratings are slower to change.  
-//! Overachieving players gain more rating while underperforming weak players do not lose rating points as quickly.
+//! Overachieving players gain more rating while under-performing weak players do not lose rating points as quickly.
 //!
 //! These factors make DWZ more dynamic than Elo while producing accurate ratings more quickly.
 //!
@@ -404,14 +404,14 @@ fn e_value(rating: f64, age: usize, score: f64, expected_score: f64, index: usiz
 
     let e0 = e0_value(rating, j);
 
-    // The acceleration factor allows young, overachieving players to gain rating more quickly.
+    // The acceleration factor allows young, over-achieving players to gain rating more quickly.
     let a = if age < 20 && score >= expected_score {
         rating / 2000.0
     } else {
         1.0
     };
 
-    // The breaking value is applied to weak players that underperform in order to not decrease in rating too rapidly.
+    // The breaking value is applied to weak players that under-perform in order to not decrease in rating too rapidly.
     let b = if rating < 1300.0 && score <= expected_score {
         ((1300.0 - rating) / 150.0_f64).exp_m1()
     } else {

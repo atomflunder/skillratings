@@ -332,7 +332,7 @@ pub fn decay_deviation(player: Glicko2Rating) -> Glicko2Rating {
 #[must_use]
 /// The 95% confidence interval of the lowest to highest rating.
 ///
-/// The system is 95% sure that the "true skill" of the player is inbetween these values.
+/// The system is 95% sure that the "true skill" of the player is in-between these values.
 ///
 /// Takes in a player as a [`Glicko2Rating`] and returns two [`f64`]s that describe the lowest and highest rating.
 ///

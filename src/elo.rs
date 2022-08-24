@@ -1,4 +1,4 @@
-//! he Elo algorithm, the most widespread rating system and the gold-standard in chess and other games.  
+//! The Elo algorithm, the most widespread rating system and the gold-standard in chess and other games.  
 //! Used in the official FIDE chess ratings, FIFA World Rankings, and many online video games.
 //!
 //! The higher the Elo rating number, the stronger the player.
