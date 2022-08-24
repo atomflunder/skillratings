@@ -1,3 +1,5 @@
+//! Structs for initializing a player's rating for the different rating algorithms used.
+
 /// The Elo rating of a player.
 ///
 /// The default rating is 1000.0.

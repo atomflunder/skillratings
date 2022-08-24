@@ -1,21 +1,35 @@
+//! The Ingo algorithm, the predecessor of DWZ and one of the first rating algorihms invented in 1947.  
+//! Sometimes still used in Xiangqi ("Chinese Chess").
+//!
+//! Unlike with the other rating systems, with Ingo a lower rating is more desirable,
+//! and negative values are possible, though unlikely.  
+//! A player with an Ingo rating of 0 has an equivalent Elo rating of 2840, and an Ingo rating of -1 equals 2848 Elo.
+//!
+//!
+//! # More Information
+//!
+//! - [Wikipedia Article (German, no english version available)](https://de.wikipedia.org/wiki/Ingo-Zahl)
+//! - [Archive of Ingo Ratings (German)](https://www.schachbund.de/ingo-spiegel.html)
+//! - [Ingo Rules (German, PDF Download)](https://www.schachbund.de/ingo-spiegel.html?file=files/dsb/historie/ingo-spiegel/Ingo-Regeln.pdf&cid=28120)
+
 use crate::{outcomes::Outcomes, rating::IngoRating};
 
 #[must_use]
-/// Calculates the Ingo ratings of two players based on their ratings, and the outcome of the game.
+/// Calculates the [`IngoRating`]s of two players based on their ratings, and the outcome of the game.
 ///
-/// Takes in two players and the outcome of the game.
+/// Takes in two players as [`IngoRating`]s, and an [`Outcome`](Outcomes).
 ///
 /// Instead of the traditional way of calculating the Ingo for only one player only using a list of results,
 /// we are calculating the Ingo rating for two players at once, like in the Elo calculation,
 /// to make it easier to see instant results.
 ///
 /// The outcome of the match is in the perspective of `player_one`.
-/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+/// This means [`Outcomes::WIN`] is a win for `player_one` and [`Outcomes::LOSS`] is a win for `player_two`.
 ///
 /// A lower Ingo rating is more desirable, and while negative values are possible,
 /// a player with an Ingo rating of 0 has an equivalent Elo rating of 2840.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{ingo::ingo, outcomes::Outcomes, rating::IngoRating};
 ///
@@ -82,14 +96,15 @@ pub fn ingo(
 
 #[allow(clippy::as_conversions, clippy::cast_precision_loss)]
 #[must_use]
-/// The "traditional" way of calculating an Ingo Rating of a player in a rating period or tournament.
+/// The "traditional" way of calculating a [`IngoRating`] of a player in a rating period.
 ///
-/// Takes in a player and their results as a Vec of tuples containing the opponent and the outcome.
+/// Takes in a player as an [`IngoRating`] and their results as a Vec of tuples containing the opponent as an [`IngoRating`],
+/// and the outcome of the game as an [`Outcome`](Outcomes)
 ///
-/// All of the outcomes are from the perspective of `player_one`.
-/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+/// The outcome of the match is in the perspective of the player.
+/// This means [`Outcomes::WIN`] is a win for the player and [`Outcomes::LOSS`] is a win for the opponent.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{ingo::ingo_rating_period, rating::IngoRating, outcomes::Outcomes};
 ///
@@ -163,11 +178,11 @@ pub fn ingo_rating_period(player: IngoRating, results: &Vec<(IngoRating, Outcome
 #[must_use]
 /// Calculates the expected outcome of two players based on Ingo.
 ///
-/// Takes in two players and returns the probability of victory for each player.  
+/// Takes in two players as [`IngoRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{ingo::expected_score, outcomes::Outcomes, rating::IngoRating};
 ///

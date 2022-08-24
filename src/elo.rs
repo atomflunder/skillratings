@@ -1,13 +1,26 @@
+//! he Elo algorithm, the most widespread rating system and the gold-standard in chess and other games.  
+//! Used in the official FIDE chess ratings, FIFA World Rankings, and many online video games.
+//!
+//! The higher the Elo rating number, the stronger the player.
+//! Compared to other rating algorithms, Elo ratings are relatively static, but very transparent and simple to calculate.
+//!
+//! # More Information
+//!
+//! - [Wikipedia Article](https://en.wikipedia.org/wiki/Elo_rating_system)
+//! - [Elo Calculator](https://www.omnicalculator.com/sports/elo)
+//! - [FIDE Ratings](https://ratings.fide.com/)
+//! - [FIFA Ratings](https://www.fifa.com/fifa-world-ranking)
+
 use crate::{config::EloConfig, outcomes::Outcomes, rating::EloRating};
 
-/// Calculates the elo scores of two players based on their ratings and the outcome of the game.
+/// Calculates the [`EloRating`]s of two players based on their old ratings and the outcome of the game.
 ///
-/// Takes in two players, the outcome of the game and an [`EloConfig`].
+/// Takes in two players as [`EloRating`]s, an [`Outcome`](Outcomes) and an [`EloConfig`].
 ///
 /// The outcome of the match is in the perspective of `player_one`.
-/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+/// This means [`Outcomes::WIN`] is a win for `player_one` and [`Outcomes::LOSS`] is a win for `player_two`.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{elo::elo, outcomes::Outcomes, rating::EloRating, config::EloConfig};
 ///
@@ -25,7 +38,8 @@ use crate::{config::EloConfig, outcomes::Outcomes, rating::EloRating};
 /// ```
 ///
 /// # More
-/// [Wikipedia Article on the Elo system](https://en.wikipedia.org/wiki/Elo_rating_system).
+/// [Wikipedia Article on the Elo system](https://en.wikipedia.org/wiki/Elo_rating_system)  
+/// [Elo Calculator](https://www.omnicalculator.com/sports/elo)
 #[must_use]
 pub fn elo(
     player_one: EloRating,
@@ -56,15 +70,16 @@ pub fn elo(
     )
 }
 
-/// Calculates a Elo Rating in a non-traditional way using a rating period,
+/// Calculates an [`EloRating`] in a non-traditional way using a rating period,
 /// for compatibility with the other algorithms.
 ///
-/// Takes in a player and their results as a Vec of tuples containing the opponent and the outcome.
+/// Takes in a player as an [`EloRating`] and their results as a Vec of tuples containing the opponent as an [`EloRating`]
+/// and the outcome of the game as an [`Outcome`](Outcomes).
 ///
-/// All of the outcomes are from the perspective of `player_one`.
-/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+/// All of the outcomes are from the perspective of the player.
+/// This means [`Outcomes::WIN`] is a win for the player and [`Outcomes::LOSS`] is a win for the opponent.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{elo::elo_rating_period, outcomes::Outcomes, rating::EloRating, config::EloConfig};
 ///
@@ -112,10 +127,11 @@ pub fn elo_rating_period(
 /// Calculates the expected score of two players based on their elo rating.
 /// Meant for usage in the elo function, but you can also use it to predict games yourself.
 ///
-/// Takes in two elo scores and returns the expected score of each player.
-/// A score of 1.0 means certain win, a score of 0.0 means certain loss, and a score of 0.5 is a draw.
+/// Takes in two players as [`EloRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near 0.5 mean a draw is likely to occur.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{elo::expected_score, rating::EloRating};
 ///

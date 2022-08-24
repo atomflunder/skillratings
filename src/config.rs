@@ -1,7 +1,9 @@
+//! Contains structs to configure key variables used in the different rating algorithms.
+
 /// Constants used in the `Elo` calculation.
 pub struct EloConfig {
     /// The k-value is the maximum amount of rating change from a single match.
-    /// In chess, k-values from 40 to 10 are used, with the most common being 32, 24 or 16.
+    /// In chess, k-values from 40 to 10 are used, with the most common being 32, 24, 16 or 10.
     /// The higher the number, the more volatile the ranking.  
     /// Here the default is 32.
     pub k: f64,

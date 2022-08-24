@@ -1,11 +1,27 @@
+//! The DWZ (Deutsche Wertungszahl) algorithm used in the german chess leagues alongside Elo.  
+//! DWZ continues to be enhanced over the years, while having similar scores to Elo.
+//!
+//! DWZ allows young players to rise and fall in the ranks more quickly, while more experienced players ratings are slower to change.  
+//! Overachieving players gain more rating while underperforming weak players do not lose rating points as quickly.
+//!
+//! These factors make DWZ more dynamic than Elo while producing accurate ratings more quickly.
+//!
+//! # More Information
+//!
+//! - [Wikipedia Article](https://en.wikipedia.org/wiki/Deutsche_Wertungszahl)
+//! - [DWZ Calculator (German)](http://www.wertungszahl.de/)
+//! - [DWZ Top 100 Ratings](https://www.schachbund.de/top-100.html)
+//! - [Official DWZ scoring system rules (German)](https://www.schachbund.de/wertungsordnung.html)
+//! - [Probability Table](https://www.schachbund.de/wertungsordnung-anhang-2-tabellen/articles/wertungsordnung-anhang-21-wahrscheinlichkeitstabelle.html)
+
 use std::collections::HashMap;
 
 use crate::{outcomes::Outcomes, rating::DWZRating};
 
 #[must_use]
-/// Calculates the DWZ (Deutsche Wertungszahl) ratings of two players based on their ratings, index, age and outcome of the game.
+/// Calculates new [`DWZRating`] of two players based on their old rating, index, age and outcome of the game.
 ///
-/// Takes in two players and the outcome of the game.
+/// Takes in two players as [`DWZRating`]s and an [`Outcome`](Outcomes).
 ///
 /// Instead of the traditional way of calculating the DWZ for only one player only using a list of results,
 /// we are calculating the DWZ rating for two players at once, like in the Elo calculation,
@@ -15,9 +31,9 @@ use crate::{outcomes::Outcomes, rating::DWZRating};
 /// To get a first DWZ rating, please see [`get_first_dwz`].
 ///
 /// The outcome of the match is in the perspective of `player_one`.
-/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+/// This means [`Outcomes::WIN`] is a win for `player_one` and [`Outcomes::LOSS`] is a win for `player_two`.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{dwz::dwz, outcomes::Outcomes, rating::DWZRating};
 ///
@@ -105,12 +121,13 @@ pub fn dwz(
 #[must_use]
 /// The "traditional" way of calculating a DWZ Rating of a player in a rating period or tournament.
 ///
-/// Takes in a player and their results as a Vec of tuples containing the opponent and the outcome.
+/// Takes in a player as an [`DWZRating`] and their results as a Vec of tuples containing the opponent as an [`DWZRating`]
+/// and the outcome of the game as an [`Outcome`](Outcomes).
 ///
-/// All of the outcomes are from the perspective of `player_one`.
-/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+/// All of the outcomes are from the perspective of the player.
+/// This means [`Outcomes::WIN`] is a win for the player and [`Outcomes::LOSS`] is a win for the opponent.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{dwz::dwz_rating_period, outcomes::Outcomes, rating::DWZRating};
 ///
@@ -175,11 +192,11 @@ pub fn dwz_rating_period(player: DWZRating, results: &Vec<(DWZRating, Outcomes)>
 #[must_use]
 /// Calculates the expected outcome of two players based on DWZ.
 ///
-/// Takes in two players and returns the probability of victory for each player.  
+/// Takes in two players as [`DWZRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{dwz::expected_score, rating::DWZRating};
 ///
@@ -211,18 +228,18 @@ pub fn expected_score(player_one: DWZRating, player_two: DWZRating) -> (f64, f64
 
 #[allow(clippy::as_conversions, clippy::cast_precision_loss)]
 #[must_use]
-/// Gets a proper first DWZ rating.
+/// Gets a proper first [`DWZRating`].
 ///
-/// If you do not have enough opponents, and have an [`crate::rating::EloRating`]
-/// consider using `DWZRating::from(EloRating { ... })`.
+/// If you do not have enough opponents, and have an [`EloRating`](crate::rating::EloRating)
+/// consider using [`DWZRating::from()`](DWZRating#impl-From<EloRating>).
 ///
 /// Takes in the player's age and their results as a Vec of tuples containing the opponent and the outcome.
 /// If the actual player's age is unavailable or unknown, choose something `>25`.
 ///
 /// This only returns a DWZ rating if the results include at least 5 matches,
-/// and you don't have a 100% or a 0% win record. Otherwise it will return `None`.
+/// and you don't have a 100% or a 0% win record. Otherwise it will return [`None`].
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{dwz::get_first_dwz, outcomes::Outcomes, rating::DWZRating};
 ///

@@ -1,22 +1,49 @@
+//! The TrueSkill rating algorithm, developed by Microsoft for Halo 3.
+//! Used in the Halo games, the Forza Games, Tom Clancy's: Rainbow Six Siege, and most Xbox Live games.  
+//! Unlike the other rating algorithms, TrueSkill supports teams.
+//!
+//! **Caution:** TrueSkill is patented. If you have a commercial project, it is recommended to use another algorithm included here.
+//!
+//! TrueSkill uses a normal distribution with a skill rating (μ) and an uncertainty value (σ) to represent a players skill level,
+//! similar to [`Glicko`](crate::glicko) and [`Glicko-2`](crate::glicko2).
+//! TrueSkill is good at assessing a player's skill level quickly.
+//! The amount of matches needed depends on the game mode, as follows (The actual numbers may vary):
+//!
+//! | Match type | Matches needed |
+//! | ---------- | -------------- |
+//! | 1 Player vs 1 Player | 12 |
+//! | 4 Players vs 4 Players | 46 |
+//! | 8 Players vs 8 Players | 91 |
+//!
+//! Whereas other algorithms might need more matches in the same circumstances.
+//!
+//! The drawback is that the calculations are complex, and thus players may find it unintuitive in certain scenarios.  
+//! For example, players might gain rank(s) when losing a match due to the uncertainty value decreasing.
+//!
+//! # More Information
+//! - [Wikipedia Article](https://en.wikipedia.org/wiki/TrueSkill)
+//! - [TrueSkill Ranking System](https://www.microsoft.com/en-us/research/project/trueskill-ranking-system/)
+//! - [Original Paper (PDF)](https://proceedings.neurips.cc/paper/2006/file/f44ee263952e65b3610b8ba51229d1f9-Paper.pdf)
+//! - [The math behind TrueSkill (PDF)](http://www.moserware.com/assets/computing-your-skill/The%20Math%20Behind%20TrueSkill.pdf)
+//! - [Moserware: Computing Your Skill](http://www.moserware.com/2010/03/computing-your-skill.html)
 use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 
 use crate::{config::TrueSkillConfig, outcomes::Outcomes, rating::TrueSkillRating};
-#[allow(clippy::doc_markdown)]
 #[must_use]
-/// Calculates the TrueSkill rating of two players based on their ratings, uncertainties, and the outcome of the game.
+/// Calculates the [`TrueSkillRating`]s of two players based on their old ratings, uncertainties, and the outcome of the game.
 ///
-/// Takes in two players, outcome of the game and a [`TrueSkillConfig`].
+/// Takes in two players as [`TrueSkillRating`]s, an [`Outcome`](Outcomes), and a [`TrueSkillConfig`].
 ///
 /// The outcome of the match is in the perspective of `player_one`.
-/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+/// This means [`Outcomes::WIN`] is a win for `player_one` and [`Outcomes::LOSS`] is a win for `player_two`.
 ///
 /// Similar to [`trueskill_rating_period`] and [`trueskill_teams`].
 ///
-/// **Caution regarding usage of TrueSkill**:
-/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill(TM).
+/// **Caution regarding usage of TrueSkill**:  
+/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.  
 /// If your project is commercial, you should use another rating system included here.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{rating::TrueSkillRating, trueskill::trueskill, outcomes::Outcomes, config::TrueSkillConfig};
 ///
@@ -116,22 +143,22 @@ pub fn trueskill(
 }
 
 #[must_use]
-#[allow(clippy::doc_markdown)]
-/// Calculates a TrueSkill Rating in a non-traditional way using a rating period,
+/// Calculates a [`TrueSkillRating`] in a non-traditional way using a rating period,
 /// for compatibility with the other algorithms.
 ///
-/// Takes in a player and their results as a Vec of tuples containing the opponent and the outcome.
+/// Takes in a player as an [`TrueSkillRating`] and their results as a Vec of tuples containing the opponent as an [`TrueSkillRating`],
+/// the outcome of the game as an [`Outcome`](Outcomes) and a [`TrueSkillConfig`].
 ///
-/// All of the outcomes are from the perspective of `player_one`.
-/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+/// The outcome of the match is in the perspective of the player.
+/// This means [`Outcomes::WIN`] is a win for the player and [`Outcomes::LOSS`] is a win for the opponent.
 ///
-/// Similar to [`trueskill`].
+/// Similar to [`trueskill`] or [`trueskill_teams`].
 ///
-/// **Caution regarding usage of TrueSkill**:
-/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill(TM).
+/// **Caution regarding usage of TrueSkill**:  
+/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.  
 /// If your project is commercial, you should use another rating system included here.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{
 ///     rating::TrueSkillRating, trueskill::trueskill_rating_period, outcomes::Outcomes, config::TrueSkillConfig
@@ -224,17 +251,13 @@ pub fn trueskill_rating_period(
 }
 
 #[must_use]
-#[allow(
-    clippy::as_conversions,
-    clippy::cast_precision_loss,
-    clippy::doc_markdown
-)]
-/// Calculates the TrueSkill rating of two teams based on their ratings, uncertainties, and the outcome of the game.
+#[allow(clippy::as_conversions, clippy::cast_precision_loss)]
+/// Calculates the [`TrueSkillRating`] of two teams based on their ratings, uncertainties, and the outcome of the game.
 ///
-/// Takes in two teams as a Vec of `TrueSkillRating`'s, the outcome of the game and a [`TrueSkillConfig`].
+/// Takes in two teams as a Vec of [`TrueSkillRating`]s, the outcome of the game as an [`Outcome`](Outcomes) and a [`TrueSkillConfig`].
 ///
-/// The outcome of the match is in the perspective of `player_one`.
-/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+/// The outcome of the match is in the perspective of `team_one`.
+/// This means [`Outcomes::WIN`] is a win for `team_one` and [`Outcomes::LOSS`] is a win for `team_two`.
 ///
 /// Similar to [`trueskill`].
 ///
@@ -242,7 +265,7 @@ pub fn trueskill_rating_period(
 /// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill(TM).
 /// If your project is commercial, you should use another rating system included here.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{
 ///     trueskill::trueskill_teams, rating::TrueSkillRating, outcomes::Outcomes, config::TrueSkillConfig
@@ -353,9 +376,11 @@ pub fn trueskill_teams(
 /// Gets the quality of the match, which is equal to the probability that the match will end in a draw.
 /// The higher the Value, the better the quality of the match.
 ///
+/// Takes in two players as [`TrueSkillRating`]s and returns the probability of a draw occurring as an [`f64`] between 1.0 and 0.0.
+///
 /// Similar to [`match_quality_teams`].
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{rating::TrueSkillRating, trueskill::match_quality, config::TrueSkillConfig};
 ///
@@ -400,12 +425,14 @@ pub fn match_quality(
     clippy::cast_precision_loss,
     clippy::needless_pass_by_value
 )]
-/// Gets the quality of a match between two teams, which is equal to the probability that the match will end in a draw.
+/// Gets the quality of the match, which is equal to the probability that the match will end in a draw.
 /// The higher the Value, the better the quality of the match.
+///
+/// Takes in two teams as Vec of [`TrueSkillRating`]s and returns the probability of a draw occurring as an [`f64`] between 1.0 and 0.0.
 ///
 /// Similar to [`match_quality`].
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{rating::TrueSkillRating, trueskill::match_quality_teams, config::TrueSkillConfig};
 ///
@@ -463,9 +490,9 @@ pub fn match_quality_teams(
 }
 
 #[must_use]
-/// Calculates the expected outcome of two players based on `TrueSkill`.
+/// Calculates the expected outcome of two players based on TrueSkill.
 ///
-/// Takes in two players and the config and returns the probability of victory for each player.  
+/// Takes in two players as [`TrueSkillRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -473,7 +500,7 @@ pub fn match_quality_teams(
 ///
 /// To see the actual chances of a draw occurring, please use [`match_quality`].
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{rating::TrueSkillRating, trueskill::expected_score, config::TrueSkillConfig};
 ///
@@ -537,15 +564,15 @@ pub fn expected_score(
 )]
 /// Calculates the expected outcome of two teams based on `TrueSkill`.
 ///
-/// Takes in two teams as Vec of players and the config and returns the probability of victory for each team.  
-/// 1.0 means a certain victory for the team, 0.0 means certain loss.
+/// Takes in two teams as Vec of [`TrueSkillRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
 /// Similar to [`expected_score`].
 ///
 /// To see the actual chances of a draw occurring, please use [`match_quality_teams`].
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{rating::TrueSkillRating, trueskill::expected_score_teams, config::TrueSkillConfig};
 ///
@@ -616,6 +643,8 @@ pub fn expected_score_teams(
 ///
 /// This is a conservative estimate of player skill,
 /// the system is 99% sure the player's skill is higher than displayed.
+///
+/// Takes in a player as a [`TrueSkillRating`] and returns the rank as an [`f64`].
 ///
 /// The recommended scale used for Xbox Live is 0 (lowest, starting value) to 50 (highest).
 ///

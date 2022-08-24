@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.10.1 - 2022-08-25
+
+- Overhauled documentation
+
 ## v0.10.0 - 2022-08-24
 
 - Add team calculations for TrueSkill

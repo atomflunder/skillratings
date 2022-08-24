@@ -1,9 +1,25 @@
+//! The Glicko-2 algorithm, an improvement on Glicko and widely used in online games,
+//! like Counter Strike: Global Offensive, Team Fortress 2, Splatoon 2 and most online chess platforms.
+//!
+//! //! For Glicko, please see [`crate::glicko`].
+//!
+//! The main improvement over Glicko is the rating volatility which is the expected fluctuation of a players rating,
+//! based on how consistent a player is performing. The lower the volatility, the more consistent a player performs.
+//!
+//! # More Information
+//!
+//! - [Wikipedia Article](https://en.wikipedia.org/wiki/Glicko_rating_system)
+//! - [Original Paper by Mark Glickman](http://www.glicko.net/glicko/glicko2.pdf)
+//! - [Glicko-2 Calculator](https://fsmosca-glicko2calculator-glicko2calculator-vik8k0.streamlitapp.com/)
+
 use crate::{config::Glicko2Config, outcomes::Outcomes, rating::Glicko2Rating};
 use std::f64::consts::PI;
 
-/// Calculates the glicko-2 scores of two players based on their ratings, deviations, and the outcome of the game.
+/// Calculates the [`Glicko2Rating`]s of two players based on their old ratings, deviations, volatilities, and the outcome of the game.
 ///
-/// Takes in two players, the outcome of the game and a [`Glicko2Config`].
+/// For the original version, please see [`crate::glicko::glicko`].
+///
+/// Takes in two players as [`Glicko2Rating`]s, an [`Outcome`](Outcomes), and a [`Glicko2Config`].
 ///
 /// Instead of the traditional way of calculating the Glicko-2 for only one player only using a list of results,
 /// we are calculating the Glicko-2 rating for two players at once, like in the Elo calculation,
@@ -12,9 +28,9 @@ use std::f64::consts::PI;
 /// For the traditional way of calculating a Glicko-2 rating please see [`glicko2_rating_period`].
 ///
 /// The outcome of the match is in the perspective of `player_one`.
-/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+/// This means [`Outcomes::WIN`] is a win for `player_one` and [`Outcomes::LOSS`] is a win for `player_two`.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{glicko2::glicko2, outcomes::Outcomes, rating::Glicko2Rating, config::Glicko2Config};
 ///
@@ -123,16 +139,17 @@ pub fn glicko2(
     (player_one_new, player_two_new)
 }
 
-/// The "traditional" way of calculating a Glicko-2 Rating of a player in a rating period.
+/// The "traditional" way of calculating a [`Glicko2Rating`] of a player in a rating period.
 ///
-/// Takes in a player, their results as a Vec of tuples containing the opponent and the outcome, and a [`Glicko2Config`].
+/// Takes in a player as an [`Glicko2Rating`] and their results as a Vec of tuples containing the opponent as an [`Glicko2Rating`],
+/// the outcome of the game as an [`Outcome`](Outcomes) and a [`Glicko2Config`].
 ///
-/// All of the outcomes are from the perspective of `player_one`.
-/// This means `Outcomes::WIN` is a win for `player_one` and `Outcomes::LOSS` is a win for `player_two`.
+/// The outcome of the match is in the perspective of the player.
+/// This means [`Outcomes::WIN`] is a win for the player and [`Outcomes::LOSS`] is a win for the opponent.
 ///
 /// If the player's results are empty, the player's rating deviation will automatically be decayed using [`decay_deviation`].
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{glicko2::glicko2_rating_period, outcomes::Outcomes, rating::Glicko2Rating, config::Glicko2Config};
 ///
@@ -229,11 +246,11 @@ pub fn glicko2_rating_period(
 
 /// Calculates the expected outcome of two players based on glicko-2.
 ///
-/// Takes in two players and returns the probability of victory for each player.  
+/// Takes in two players as [`Glicko2Rating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{glicko2::expected_score, rating::Glicko2Rating};
 ///
@@ -284,9 +301,9 @@ pub fn expected_score(player_one: Glicko2Rating, player_two: Glicko2Rating) -> (
 ///
 /// The length of the rating period and thus the number of missed periods per player is something to decide and track yourself.
 ///
-/// Takes in a player and returns the player with the Rating Deviation Value adjusted.
+/// Takes in a player as a [`Glicko2Rating`] and returns the decayed [`Glicko2Rating`].
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use skillratings::{glicko2::decay_deviation, rating::Glicko2Rating};
 ///
@@ -317,7 +334,9 @@ pub fn decay_deviation(player: Glicko2Rating) -> Glicko2Rating {
 ///
 /// The system is 95% sure that the "true skill" of the player is inbetween these values.
 ///
-/// # Example
+/// Takes in a player as a [`Glicko2Rating`] and returns two [`f64`]s that describe the lowest and highest rating.
+///
+/// # Examples
 /// ```rust
 /// use skillratings::{rating::Glicko2Rating, glicko2::confidence_interval};
 ///
