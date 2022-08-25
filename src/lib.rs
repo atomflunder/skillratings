@@ -28,7 +28,7 @@
 //! Add the following to your `Cargo.toml` file:  
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.10.2"
+//! skillratings = "0.11.0"
 //! ```
 //!
 //! # Examples and Usage

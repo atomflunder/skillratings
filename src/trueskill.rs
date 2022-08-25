@@ -562,7 +562,7 @@ pub fn expected_score(
     clippy::as_conversions,
     clippy::cast_precision_loss
 )]
-/// Calculates the expected outcome of two teams based on `TrueSkill`.
+/// Calculates the expected outcome of two teams based on TrueSkill.
 ///
 /// Takes in two teams as Vec of [`TrueSkillRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.

@@ -1,8 +1,9 @@
 //! The possible outcomes of a match.
 
 /// The possible outcomes for a match: Win, Draw, Loss.
-/// Note that this is always from the perspective of player one.
-/// So a win is a win for player one and a loss is a win for player two.
+///
+/// Note that this is always from the perspective of player one.  
+/// That means a win is a win for player one and a loss is a win for player two.
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Outcomes {

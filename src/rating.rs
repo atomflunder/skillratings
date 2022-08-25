@@ -32,7 +32,9 @@ impl From<IngoRating> for EloRating {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-/// The Glicko rating for a player. **For the glicko-2 rating, please see [`Glicko2Rating`]**.
+/// The Glicko rating for a player.
+///
+/// For the Glicko-2 rating, please see [`Glicko2Rating`].
 ///
 /// The default rating is 1500.0.  
 /// The default deviation is 350.0.
@@ -61,6 +63,8 @@ impl Default for GlickoRating {
 }
 
 /// The Glicko-2 rating of a player.
+///
+/// For the Glicko rating, please see [`GlickoRating`].
 ///
 /// The default rating is 1500.0.  
 /// The default deviation is 350.0.  
@@ -96,13 +100,10 @@ impl Default for Glicko2Rating {
 #[derive(Copy, Clone, Debug, PartialEq)]
 /// The DWZ (Deutsche Wertungszahl) rating for a player.
 ///
-/// Note there is no default value for this,
-/// you either have to convert an existing [`EloRating`]
-/// using `DWZRating::from(EloRating { ... })`,
-/// or use the [`crate::dwz::get_first_dwz`] function.
-///
 /// The age is the actual age of the player, if unsure or unavailable set this to `>25`.  
-/// Using `from` will set the age to 26.
+/// Converting from an `EloRating` or using `DWZRating::default()` will set the age to 26.
+///
+/// The default rating is 1000.0.
 pub struct DWZRating {
     /// The player's DWZ rating number.
     pub rating: f64,
@@ -110,6 +111,25 @@ pub struct DWZRating {
     pub index: usize,
     /// The age of the player, if uncertain or unavailable set this to `>25`.
     pub age: usize,
+}
+
+impl DWZRating {
+    #[must_use]
+    /// Initialize a new `DWZRating` with a rating of 1000.0, an index of 1 and the specified age.  
+    /// The age is the actual age of the player, if unsure or unavailable set this to `>25`.
+    pub const fn new(age: usize) -> Self {
+        Self {
+            rating: 1000.0,
+            index: 1,
+            age,
+        }
+    }
+}
+
+impl Default for DWZRating {
+    fn default() -> Self {
+        Self::new(26)
+    }
 }
 
 impl From<EloRating> for DWZRating {
@@ -123,7 +143,7 @@ impl From<EloRating> for DWZRating {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-/// The `TrueSkill` rating of a player.
+/// The TrueSkill rating of a player.
 ///
 /// The default rating is 25.0.  
 /// The default uncertainty is 25/3 ≈ 8.33.
@@ -154,8 +174,11 @@ impl Default for TrueSkillRating {
 #[derive(Copy, Clone, Debug, PartialEq)]
 /// The Ingo rating of a player.
 ///
-/// Note that unlike in the other systems, a lower score is better than a higher score.
+/// Note that unlike in the other systems, a lower score is better than a higher score.  
 /// Negative values are possible.
+///
+/// The age is the actual age of the player, if unsure or unavailable set this to `>25`.  
+/// Converting from an `EloRating` or using `IngoRating::default()` will set the age to 26.
 ///
 /// The default rating is 230.0.
 pub struct IngoRating {
@@ -168,18 +191,16 @@ pub struct IngoRating {
 
 impl IngoRating {
     #[must_use]
-    /// Initialize a new `IngoRating` with a rating of 230.0
-    pub const fn new() -> Self {
-        Self {
-            rating: 230.0,
-            age: 26,
-        }
+    /// Initialize a new `IngoRating` with a rating of 230.0 and the given age.  
+    /// The age is the actual age of the player, if unsure or unavailable set this to `>25`.
+    pub const fn new(age: usize) -> Self {
+        Self { rating: 230.0, age }
     }
 }
 
 impl Default for IngoRating {
     fn default() -> Self {
-        Self::new()
+        Self::new(26)
     }
 }
 

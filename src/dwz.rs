@@ -230,8 +230,9 @@ pub fn expected_score(player_one: DWZRating, player_two: DWZRating) -> (f64, f64
 #[must_use]
 /// Gets a proper first [`DWZRating`].
 ///
-/// If you do not have enough opponents, and have an [`EloRating`](crate::rating::EloRating)
-/// consider using [`DWZRating::from()`](DWZRating#impl-From<EloRating>).
+/// In the case that you do not have enough opponents to rate a player against,
+/// consider using [`DWZRating::from()`](DWZRating) if you have an [`EloRating`](crate::rating::EloRating)
+/// or [`DWZRating::new()`](DWZRating) if not.
 ///
 /// Takes in the player's age and their results as a Vec of tuples containing the opponent and the outcome.
 /// If the actual player's age is unavailable or unknown, choose something `>25`.
@@ -779,5 +780,14 @@ mod tests {
         assert!((player_one_dwz.rating.round() - 1200.0).abs() < f64::EPSILON);
         assert_eq!(player_one_dwz.index, 6);
         assert_eq!(player_one_dwz.age, 26);
+    }
+
+    #[test]
+    fn default_new() {
+        let player_one = DWZRating::default();
+
+        let player_two = DWZRating::new(26);
+
+        assert_eq!(player_one, player_two);
     }
 }

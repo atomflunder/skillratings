@@ -5,7 +5,6 @@
 //! and negative values are possible, though unlikely.  
 //! A player with an Ingo rating of 0 has an equivalent Elo rating of 2840, and an Ingo rating of -1 equals 2848 Elo.
 //!
-//!
 //! # More Information
 //!
 //! - [Wikipedia Article (German, no english version available)](https://de.wikipedia.org/wiki/Ingo-Zahl)

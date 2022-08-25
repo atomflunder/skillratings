@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.11.0 - 2022-08-26
+
+- Add `new` and `default` implementations for `DWZRating`
+- `new` implementation for `IngoRating` now requires an age to be set
+
 ## v0.10.2 - 2022-08-25
 
 - Fix typos

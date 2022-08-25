@@ -1,6 +1,6 @@
 //! Contains structs to configure key variables used in the different rating algorithms.
 
-/// Constants used in the `Elo` calculation.
+/// Constants used in the Elo calculation.
 pub struct EloConfig {
     /// The k-value is the maximum amount of rating change from a single match.
     /// In chess, k-values from 40 to 10 are used, with the most common being 32, 24, 16 or 10.
@@ -23,7 +23,7 @@ impl Default for EloConfig {
     }
 }
 
-/// Constants used in the `Glicko` calculation.
+/// Constants used in the Glicko calculation.
 pub struct GlickoConfig {
     /// The c value describes how much the rating deviation should decay in each step.
     /// The higher the value, the more the rating deviation will decay.  
@@ -46,7 +46,7 @@ impl Default for GlickoConfig {
     }
 }
 
-/// Constants used in the `Glicko-2` calculation.
+/// Constants used in the Glicko-2 calculation.
 pub struct Glicko2Config {
     /// The tau constant constrains the change in volatility over time.
     /// To cite Mark Glickman himself: "Reasonable choices are between 0.3 and 1.2".
@@ -76,7 +76,7 @@ impl Default for Glicko2Config {
     }
 }
 
-/// Constants used in the `TrueSkill` calculation.
+/// Constants used in the TrueSkill calculation.
 pub struct TrueSkillConfig {
     /// The probability of draws occurring in match.
     /// The higher the probability, the bigger the updates to the ratings in a non-drawn outcome.  

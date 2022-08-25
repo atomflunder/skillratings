@@ -5,7 +5,7 @@
 [![](https://codecov.io/gh/atomflunder/skillratings/branch/master/graph/badge.svg?token=JFSA86GAX1)](https://codecov.io/gh/atomflunder/skillratings)
 [![](https://img.shields.io/crates/d/skillratings)](https://crates.io/crates/skillratings)
 
-Skillratings allows you to calculate the player's skill instantly or after tournaments/rating periods with a list of results using a variety of known and lesser known skill rating algorithms.
+Skillratings allows you to calculate the player's skill instantly, or after tournaments/rating periods with a list of results using a variety of known and lesser known skill rating algorithms.
 
 Currently supported algorithms:
 
@@ -24,7 +24,7 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-skillratings = "0.10.2"
+skillratings = "0.11.0"
 ```
 
 ## Basic Usage

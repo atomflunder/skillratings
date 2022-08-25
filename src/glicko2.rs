@@ -1,7 +1,7 @@
 //! The Glicko-2 algorithm, an improvement on Glicko and widely used in online games,
 //! like Counter Strike: Global Offensive, Team Fortress 2, Splatoon 2 and most online chess platforms.
 //!
-//! //! For Glicko, please see [`crate::glicko`].
+//! For Glicko, please see [`crate::glicko`].
 //!
 //! The main improvement over Glicko is the rating volatility which is the expected fluctuation of a players rating,
 //! based on how consistent a player is performing. The lower the volatility, the more consistent a player performs.
