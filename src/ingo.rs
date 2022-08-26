@@ -46,9 +46,6 @@ use crate::{outcomes::Outcomes, rating::IngoRating};
 /// assert!((p1.rating.round() - 129.0).abs() < f64::EPSILON);
 /// assert!((p2.rating.round() - 161.0).abs() < f64::EPSILON);
 /// ```
-///
-/// # More:
-/// [Wikipedia Article on the Ingo system (in german, no english version available)](https://de.wikipedia.org/wiki/Ingo-Zahl).
 pub fn ingo(
     player_one: IngoRating,
     player_two: IngoRating,

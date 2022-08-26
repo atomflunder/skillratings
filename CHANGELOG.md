@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.12.0 - 2022-08-26
+
+- Add Weng-Lin (A Bayesian Approximation Method for Online Ranking) calculations
+- Return original teams when a team is empty in `trueskill::trueskill_teams`
+
 ## v0.11.0 - 2022-08-26
 
 - Add `new` and `default` implementations for `DWZRating`

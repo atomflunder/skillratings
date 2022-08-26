@@ -1,6 +1,7 @@
 //! The TrueSkill rating algorithm, developed by Microsoft for Halo 3.
-//! Used in the Halo games, the Forza Games, Tom Clancy's: Rainbow Six Siege, and most Xbox Live games.  
-//! Unlike the other rating algorithms, TrueSkill supports teams.
+//! Used in the Halo games, the Forza Games, Tom Clancy's: Rainbow Six Siege, and most Xbox Live games.
+//!
+//! Developed specifically for online games with multiple teams and multiple players.
 //!
 //! **Caution:** TrueSkill is patented. If you have a commercial project, it is recommended to use another algorithm included here.
 //!
@@ -65,11 +66,6 @@ use crate::{config::TrueSkillConfig, outcomes::Outcomes, rating::TrueSkillRating
 /// assert!(((player_two.rating * 100.0).round() - 4960.0).abs() < f64::EPSILON);
 /// assert!(((player_two.uncertainty * 100.0).round() - 121.0).abs() < f64::EPSILON);
 /// ```
-///
-/// # More:
-/// [Wikipedia Article about TrueSkill](https://en.wikipedia.org/wiki/TrueSkill).  
-/// [TrueSkill: A Bayesian Skill Rating System (PDF)](https://proceedings.neurips.cc/paper/2006/file/f44ee263952e65b3610b8ba51229d1f9-Paper.pdf).  
-/// [The math behind TrueSkill (PDF)](http://www.moserware.com/assets/computing-your-skill/The%20Math%20Behind%20TrueSkill.pdf).
 pub fn trueskill(
     player_one: TrueSkillRating,
     player_two: TrueSkillRating,
@@ -191,10 +187,6 @@ pub fn trueskill(
 /// assert!(((player.rating * 100.0).round() - 3277.0).abs() < f64::EPSILON);
 /// assert!(((player.uncertainty * 100.0).round() - 566.0).abs() < f64::EPSILON);
 /// ```
-/// # More:
-/// [Wikipedia Article about TrueSkill](https://en.wikipedia.org/wiki/TrueSkill).  
-/// [TrueSkill: A Bayesian Skill Rating System (PDF)](https://proceedings.neurips.cc/paper/2006/file/f44ee263952e65b3610b8ba51229d1f9-Paper.pdf).  
-/// [The math behind TrueSkill (PDF)](http://www.moserware.com/assets/computing-your-skill/The%20Math%20Behind%20TrueSkill.pdf).
 pub fn trueskill_rating_period(
     player: TrueSkillRating,
     results: &Vec<(TrueSkillRating, Outcomes)>,
@@ -301,17 +293,16 @@ pub fn trueskill_rating_period(
 /// assert!((team_two[0].rating - 27.574_109_105_332_1).abs() < f64::EPSILON);
 /// assert!((team_two[1].rating - 36.210_764_756_738_115).abs() < f64::EPSILON);
 /// ```
-///
-/// # More:
-/// [Wikipedia Article about TrueSkill](https://en.wikipedia.org/wiki/TrueSkill).  
-/// [TrueSkill: A Bayesian Skill Rating System (PDF)](https://proceedings.neurips.cc/paper/2006/file/f44ee263952e65b3610b8ba51229d1f9-Paper.pdf).  
-/// [The math behind TrueSkill (PDF)](http://www.moserware.com/assets/computing-your-skill/The%20Math%20Behind%20TrueSkill.pdf).
 pub fn trueskill_teams(
     team_one: Vec<TrueSkillRating>,
     team_two: Vec<TrueSkillRating>,
     outcome: Outcomes,
     config: &TrueSkillConfig,
 ) -> (Vec<TrueSkillRating>, Vec<TrueSkillRating>) {
+    if team_one.is_empty() || team_two.is_empty() {
+        return (team_one, team_two);
+    }
+
     let total_players = (team_one.len() + team_two.len()) as f64;
 
     let draw_margin = draw_margin(config.draw_probability, config.beta, total_players);
@@ -524,9 +515,6 @@ pub fn match_quality_teams(
 ///
 /// assert!((exp1.mul_add(100.0, exp2 * 100.0).round() - 100.0).abs() < f64::EPSILON);
 /// ```
-///
-/// # More
-/// <http://www.moserware.com/2010/03/computing-your-skill.html>
 pub fn expected_score(
     player_one: TrueSkillRating,
     player_two: TrueSkillRating,
@@ -606,9 +594,6 @@ pub fn expected_score(
 /// assert!(((exp1 * 100.0).round() - 12.0).abs() < f64::EPSILON);
 /// assert!(((exp2 * 100.0).round() - 88.0).abs() < f64::EPSILON);
 /// ```
-///
-/// # More
-/// <http://www.moserware.com/2010/03/computing-your-skill.html>
 pub fn expected_score_teams(
     team_one: Vec<TrueSkillRating>,
     team_two: Vec<TrueSkillRating>,
@@ -1060,6 +1045,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::cognitive_complexity)]
     /// This test is taken from:
     /// <https://github.com/moserware/Skills/blob/master/UnitTests/TrueSkill/TrueSkillCalculatorTests.cs>
     fn test_teams() {
@@ -1149,6 +1135,15 @@ mod tests {
         assert!((team_one[1].uncertainty - 5.417_723_612_401_869).abs() < f64::EPSILON);
         assert!((team_two[0].uncertainty - 3.832_975_356_683_128).abs() < f64::EPSILON);
         assert!((team_two[1].uncertainty - 2.930_957_525_591_959_5).abs() < f64::EPSILON);
+
+        let (team_one, _) = trueskill_teams(
+            vec![player_one],
+            vec![],
+            Outcomes::WIN,
+            &TrueSkillConfig::new(),
+        );
+
+        assert_eq!(team_one[0], player_one);
     }
 
     #[test]

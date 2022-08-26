@@ -36,10 +36,6 @@ use crate::{config::EloConfig, outcomes::Outcomes, rating::EloRating};
 /// assert!((player_one_new.rating - 1016.0).abs() < f64::EPSILON);
 /// assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
 /// ```
-///
-/// # More
-/// [Wikipedia Article on the Elo system](https://en.wikipedia.org/wiki/Elo_rating_system)  
-/// [Elo Calculator](https://www.omnicalculator.com/sports/elo)
 #[must_use]
 pub fn elo(
     player_one: EloRating,

@@ -13,6 +13,7 @@ Currently supported algorithms:
 - [Glicko](#glicko-rating-system)
 - [Glicko-2](#glicko-2-rating-system)
 - [TrueSkill](#trueskill-rating-system)
+- [Weng-Lin (Bayesian Approxmation Method)](#weng-lin-rating-system)
 - [DWZ (Deutsche Wertungszahl)](#dwz-deutsche-wertungszahl-rating-system)
 - [Ingo](#ingo-rating-system)
 
@@ -24,7 +25,7 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-skillratings = "0.11.0"
+skillratings = "0.12.0"
 ```
 
 ## Basic Usage
@@ -169,6 +170,41 @@ assert!(((p1.uncertainty * 100.0).round() - 597.0).abs() < f64::EPSILON);
 
 assert!(((p2.rating * 100.0).round() - 2983.0).abs() < f64::EPSILON);
 assert!(((p2.uncertainty * 100.0).round() - 120.0).abs() < f64::EPSILON);
+```
+
+## Weng-Lin rating system
+
+(A Bayesian Approximation Method for Online Ranking)
+
+- [Documentation](https://docs.rs/skillratings/latest/skillratings/weng_lin/index.html)
+- [Original Paper (PDF)](https://jmlr.csail.mit.edu/papers/volume12/weng11a/weng11a.pdf)
+
+```rust
+use skillratings::{
+    rating::WengLinRating, weng_lin::weng_lin, outcomes::Outcomes, config::WengLinConfig
+};
+
+let player_one = WengLinRating {
+    rating: 42.0,
+    uncertainty: 1.3,
+};
+let player_two = WengLinRating {
+    rating: 25.0,
+    uncertainty: 8.333,
+};
+
+// The config allows you to change certain adjustable values in the algorithms.
+let config = WengLinConfig::new();
+
+// The outcome is from the perspective of player one.
+let outcome = Outcomes::WIN;
+
+let (player_one, player_two) = weng_lin(player_one, player_two, outcome, &config);
+
+assert!(((player_one.rating * 100.0).round() - 4203.0).abs() < f64::EPSILON);
+assert!(((player_one.uncertainty * 100.0).round() - 130.0).abs() < f64::EPSILON);
+assert!(((player_two.rating * 100.0).round() - 2391.0).abs() < f64::EPSILON);
+assert!(((player_two.uncertainty * 100.0).round() - 803.0).abs() < f64::EPSILON);
 ```
 
 ### DWZ (Deutsche Wertungszahl) rating system

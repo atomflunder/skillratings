@@ -114,3 +114,36 @@ impl Default for TrueSkillConfig {
         Self::new()
     }
 }
+
+/// Constants used in the Weng calculations.
+pub struct WengLinConfig {
+    /// The skill-class width, aka the number of difference in rating points
+    /// needed to have an 80% win probability against another player.  
+    /// By default set to 25 / 6 ≈ `4.167`.  
+    /// If your game is more reliant on pure skill, decrease this value,
+    /// if there are more random factors, increase it.
+    pub beta: f64,
+    /// The lower ceiling of the sigma value, in the uncertainty calculations.
+    /// The lower this value, the lower the possible uncertainty values.  
+    /// By default set to 0.000_001.  
+    /// Do not set this to a negative value.
+    pub uncertainty_tolerance: f64,
+}
+
+impl WengLinConfig {
+    #[must_use]
+    /// Initialize a new `WengConfig` with a beta value of 25 / 6 ≈ `4.167`
+    /// and an uncertainty tolerance of `0.000_001`.
+    pub fn new() -> Self {
+        Self {
+            beta: 25.0 / 6.0,
+            uncertainty_tolerance: 0.000_001,
+        }
+    }
+}
+
+impl Default for WengLinConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}

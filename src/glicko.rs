@@ -56,10 +56,6 @@ use std::f64::consts::PI;
 /// assert!((player_two_new.rating.round() - 1338.0).abs() < f64::EPSILON);
 /// assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 /// ```
-///
-/// # More
-/// [Wikipedia Article on the Glicko system](https://en.wikipedia.org/wiki/Glicko_rating_system).  
-/// [Example of the Glicko system](http://www.glicko.net/glicko/glicko.pdf).
 pub fn glicko(
     player_one: GlickoRating,
     player_two: GlickoRating,

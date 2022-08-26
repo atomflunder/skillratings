@@ -58,9 +58,6 @@ use crate::{outcomes::Outcomes, rating::DWZRating};
 /// assert!((player_two_new.rating.round() - 1464.0).abs() < f64::EPSILON);
 /// assert_eq!(player_two_new.index, 13);
 /// ```
-///
-/// # More
-/// [Wikipedia Article on DWZ](https://en.wikipedia.org/wiki/Deutsche_Wertungszahl)
 pub fn dwz(
     player_one: DWZRating,
     player_two: DWZRating,
@@ -285,9 +282,6 @@ pub fn expected_score(player_one: DWZRating, player_two: DWZRating) -> (f64, f64
 /// assert!((player.rating - 1491.0).abs() < f64::EPSILON);
 /// assert_eq!(player.index, 1);
 /// ```
-///
-/// # More
-/// [Probability Table](https://www.schachbund.de/wertungsordnung-anhang-2-tabellen/articles/wertungsordnung-anhang-21-wahrscheinlichkeitstabelle.html)
 pub fn get_first_dwz(player_age: usize, results: &Vec<(DWZRating, Outcomes)>) -> Option<DWZRating> {
     if results.len() < 5 {
         return None;

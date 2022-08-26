@@ -12,11 +12,12 @@
 //!
 //! Currently we support these skill rating systems:
 //! **[`Elo`](crate::elo)**,
-//! **[`DWZ`](crate::dwz)**,
-//! **[`Ingo`](crate::ingo)**,
+//! **[`Glicko`](crate::glicko)**,
+//! **[`Glicko-2`](crate::glicko2)**,
 //! **[`TrueSkill`](crate::trueskill)**,
-//! **[`Glicko`](crate::glicko)**
-//! and **[`Glicko-2`](crate::glicko2)**.
+//! **[`Weng-Lin`](crate::weng_lin)**,
+//! **[`DWZ (Deutsche Wertungszahl)`](crate::dwz)**,
+//! and **[`Ingo`](crate::ingo)**.
 //!
 //! You can use this crate to calculate results for two players instantly,
 //! or for one player in a rating period with the algorithms mentioned above.
@@ -28,7 +29,7 @@
 //! Add the following to your `Cargo.toml` file:  
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.11.0"
+//! skillratings = "0.12.0"
 //! ```
 //!
 //! # Examples and Usage
@@ -44,3 +45,4 @@ pub mod ingo;
 pub mod outcomes;
 pub mod rating;
 pub mod trueskill;
+pub mod weng_lin;

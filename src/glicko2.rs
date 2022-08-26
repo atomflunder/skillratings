@@ -59,10 +59,6 @@ use std::f64::consts::PI;
 /// assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 /// assert!((player_two_new.volatility - 0.05999578094735206).abs() < f64::EPSILON);
 /// ```
-///
-/// # More
-/// [Wikipedia Article on the Glicko-2 system](https://en.wikipedia.org/wiki/Glicko-2).  
-/// [Example of the Glicko-2 system](http://www.glicko.net/glicko/glicko2.pdf).
 #[must_use]
 pub fn glicko2(
     player_one: Glicko2Rating,

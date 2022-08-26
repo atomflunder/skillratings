@@ -156,7 +156,7 @@ pub struct TrueSkillRating {
 
 impl TrueSkillRating {
     #[must_use]
-    /// Initialize a new `TrueSkillRating` with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
+    /// Initialize a new TrueSkillRating with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
     pub fn new() -> Self {
         Self {
             rating: 25.0,
@@ -210,5 +210,36 @@ impl From<EloRating> for IngoRating {
             rating: 355.0 - (e.rating / 8.0),
             age: 26,
         }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The Weng rating of a player.
+///
+/// Similar to [`TrueSkillRating`].
+///
+/// The default rating is 25.0.  
+/// The default uncertainty is 25/3 ≈ 8.33.
+pub struct WengLinRating {
+    /// The rating value (mu) of the WengRating, by default 25.0.
+    pub rating: f64,
+    /// The uncertainty value (sigma) of the WengRating, by default 25/3 ≈ 8.33.
+    pub uncertainty: f64,
+}
+
+impl WengLinRating {
+    #[must_use]
+    /// Initialize a new WengRating with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
+    pub fn new() -> Self {
+        Self {
+            rating: 25.0,
+            uncertainty: 25.0 / 3.0,
+        }
+    }
+}
+
+impl Default for WengLinRating {
+    fn default() -> Self {
+        Self::new()
     }
 }
