@@ -666,12 +666,19 @@ mod tests {
             Outcomes::DRAW,
             &WengLinConfig::new(),
         );
+        let (normal_player, _) = weng_lin(
+            normal_player,
+            opponent_two,
+            Outcomes::LOSS,
+            &WengLinConfig::new(),
+        );
 
         let rating_player = weng_lin_rating_period(
             player,
             &vec![
                 (opponent_one, Outcomes::WIN),
                 (opponent_two, Outcomes::DRAW),
+                (opponent_two, Outcomes::LOSS),
             ],
             &WengLinConfig::new(),
         );
