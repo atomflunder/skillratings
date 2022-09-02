@@ -115,7 +115,7 @@ impl Default for TrueSkillConfig {
     }
 }
 
-/// Constants used in the Weng calculations.
+/// Constants used in the Weng-Lin calculations.
 pub struct WengLinConfig {
     /// The skill-class width, aka the number of difference in rating points
     /// needed to have an 80% win probability against another player.  
@@ -132,7 +132,7 @@ pub struct WengLinConfig {
 
 impl WengLinConfig {
     #[must_use]
-    /// Initialize a new `WengConfig` with a beta value of 25 / 6 ≈ `4.167`
+    /// Initialize a new `WengLinConfig` with a beta value of 25 / 6 ≈ `4.167`
     /// and an uncertainty tolerance of `0.000_001`.
     pub fn new() -> Self {
         Self {

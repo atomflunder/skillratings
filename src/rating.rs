@@ -214,22 +214,22 @@ impl From<EloRating> for IngoRating {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-/// The Weng rating of a player.
+/// The Weng-Lin rating of a player.
 ///
 /// Similar to [`TrueSkillRating`].
 ///
 /// The default rating is 25.0.  
 /// The default uncertainty is 25/3 ≈ 8.33.
 pub struct WengLinRating {
-    /// The rating value (mu) of the WengRating, by default 25.0.
+    /// The rating value (mu) of the WengLinRating, by default 25.0.
     pub rating: f64,
-    /// The uncertainty value (sigma) of the WengRating, by default 25/3 ≈ 8.33.
+    /// The uncertainty value (sigma) of the WengLinRating, by default 25/3 ≈ 8.33.
     pub uncertainty: f64,
 }
 
 impl WengLinRating {
     #[must_use]
-    /// Initialize a new WengRating with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
+    /// Initialize a new WengLinRating with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
     pub fn new() -> Self {
         Self {
             rating: 25.0,
