@@ -56,7 +56,7 @@ let outcome = Outcomes::WIN;
 // The config allows you to change certain adjustable values in the algorithms.
 let config = EloConfig::new();
 
-let (player_one_new, player_two_new) = elo(player_one, player_two, outcome, &config);
+let (player_one_new, player_two_new) = elo(&player_one, &player_two, &outcome, &config);
 assert!((player_one_new.rating - 1016.0).abs() < f64::EPSILON);
 assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
 ```
@@ -87,7 +87,7 @@ let outcome = Outcomes::WIN;
 // The config allows you to change certain adjustable values in the algorithms.
 let config = GlickoConfig::new();
 
-let (player_one_new, player_two_new) = glicko(player_one, player_two, outcome, &config);
+let (player_one_new, player_two_new) = glicko(&player_one, &player_two, &outcome, &config);
 
 assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
 assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
@@ -125,7 +125,7 @@ let outcome = Outcomes::WIN;
 // The config allows you to change certain adjustable values in the algorithms.
 let config = Glicko2Config::new();
 
-let (player_one_new, player_two_new) = glicko2(player_one, player_two, outcome, &config);
+let (player_one_new, player_two_new) = glicko2(&player_one, &player_two, &outcome, &config);
 
 assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
 assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
@@ -163,7 +163,7 @@ let config = TrueSkillConfig::new();
 // The outcome is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
-let (p1, p2) = trueskill(player_one, player_two, outcome, &config);
+let (p1, p2) = trueskill(&player_one, &player_two, &outcome, &config);
 
 assert!(((p1.rating * 100.0).round() - 3300.0).abs() < f64::EPSILON);
 assert!(((p1.uncertainty * 100.0).round() - 597.0).abs() < f64::EPSILON);
@@ -199,7 +199,7 @@ let config = WengLinConfig::new();
 // The outcome is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
-let (player_one, player_two) = weng_lin(player_one, player_two, outcome, &config);
+let (player_one, player_two) = weng_lin(&player_one, &player_two, &outcome, &config);
 
 assert!(((player_one.rating * 100.0).round() - 4203.0).abs() < f64::EPSILON);
 assert!(((player_one.uncertainty * 100.0).round() - 130.0).abs() < f64::EPSILON);
@@ -231,7 +231,7 @@ let player_two = DWZRating {
 // The outcome is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
-let (player_one_new, player_two_new) = dwz(player_one, player_two, outcome);
+let (player_one_new, player_two_new) = dwz(&player_one, &player_two, &outcome);
 
 assert!((player_one_new.rating.round() - 1519.0).abs() < f64::EPSILON);
 assert_eq!(player_one_new.index, 43);
@@ -263,7 +263,7 @@ let player_two = IngoRating {
 // The outcome is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
-let (p1, p2) = ingo(player_one, player_two, outcome);
+let (p1, p2) = ingo(&player_one, &player_two, &outcome);
 
 assert!((p1.rating.round() - 129.0).abs() < f64::EPSILON);
 assert!((p2.rating.round() - 161.0).abs() < f64::EPSILON);
