@@ -42,7 +42,7 @@ use crate::{config::WengLinConfig, outcomes::Outcomes, rating::WengLinRating};
 /// };
 /// let player_two = WengLinRating::new();
 ///
-/// let (player_one, player_two) = weng_lin(player_one, player_two, Outcomes::WIN, &WengLinConfig::new());
+/// let (player_one, player_two) = weng_lin(&player_one, &player_two, &Outcomes::WIN, &WengLinConfig::new());
 ///
 /// assert!(((player_one.rating * 100.0).round() - 4203.0).abs() < f64::EPSILON);
 /// assert!(((player_one.uncertainty * 100.0).round() - 130.0).abs() < f64::EPSILON);
@@ -50,9 +50,9 @@ use crate::{config::WengLinConfig, outcomes::Outcomes, rating::WengLinRating};
 /// assert!(((player_two.uncertainty * 100.0).round() - 803.0).abs() < f64::EPSILON);
 /// ```
 pub fn weng_lin(
-    player_one: WengLinRating,
-    player_two: WengLinRating,
-    outcome: Outcomes,
+    player_one: &WengLinRating,
+    player_two: &WengLinRating,
+    outcome: &Outcomes,
     config: &WengLinConfig,
 ) -> (WengLinRating, WengLinRating) {
     let c = 2.0f64
@@ -134,7 +134,7 @@ pub fn weng_lin(
 /// };
 ///
 /// let player = weng_lin_rating_period(
-///     player,
+///     &player,
 ///     &vec![
 ///         (opponent_one, Outcomes::WIN),
 ///         (opponent_two, Outcomes::DRAW),
@@ -146,11 +146,11 @@ pub fn weng_lin(
 /// assert!(((player.uncertainty * 100.0).round() - 780.0).abs() < f64::EPSILON);
 /// ```
 pub fn weng_lin_rating_period(
-    player: WengLinRating,
+    player: &WengLinRating,
     results: &Vec<(WengLinRating, Outcomes)>,
     config: &WengLinConfig,
 ) -> WengLinRating {
-    let mut player = player;
+    let mut player = *player;
 
     for (opponent, result) in results {
         let c = 2.0f64
@@ -162,7 +162,7 @@ pub fn weng_lin_rating_period(
             )
             .sqrt();
 
-        let (p1, p2) = expected_score(player, *opponent, config);
+        let (p1, p2) = expected_score(&player, opponent, config);
 
         let outcome = match result {
             Outcomes::WIN => 1.0,
@@ -228,7 +228,7 @@ pub fn weng_lin_rating_period(
 /// ];
 ///
 /// let (team_one, team_two) =
-///     weng_lin_teams(team_one, team_two, Outcomes::WIN, &WengLinConfig::new());
+///     weng_lin_teams(&team_one, &team_two, &Outcomes::WIN, &WengLinConfig::new());
 ///
 /// assert!(((team_one[0].rating * 100.0).round() - 2790.0).abs() < f64::EPSILON);
 /// assert!(((team_one[1].rating * 100.0).round() - 3006.0).abs() < f64::EPSILON);
@@ -239,14 +239,15 @@ pub fn weng_lin_rating_period(
 /// assert!(((team_two[2].rating * 100.0).round() - 1843.0).abs() < f64::EPSILON);
 /// ```
 pub fn weng_lin_teams(
-    team_one: Vec<WengLinRating>,
-    team_two: Vec<WengLinRating>,
-    outcome: Outcomes,
+    team_one: &Vec<WengLinRating>,
+    team_two: &Vec<WengLinRating>,
+    outcome: &Outcomes,
     config: &WengLinConfig,
 ) -> (Vec<WengLinRating>, Vec<WengLinRating>) {
     if team_one.is_empty() || team_two.is_empty() {
-        return (team_one, team_two);
+        return (team_one.clone(), team_two.clone());
     }
+
     let team_one_uncertainties = team_one.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
     let team_two_uncertainties = team_two.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
 
@@ -257,7 +258,7 @@ pub fn weng_lin_teams(
         )
         .sqrt();
 
-    let (p1, p2) = expected_score_teams(team_one.clone(), team_two.clone(), config);
+    let (p1, p2) = expected_score_teams(team_one, team_two, config);
 
     let outcome1 = match outcome {
         Outcomes::WIN => 1.0,
@@ -339,15 +340,15 @@ pub fn weng_lin_teams(
 ///     uncertainty: 1.2,
 /// };
 ///
-/// let (exp1, exp2) = expected_score(p1, p2, &WengLinConfig::new());
+/// let (exp1, exp2) = expected_score(&p1, &p2, &WengLinConfig::new());
 ///
 /// assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
 ///
 /// assert!(((exp1 * 100.0).round() - 85.0).abs() < f64::EPSILON);
 /// ```
 pub fn expected_score(
-    player_one: WengLinRating,
-    player_two: WengLinRating,
+    player_one: &WengLinRating,
+    player_two: &WengLinRating,
     config: &WengLinConfig,
 ) -> (f64, f64) {
     let c = 2.0f64
@@ -407,15 +408,15 @@ pub fn expected_score(
 ///     },
 /// ];
 ///
-/// let (exp1, exp2) = expected_score_teams(team_one, team_two, &WengLinConfig::new());
+/// let (exp1, exp2) = expected_score_teams(&team_one, &team_two, &WengLinConfig::new());
 ///
 /// assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
 ///
 /// assert!(((exp1 * 100.0).round() - 21.0).abs() < f64::EPSILON);
 /// ```
 pub fn expected_score_teams(
-    team_one: Vec<WengLinRating>,
-    team_two: Vec<WengLinRating>,
+    team_one: &Vec<WengLinRating>,
+    team_two: &Vec<WengLinRating>,
     config: &WengLinConfig,
 ) -> (f64, f64) {
     let team_one_ratings = team_one.iter().map(|p| p.rating).sum::<f64>();
@@ -446,7 +447,7 @@ mod tests {
         let p1 = WengLinRating::new();
         let p2 = WengLinRating::new();
 
-        let (t1, t2) = weng_lin(p1, p2, Outcomes::WIN, &WengLinConfig::new());
+        let (t1, t2) = weng_lin(&p1, &p2, &Outcomes::WIN, &WengLinConfig::new());
 
         assert!((t1.rating - 27.635_231_383_473_65).abs() < f64::EPSILON);
         assert!((t1.uncertainty - 8.065_506_316_323_548).abs() < f64::EPSILON);
@@ -459,21 +460,21 @@ mod tests {
         };
         let p2 = WengLinRating::new();
 
-        let (t1, t2) = weng_lin(p1, p2, Outcomes::WIN, &WengLinConfig::new());
+        let (t1, t2) = weng_lin(&p1, &p2, &Outcomes::WIN, &WengLinConfig::new());
 
         assert!((t1.rating - 42.026_412_401_802_894).abs() < f64::EPSILON);
         assert!((t1.uncertainty - 1.299_823_053_277_078_3).abs() < f64::EPSILON);
         assert!((t2.rating - 23.914_677_769_440_46).abs() < f64::EPSILON);
         assert!((t2.uncertainty - 8.029_022_445_649_298).abs() < f64::EPSILON);
 
-        let (t1, t2) = weng_lin(p1, p2, Outcomes::LOSS, &WengLinConfig::new());
+        let (t1, t2) = weng_lin(&p1, &p2, &Outcomes::LOSS, &WengLinConfig::new());
 
         assert!((t1.rating - 41.862_153_998_286_94).abs() < f64::EPSILON);
         assert!((t1.uncertainty - 1.299_823_053_277_078_3).abs() < f64::EPSILON);
         assert!((t2.rating - 30.664_283_436_598_35).abs() < f64::EPSILON);
         assert!((t2.uncertainty - 8.029_022_445_649_298).abs() < f64::EPSILON);
 
-        let (t1, t2) = weng_lin(p1, p2, Outcomes::DRAW, &WengLinConfig::new());
+        let (t1, t2) = weng_lin(&p1, &p2, &Outcomes::DRAW, &WengLinConfig::new());
 
         assert!((t1.rating - 41.944_283_200_044_92).abs() < f64::EPSILON);
         assert!((t1.uncertainty - 1.299_823_053_277_078_3).abs() < f64::EPSILON);
@@ -508,8 +509,7 @@ mod tests {
             },
         ];
 
-        let (nt1, nt2) =
-            weng_lin_teams(t1.clone(), t2.clone(), Outcomes::WIN, &WengLinConfig::new());
+        let (nt1, nt2) = weng_lin_teams(&t1, &t2, &Outcomes::WIN, &WengLinConfig::new());
 
         assert!((nt1[0].rating - 27.904_443_970_057_24).abs() < f64::EPSILON);
         assert!((nt1[1].rating - 30.060_226_550_163_108).abs() < f64::EPSILON);
@@ -527,12 +527,7 @@ mod tests {
         assert!((nt2[1].uncertainty - 1.399_187_149_975_365_4).abs() < f64::EPSILON);
         assert!((nt2[2].uncertainty - 4.276_389_807_576_043).abs() < f64::EPSILON);
 
-        let (nt1, nt2) = weng_lin_teams(
-            t1.clone(),
-            t2.clone(),
-            Outcomes::DRAW,
-            &WengLinConfig::new(),
-        );
+        let (nt1, nt2) = weng_lin_teams(&t1, &t2, &Outcomes::DRAW, &WengLinConfig::new());
 
         assert!((nt1[0].rating - 25.652_558_832_338_293).abs() < f64::EPSILON);
         assert!((nt1[1].rating - 30.013_531_459_947_366).abs() < f64::EPSILON);
@@ -545,7 +540,7 @@ mod tests {
         // The uncertainties do not change.
         assert!((nt1[0].uncertainty - 8.138_803_466_450_47).abs() < f64::EPSILON);
 
-        let (nt1, nt2) = weng_lin_teams(t1, t2, Outcomes::LOSS, &WengLinConfig::default());
+        let (nt1, nt2) = weng_lin_teams(&t1, &t2, &Outcomes::LOSS, &WengLinConfig::default());
 
         assert!((nt1[0].rating - 23.400_673_694_619_35).abs() < f64::EPSILON);
         assert!((nt1[1].rating - 29.966_836_369_731_627).abs() < f64::EPSILON);
@@ -561,12 +556,7 @@ mod tests {
         let t1 = vec![WengLinRating::new()];
         let t2 = Vec::new();
 
-        let (nt1, nt2) = weng_lin_teams(
-            t1.clone(),
-            t2.clone(),
-            Outcomes::DRAW,
-            &WengLinConfig::new(),
-        );
+        let (nt1, nt2) = weng_lin_teams(&t1, &t2, &Outcomes::DRAW, &WengLinConfig::new());
 
         assert_eq!(t1, nt1);
         assert_eq!(t2, nt2);
@@ -577,7 +567,7 @@ mod tests {
         let p1 = WengLinRating::new();
         let p2 = WengLinRating::new();
 
-        let (exp1, exp2) = expected_score(p1, p2, &WengLinConfig::new());
+        let (exp1, exp2) = expected_score(&p1, &p2, &WengLinConfig::new());
 
         assert!((exp1 - exp2).abs() < f64::EPSILON);
 
@@ -590,7 +580,7 @@ mod tests {
             uncertainty: 1.2,
         };
 
-        let (exp1, exp2) = expected_score(p1, p2, &WengLinConfig::new());
+        let (exp1, exp2) = expected_score(&p1, &p2, &WengLinConfig::new());
 
         assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
 
@@ -603,7 +593,7 @@ mod tests {
         let p1 = vec![WengLinRating::new()];
         let p2 = vec![WengLinRating::new()];
 
-        let (exp1, exp2) = expected_score_teams(p1, p2, &WengLinConfig::new());
+        let (exp1, exp2) = expected_score_teams(&p1, &p2, &WengLinConfig::new());
 
         assert!((exp1 - exp2).abs() < f64::EPSILON);
 
@@ -616,7 +606,7 @@ mod tests {
             uncertainty: 1.2,
         }];
 
-        let (exp1, exp2) = expected_score_teams(p1.clone(), p2.clone(), &WengLinConfig::new());
+        let (exp1, exp2) = expected_score_teams(&p1, &p2, &WengLinConfig::new());
 
         assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
 
@@ -634,7 +624,7 @@ mod tests {
             uncertainty: 1.2,
         });
 
-        let (exp1, exp2) = expected_score_teams(p1.clone(), p2.clone(), &WengLinConfig::new());
+        let (exp1, exp2) = expected_score_teams(&p1, &p2, &WengLinConfig::new());
 
         assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
 
@@ -643,7 +633,7 @@ mod tests {
 
         p2.push(WengLinRating::new());
 
-        let (exp1, _) = expected_score_teams(p1, p2, &WengLinConfig::new());
+        let (exp1, _) = expected_score_teams(&p1, &p2, &WengLinConfig::new());
 
         assert!((exp1 - 0.213_836_440_502_453_18).abs() < f64::EPSILON);
     }
@@ -658,23 +648,27 @@ mod tests {
             uncertainty: 4.2,
         };
 
-        let (normal_player, _) =
-            weng_lin(player, opponent_one, Outcomes::WIN, &WengLinConfig::new());
         let (normal_player, _) = weng_lin(
-            normal_player,
-            opponent_two,
-            Outcomes::DRAW,
+            &player,
+            &opponent_one,
+            &Outcomes::WIN,
             &WengLinConfig::new(),
         );
         let (normal_player, _) = weng_lin(
-            normal_player,
-            opponent_two,
-            Outcomes::LOSS,
+            &normal_player,
+            &opponent_two,
+            &Outcomes::DRAW,
+            &WengLinConfig::new(),
+        );
+        let (normal_player, _) = weng_lin(
+            &normal_player,
+            &opponent_two,
+            &Outcomes::LOSS,
             &WengLinConfig::new(),
         );
 
         let rating_player = weng_lin_rating_period(
-            player,
+            &player,
             &vec![
                 (opponent_one, Outcomes::WIN),
                 (opponent_two, Outcomes::DRAW),

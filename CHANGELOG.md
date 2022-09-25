@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.13.0 - 2022-09-25
+
+- All functions now use references instead of taking ownership unnecessarily
+
 ## v0.12.0 - 2022-08-26
 
 - Add Weng-Lin (A Bayesian Approximation Method for Online Ranking) calculations

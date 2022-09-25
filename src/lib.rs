@@ -6,7 +6,7 @@
     clippy::expect_used,
     clippy::as_conversions
 )]
-#![allow(clippy::module_name_repetitions, clippy::doc_markdown)]
+#![allow(clippy::module_name_repetitions, clippy::doc_markdown, clippy::ptr_arg)]
 
 //! Skillratings provides functions on calculating a player's skill rating.
 //!

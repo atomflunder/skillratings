@@ -49,7 +49,7 @@ use std::f64::consts::PI;
 ///
 /// let config = Glicko2Config::new();
 ///
-/// let (player_one_new, player_two_new) = glicko2(player_one, player_two, outcome, &config);
+/// let (player_one_new, player_two_new) = glicko2(&player_one, &player_two, &outcome, &config);
 ///
 /// assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
 /// assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
@@ -61,9 +61,9 @@ use std::f64::consts::PI;
 /// ```
 #[must_use]
 pub fn glicko2(
-    player_one: Glicko2Rating,
-    player_two: Glicko2Rating,
-    outcome: Outcomes,
+    player_one: &Glicko2Rating,
+    player_two: &Glicko2Rating,
+    outcome: &Outcomes,
     config: &Glicko2Config,
 ) -> (Glicko2Rating, Glicko2Rating) {
     // First we need to convert the ratings into the glicko-2 scale.
@@ -179,7 +179,7 @@ pub fn glicko2(
 ///     (opponent_three, Outcomes::LOSS),
 /// ];
 ///
-/// let new_player = glicko2_rating_period(player, &results, &Glicko2Config::new());
+/// let new_player = glicko2_rating_period(&player, &results, &Glicko2Config::new());
 ///
 /// assert!((new_player.rating.round() - 1464.0).abs() < f64::EPSILON);
 /// assert!((new_player.deviation.round() - 152.0).abs() < f64::EPSILON);
@@ -187,7 +187,7 @@ pub fn glicko2(
 /// ```
 #[must_use]
 pub fn glicko2_rating_period(
-    player: Glicko2Rating,
+    player: &Glicko2Rating,
     results: &Vec<(Glicko2Rating, Outcomes)>,
     config: &Glicko2Config,
 ) -> Glicko2Rating {
@@ -260,12 +260,12 @@ pub fn glicko2_rating_period(
 ///     deviation: 320.0,
 ///     volatility: 0.06,
 /// };
-/// let (exp_one, exp_two) = expected_score(player_one, player_two);
+/// let (exp_one, exp_two) = expected_score(&player_one, &player_two);
 /// assert!(((exp_one * 100.0).round() - 90.0).abs() < f64::EPSILON);
 /// assert!(((exp_two * 100.0).round() - 10.0).abs() < f64::EPSILON);
 /// ```
 #[must_use]
-pub fn expected_score(player_one: Glicko2Rating, player_two: Glicko2Rating) -> (f64, f64) {
+pub fn expected_score(player_one: &Glicko2Rating, player_two: &Glicko2Rating) -> (f64, f64) {
     // First we need to convert the ratings into the glicko-2 scale.
     let player_one_rating = (player_one.rating - 1500.0) / 173.7178;
     let player_two_rating = (player_two.rating - 1500.0) / 173.7178;
@@ -309,12 +309,12 @@ pub fn expected_score(player_one: Glicko2Rating, player_two: Glicko2Rating) -> (
 ///     volatility: 0.06,
 /// };
 ///
-/// let player_one_decay = decay_deviation(player_one);
+/// let player_one_decay = decay_deviation(&player_one);
 ///
 /// assert!((player_one_decay.deviation.round() - 43.0).abs() < f64::EPSILON);
 /// ```
 #[must_use]
-pub fn decay_deviation(player: Glicko2Rating) -> Glicko2Rating {
+pub fn decay_deviation(player: &Glicko2Rating) -> Glicko2Rating {
     let player_deviation = player.deviation / 173.7178;
     let new_player_deviation = player_deviation.hypot(player.volatility);
 
@@ -342,12 +342,12 @@ pub fn decay_deviation(player: Glicko2Rating) -> Glicko2Rating {
 ///     volatility: 0.0598,
 /// };
 ///
-/// let (interval_low, interval_high) = confidence_interval(player);
+/// let (interval_low, interval_high) = confidence_interval(&player);
 ///
 /// assert!(interval_low.round() - 2095.0 < f64::EPSILON);
 /// assert!(interval_high.round() - 2405.0 < f64::EPSILON);
 /// ```
-pub fn confidence_interval(player: Glicko2Rating) -> (f64, f64) {
+pub fn confidence_interval(player: &Glicko2Rating) -> (f64, f64) {
     (
         // Seems like there is no mul_sub function.
         player.rating - 1.96 * player.deviation,
@@ -485,7 +485,7 @@ mod tests {
         };
 
         let (player1new, player2new) =
-            glicko2(player1, player2, Outcomes::WIN, &Glicko2Config::new());
+            glicko2(&player1, &player2, &Outcomes::WIN, &Glicko2Config::new());
 
         assert!((player1new.rating.round() - 1653.0).abs() < f64::EPSILON);
         assert!((player1new.deviation.round() - 292.0).abs() < f64::EPSILON);
@@ -508,8 +508,12 @@ mod tests {
             volatility: 0.06,
         };
 
-        let (player1new, player2new) =
-            glicko2(player1, player2, Outcomes::DRAW, &Glicko2Config::default());
+        let (player1new, player2new) = glicko2(
+            &player1,
+            &player2,
+            &Outcomes::DRAW,
+            &Glicko2Config::default(),
+        );
 
         assert!((player1new.rating.round() - 1550.0).abs() < f64::EPSILON);
         assert!((player1new.deviation.round() - 253.0).abs() < f64::EPSILON);
@@ -534,8 +538,12 @@ mod tests {
             volatility: 0.06,
         };
 
-        let (player, opponent_one) =
-            glicko2(player, opponent_one, Outcomes::WIN, &Glicko2Config::new());
+        let (player, opponent_one) = glicko2(
+            &player,
+            &opponent_one,
+            &Outcomes::WIN,
+            &Glicko2Config::new(),
+        );
 
         assert!((player.rating.round() - 1564.0).abs() < f64::EPSILON);
         assert!((player.deviation.round() - 175.0).abs() < f64::EPSILON);
@@ -549,7 +557,12 @@ mod tests {
             volatility: 0.06,
         };
 
-        let (player, _) = glicko2(player, opponent_two, Outcomes::LOSS, &Glicko2Config::new());
+        let (player, _) = glicko2(
+            &player,
+            &opponent_two,
+            &Outcomes::LOSS,
+            &Glicko2Config::new(),
+        );
 
         let opponent_three = Glicko2Rating {
             rating: 1700.0,
@@ -558,9 +571,9 @@ mod tests {
         };
 
         let (player, _) = glicko2(
-            player,
-            opponent_three,
-            Outcomes::LOSS,
+            &player,
+            &opponent_three,
+            &Outcomes::LOSS,
             &Glicko2Config::new(),
         );
 
@@ -601,7 +614,7 @@ mod tests {
             (opponent_three, Outcomes::LOSS),
         ];
 
-        let new_player = glicko2_rating_period(player, &results, &Glicko2Config::new());
+        let new_player = glicko2_rating_period(&player, &results, &Glicko2Config::new());
 
         assert!((new_player.rating.round() - 1527.0).abs() < f64::EPSILON);
         assert!((new_player.deviation.round() - 151.0).abs() < f64::EPSILON);
@@ -615,7 +628,7 @@ mod tests {
 
         let results: Vec<(Glicko2Rating, Outcomes)> = Vec::new();
 
-        let new_player = glicko2_rating_period(player, &results, &Glicko2Config::new());
+        let new_player = glicko2_rating_period(&player, &results, &Glicko2Config::new());
 
         assert!((new_player.deviation.round() - 96.0).abs() < f64::EPSILON);
     }
@@ -634,7 +647,7 @@ mod tests {
             volatility: 0.06,
         };
 
-        let (exp_one, exp_two) = expected_score(player_one, player_two);
+        let (exp_one, exp_two) = expected_score(&player_one, &player_two);
 
         assert!((exp_one * 100.0 - 50.0).abs() < f64::EPSILON);
         assert!((exp_two * 100.0 - 50.0).abs() < f64::EPSILON);
@@ -651,7 +664,7 @@ mod tests {
             volatility: 0.06,
         };
 
-        let (exp_three, exp_four) = expected_score(player_three, player_four);
+        let (exp_three, exp_four) = expected_score(&player_three, &player_four);
 
         assert!(((exp_three * 100.0).round() - 76.0).abs() < f64::EPSILON);
         assert!(((exp_four * 100.0).round() - 24.0).abs() < f64::EPSILON);
@@ -677,13 +690,13 @@ mod tests {
             volatility: 0.059_998,
         };
 
-        let player_one_decayed = decay_deviation(player_one);
-        let player_one_decayed_2 = decay_deviation(player_one_decayed);
+        let player_one_decayed = decay_deviation(&player_one);
+        let player_one_decayed_2 = decay_deviation(&player_one_decayed);
 
-        let player_two_decayed = decay_deviation(player_two);
+        let player_two_decayed = decay_deviation(&player_two);
 
-        let player_three_decayed = decay_deviation(player_three);
-        let player_three_decayed_2 = decay_deviation(player_three_decayed);
+        let player_three_decayed = decay_deviation(&player_three);
+        let player_three_decayed_2 = decay_deviation(&player_three_decayed);
 
         assert!((player_one_decayed.deviation.round() - 350.0).abs() < f64::EPSILON);
         assert!((player_one_decayed_2.deviation.round() - 350.0).abs() < f64::EPSILON);
@@ -700,7 +713,7 @@ mod tests {
             volatility: 0.06,
         };
 
-        let ci = confidence_interval(player);
+        let ci = confidence_interval(&player);
 
         assert!((ci.0.round() - 1441.0).abs() < f64::EPSILON);
         assert!((ci.1.round() - 1559.0).abs() < f64::EPSILON);
@@ -725,7 +738,7 @@ mod tests {
             convergence_tolerance: 0.000_001,
         };
 
-        (player, opponent) = glicko2(player, opponent, Outcomes::WIN, &config);
+        (player, opponent) = glicko2(&player, &opponent, &Outcomes::WIN, &config);
 
         assert!((player.rating.round() - 2596.0).abs() < f64::EPSILON);
         assert!((opponent.rating.round() - 2249.0).abs() < f64::EPSILON);
@@ -738,10 +751,11 @@ mod tests {
         let mut opponent = Glicko2Rating::default();
 
         for _ in 0..6 {
-            (player, opponent) = glicko2(player, opponent, Outcomes::LOSS, &Glicko2Config::new());
+            (player, opponent) =
+                glicko2(&player, &opponent, &Outcomes::LOSS, &Glicko2Config::new());
         }
 
-        (player, opponent) = glicko2(player, opponent, Outcomes::WIN, &Glicko2Config::new());
+        (player, opponent) = glicko2(&player, &opponent, &Outcomes::WIN, &Glicko2Config::new());
 
         assert!((player.rating.round() - 1397.0).abs() < f64::EPSILON);
         assert!((player.deviation.round() - 212.0).abs() < f64::EPSILON);
@@ -756,10 +770,11 @@ mod tests {
         let mut opponent = Glicko2Rating::new();
 
         for _ in 0..25 {
-            (player, opponent) = glicko2(player, opponent, Outcomes::LOSS, &Glicko2Config::new());
+            (player, opponent) =
+                glicko2(&player, &opponent, &Outcomes::LOSS, &Glicko2Config::new());
         }
 
-        (player, opponent) = glicko2(player, opponent, Outcomes::WIN, &Glicko2Config::new());
+        (player, opponent) = glicko2(&player, &opponent, &Outcomes::WIN, &Glicko2Config::new());
 
         assert!((player.rating.round() - 1248.0).abs() < f64::EPSILON);
         assert!((player.deviation.round() - 176.0).abs() < f64::EPSILON);

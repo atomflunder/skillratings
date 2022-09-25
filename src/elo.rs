@@ -31,16 +31,16 @@ use crate::{config::EloConfig, outcomes::Outcomes, rating::EloRating};
 ///
 /// let config = EloConfig::new();
 ///
-/// let (player_one_new, player_two_new) = elo(player_one, player_two, outcome, &config);
+/// let (player_one_new, player_two_new) = elo(&player_one, &player_two, &outcome, &config);
 ///
 /// assert!((player_one_new.rating - 1016.0).abs() < f64::EPSILON);
 /// assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
 /// ```
 #[must_use]
 pub fn elo(
-    player_one: EloRating,
-    player_two: EloRating,
-    outcome: Outcomes,
+    player_one: &EloRating,
+    player_two: &EloRating,
+    outcome: &Outcomes,
     config: &EloConfig,
 ) -> (EloRating, EloRating) {
     let (one_expected, two_expected) = expected_score(player_one, player_two);
@@ -86,7 +86,7 @@ pub fn elo(
 /// let opponent3 = EloRating::new();
 ///
 /// let new_player = elo_rating_period(
-///     player,
+///     &player,
 ///     &vec![
 ///         (opponent1, Outcomes::WIN),
 ///         (opponent2, Outcomes::WIN),
@@ -99,14 +99,14 @@ pub fn elo(
 /// ```
 #[must_use]
 pub fn elo_rating_period(
-    player: EloRating,
+    player: &EloRating,
     results: &Vec<(EloRating, Outcomes)>,
     config: &EloConfig,
 ) -> EloRating {
-    let mut player = player;
+    let mut player = *player;
 
     for (opponent, result) in results {
-        let (exp, _) = expected_score(player, *opponent);
+        let (exp, _) = expected_score(&player, opponent);
 
         let o = match result {
             Outcomes::WIN => 1.0,
@@ -134,13 +134,13 @@ pub fn elo_rating_period(
 /// let player_one = EloRating { rating: 1320.0 };
 /// let player_two = EloRating { rating: 1217.0 };
 ///
-/// let (winner_exp, loser_exp) = expected_score(player_one, player_two);
+/// let (winner_exp, loser_exp) = expected_score(&player_one, &player_two);
 ///
 /// assert!(((winner_exp * 100.0).round() - 64.0).abs() < f64::EPSILON);
 /// assert!(((loser_exp * 100.0).round() - 36.0).abs() < f64::EPSILON);
 /// ```
 #[must_use]
-pub fn expected_score(player_one: EloRating, player_two: EloRating) -> (f64, f64) {
+pub fn expected_score(player_one: &EloRating, player_two: &EloRating) -> (f64, f64) {
     (
         1.0 / (1.0 + 10_f64.powf((player_two.rating - player_one.rating) / 400.0)),
         1.0 / (1.0 + 10_f64.powf((player_one.rating - player_two.rating) / 400.0)),
@@ -154,36 +154,36 @@ mod tests {
     #[test]
     fn test_elo() {
         let (winner_new_elo, loser_new_elo) = elo(
-            EloRating { rating: 1000.0 },
-            EloRating { rating: 1000.0 },
-            Outcomes::WIN,
+            &EloRating { rating: 1000.0 },
+            &EloRating { rating: 1000.0 },
+            &Outcomes::WIN,
             &EloConfig::new(),
         );
         assert!((winner_new_elo.rating - 1016.0).abs() < f64::EPSILON);
         assert!((loser_new_elo.rating - 984.0).abs() < f64::EPSILON);
 
         let (winner_new_elo, loser_new_elo) = elo(
-            EloRating { rating: 1000.0 },
-            EloRating { rating: 1000.0 },
-            Outcomes::LOSS,
+            &EloRating { rating: 1000.0 },
+            &EloRating { rating: 1000.0 },
+            &Outcomes::LOSS,
             &EloConfig::new(),
         );
         assert!((winner_new_elo.rating - 984.0).abs() < f64::EPSILON);
         assert!((loser_new_elo.rating - 1016.0).abs() < f64::EPSILON);
 
         let (winner_new_elo, loser_new_elo) = elo(
-            EloRating { rating: 1000.0 },
-            EloRating { rating: 1000.0 },
-            Outcomes::DRAW,
+            &EloRating { rating: 1000.0 },
+            &EloRating { rating: 1000.0 },
+            &Outcomes::DRAW,
             &EloConfig::new(),
         );
         assert!((winner_new_elo.rating - 1000.0).abs() < f64::EPSILON);
         assert!((loser_new_elo.rating - 1000.0).abs() < f64::EPSILON);
 
         let (winner_new_elo, loser_new_elo) = elo(
-            EloRating { rating: 500.0 },
-            EloRating { rating: 1500.0 },
-            Outcomes::WIN,
+            &EloRating { rating: 500.0 },
+            &EloRating { rating: 1500.0 },
+            &Outcomes::WIN,
             &EloConfig::default(),
         );
         assert!((winner_new_elo.rating.round() - 532.0).abs() < f64::EPSILON);
@@ -199,7 +199,7 @@ mod tests {
         let opponent3 = EloRating::new();
 
         let new_player = elo_rating_period(
-            player,
+            &player,
             &vec![
                 (opponent1, Outcomes::WIN),
                 (opponent2, Outcomes::DRAW),
@@ -216,7 +216,7 @@ mod tests {
         let player_one = EloRating::new();
         let player_two = EloRating::default();
 
-        let (winner_expected, loser_expected) = expected_score(player_one, player_two);
+        let (winner_expected, loser_expected) = expected_score(&player_one, &player_two);
 
         assert!((winner_expected - 0.5).abs() < f64::EPSILON);
         assert!((loser_expected - 0.5).abs() < f64::EPSILON);
@@ -224,7 +224,7 @@ mod tests {
         let player_one = EloRating { rating: 2251.0 };
         let player_two = EloRating { rating: 1934.0 };
 
-        let (winner_expected, loser_expected) = expected_score(player_one, player_two);
+        let (winner_expected, loser_expected) = expected_score(&player_one, &player_two);
 
         assert!(((winner_expected * 100.0).round() - 86.0).abs() < f64::EPSILON);
         assert!(((loser_expected * 100.0).round() - 14.0).abs() < f64::EPSILON);

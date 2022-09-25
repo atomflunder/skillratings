@@ -41,15 +41,15 @@ use crate::{outcomes::Outcomes, rating::IngoRating};
 ///     age: 40,
 /// };
 ///
-/// let (p1, p2) = ingo(player_one, player_two, Outcomes::WIN);
+/// let (p1, p2) = ingo(&player_one, &player_two, &Outcomes::WIN);
 ///
 /// assert!((p1.rating.round() - 129.0).abs() < f64::EPSILON);
 /// assert!((p2.rating.round() - 161.0).abs() < f64::EPSILON);
 /// ```
 pub fn ingo(
-    player_one: IngoRating,
-    player_two: IngoRating,
-    outcome: Outcomes,
+    player_one: &IngoRating,
+    player_two: &IngoRating,
+    outcome: &Outcomes,
 ) -> (IngoRating, IngoRating) {
     let score1 = match outcome {
         Outcomes::WIN => 1.0,
@@ -136,11 +136,14 @@ pub fn ingo(
 ///     (player_five, Outcomes::LOSS),
 /// ];
 ///
-/// let p1 = ingo_rating_period(player_one, &results);
+/// let p1 = ingo_rating_period(&player_one, &results);
 ///
 /// assert!((p1.rating.round() - 126.0).abs() < f64::EPSILON);
 /// ```
-pub fn ingo_rating_period(player: IngoRating, results: &Vec<(IngoRating, Outcomes)>) -> IngoRating {
+pub fn ingo_rating_period(
+    player: &IngoRating,
+    results: &Vec<(IngoRating, Outcomes)>,
+) -> IngoRating {
     let development = match player.age {
         usize::MIN..=20 => 10.0,
         21..=25 => 15.0,
@@ -191,14 +194,14 @@ pub fn ingo_rating_period(player: IngoRating, results: &Vec<(IngoRating, Outcome
 ///     age: 40,
 /// };
 ///
-/// let (exp1, exp2) = expected_score(player_one, player_two);
+/// let (exp1, exp2) = expected_score(&player_one, &player_two);
 ///
 /// assert!(((exp1 * 100.0).round() - 80.0).abs() < f64::EPSILON);
 /// assert!(((exp2 * 100.0).round() - 20.0).abs() < f64::EPSILON);
 ///
 /// assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
 /// ```
-pub fn expected_score(player_one: IngoRating, player_two: IngoRating) -> (f64, f64) {
+pub fn expected_score(player_one: &IngoRating, player_two: &IngoRating) -> (f64, f64) {
     let exp_one = 0.5 + (player_two.rating - player_one.rating) / 100.0;
 
     (exp_one, 1.0 - exp_one)
@@ -225,12 +228,12 @@ mod tests {
             age: 40,
         };
 
-        let (p1, p2) = ingo(player_one, player_two, Outcomes::WIN);
+        let (p1, p2) = ingo(&player_one, &player_two, &Outcomes::WIN);
 
         assert!((p1.rating.round() - 129.0).abs() < f64::EPSILON);
         assert!((p2.rating.round() - 161.0).abs() < f64::EPSILON);
 
-        let (p1, p2) = ingo(player_one, player_two, Outcomes::LOSS);
+        let (p1, p2) = ingo(&player_one, &player_two, &Outcomes::LOSS);
 
         assert!((p1.rating.round() - 134.0).abs() < f64::EPSILON);
         assert!((p2.rating.round() - 156.0).abs() < f64::EPSILON);
@@ -245,7 +248,7 @@ mod tests {
             age: 78,
         };
 
-        let (yp, op) = ingo(young_player, old_player, Outcomes::DRAW);
+        let (yp, op) = ingo(&young_player, &old_player, &Outcomes::DRAW);
 
         assert!((yp.rating.round() - 219.0).abs() < f64::EPSILON);
         assert!((op.rating.round() - 115.0).abs() < f64::EPSILON);
@@ -264,7 +267,7 @@ mod tests {
 
         let results = vec![(player_two, Outcomes::WIN)];
 
-        let p1 = ingo_rating_period(player_one, &results);
+        let p1 = ingo_rating_period(&player_one, &results);
 
         assert!((p1.rating.round() - 129.0).abs() < f64::EPSILON);
 
@@ -295,7 +298,7 @@ mod tests {
             (player_five, Outcomes::LOSS),
         ];
 
-        let p1 = ingo_rating_period(player_one, &results);
+        let p1 = ingo_rating_period(&player_one, &results);
 
         assert!((p1.rating.round() - 126.0).abs() < f64::EPSILON);
     }
@@ -311,7 +314,7 @@ mod tests {
             age: 40,
         };
 
-        let (exp1, exp2) = expected_score(player_one, player_two);
+        let (exp1, exp2) = expected_score(&player_one, &player_two);
 
         assert!(((exp1 * 100.0).round() - 80.0).abs() < f64::EPSILON);
         assert!(((exp2 * 100.0).round() - 20.0).abs() < f64::EPSILON);

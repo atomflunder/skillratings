@@ -25,7 +25,7 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-skillratings = "0.12.0"
+skillratings = "0.13.0"
 ```
 
 ## Basic Usage

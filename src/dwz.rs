@@ -50,7 +50,7 @@ use crate::{outcomes::Outcomes, rating::DWZRating};
 ///
 /// let outcome = Outcomes::WIN;
 ///
-/// let (player_one_new, player_two_new) = dwz(player_one, player_two, outcome);
+/// let (player_one_new, player_two_new) = dwz(&player_one, &player_two, &outcome);
 ///
 /// assert!((player_one_new.rating.round() - 1519.0).abs() < f64::EPSILON);
 /// assert_eq!(player_one_new.index, 43);
@@ -59,9 +59,9 @@ use crate::{outcomes::Outcomes, rating::DWZRating};
 /// assert_eq!(player_two_new.index, 13);
 /// ```
 pub fn dwz(
-    player_one: DWZRating,
-    player_two: DWZRating,
-    outcome: Outcomes,
+    player_one: &DWZRating,
+    player_two: &DWZRating,
+    outcome: &Outcomes,
 ) -> (DWZRating, DWZRating) {
     let outcome1 = match outcome {
         Outcomes::WIN => 1.0,
@@ -148,12 +148,12 @@ pub fn dwz(
 ///
 /// let results = vec![(opponent1, Outcomes::WIN), (opponent2, Outcomes::DRAW)];
 ///
-/// let new_player = dwz_rating_period(player, &results);
+/// let new_player = dwz_rating_period(&player, &results);
 ///
 /// assert!((new_player.rating.round() - 1635.0).abs() < f64::EPSILON);
 /// assert_eq!(new_player.index, 18);
 /// ```
-pub fn dwz_rating_period(player: DWZRating, results: &Vec<(DWZRating, Outcomes)>) -> DWZRating {
+pub fn dwz_rating_period(player: &DWZRating, results: &Vec<(DWZRating, Outcomes)>) -> DWZRating {
     let points = results
         .iter()
         .map(|r| match r.1 {
@@ -165,7 +165,7 @@ pub fn dwz_rating_period(player: DWZRating, results: &Vec<(DWZRating, Outcomes)>
 
     let expected_points = results
         .iter()
-        .map(|r| expected_score(player, r.0).0)
+        .map(|r| expected_score(player, &r.0).0)
         .sum::<f64>();
 
     #[allow(clippy::as_conversions, clippy::cast_precision_loss)]
@@ -208,13 +208,13 @@ pub fn dwz_rating_period(player: DWZRating, results: &Vec<(DWZRating, Outcomes)>
 ///     age: 12,
 /// };
 ///
-/// let (exp_one, exp_two) = expected_score(player_one, player_two);
+/// let (exp_one, exp_two) = expected_score(&player_one, &player_two);
 ///
 ///
 /// assert!(((exp_one * 100.0).round() - 91.0).abs() < f64::EPSILON);
 /// assert!(((exp_two * 100.0).round() - 9.0).abs() < f64::EPSILON);
 /// ```
-pub fn expected_score(player_one: DWZRating, player_two: DWZRating) -> (f64, f64) {
+pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f64) {
     (
         (1.0 + 10.0_f64.powf(-1.0 * (1.0 / 400.0) * (player_one.rating - player_two.rating)))
             .recip(),
@@ -460,7 +460,7 @@ mod tests {
             age: 39,
         };
 
-        (player_one, player_two) = dwz(player_one, player_two, Outcomes::WIN);
+        (player_one, player_two) = dwz(&player_one, &player_two, &Outcomes::WIN);
 
         assert!((player_one.rating.round() - 1564.0).abs() < f64::EPSILON);
         assert_eq!(player_one.index, 23);
@@ -468,7 +468,7 @@ mod tests {
         assert!((player_two.rating.round() - 1906.0).abs() < f64::EPSILON);
         assert_eq!(player_two.index, 104);
 
-        (player_one, player_two) = dwz(player_one, player_two, Outcomes::DRAW);
+        (player_one, player_two) = dwz(&player_one, &player_two, &Outcomes::DRAW);
 
         assert!((player_one.rating.round() - 1578.0).abs() < f64::EPSILON);
         assert_eq!(player_one.index, 24);
@@ -478,7 +478,7 @@ mod tests {
 
         player_two.age = 12;
 
-        (player_one, player_two) = dwz(player_one, player_two, Outcomes::LOSS);
+        (player_one, player_two) = dwz(&player_one, &player_two, &Outcomes::LOSS);
 
         assert!((player_one.rating.round() - 1573.0).abs() < f64::EPSILON);
         assert_eq!(player_one.index, 25);
@@ -513,7 +513,7 @@ mod tests {
             (opponent1, Outcomes::LOSS),
         ];
 
-        let new_player = dwz_rating_period(player, &results);
+        let new_player = dwz_rating_period(&player, &results);
 
         assert!((new_player.rating.round() - 1619.0).abs() < f64::EPSILON);
         assert_eq!(new_player.index, 18);
@@ -534,7 +534,7 @@ mod tests {
         };
 
         (really_good_player, really_bad_player) =
-            dwz(really_good_player, really_bad_player, Outcomes::WIN);
+            dwz(&really_good_player, &really_bad_player, &Outcomes::WIN);
 
         assert!((really_good_player.rating.round() - 3210.0).abs() < f64::EPSILON);
         assert_eq!(really_good_player.index, 144);
@@ -546,7 +546,7 @@ mod tests {
         really_good_player.rating = 32_477_324_874_238.0;
 
         (really_good_player, really_bad_player) =
-            dwz(really_good_player, really_bad_player, Outcomes::WIN);
+            dwz(&really_good_player, &really_bad_player, &Outcomes::WIN);
 
         assert!((really_good_player.rating.round() - 32_477_324_874_238.0).abs() < f64::EPSILON);
 
@@ -559,7 +559,7 @@ mod tests {
         really_bad_player.age = 5;
 
         (really_good_player, really_bad_player) =
-            dwz(really_good_player, really_bad_player, Outcomes::LOSS);
+            dwz(&really_good_player, &really_bad_player, &Outcomes::LOSS);
 
         assert!((really_good_player.rating.round() + 1.0).abs() < f64::EPSILON);
         assert!((really_bad_player.rating.round() - 68.0).abs() < f64::EPSILON);
@@ -579,7 +579,7 @@ mod tests {
             age: 39,
         };
 
-        let (exp1, exp2) = expected_score(player_one, player_two);
+        let (exp1, exp2) = expected_score(&player_one, &player_two);
 
         assert!(((exp1 * 100.0).round() - 9.0).abs() < f64::EPSILON);
         assert!(((exp2 * 100.0).round() - 91.0).abs() < f64::EPSILON);

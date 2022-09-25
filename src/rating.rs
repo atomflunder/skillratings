@@ -3,7 +3,7 @@
 /// The Elo rating of a player.
 ///
 /// The default rating is 1000.0.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct EloRating {
     /// The player's Elo rating number, by default 1000.0.
     pub rating: f64,
