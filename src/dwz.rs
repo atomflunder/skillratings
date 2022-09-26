@@ -389,7 +389,7 @@ fn e0_value(rating: f64, j: f64) -> f64 {
 }
 
 fn e_value(rating: f64, age: usize, score: f64, expected_score: f64, index: usize) -> f64 {
-    //The variable j is dependent on the age of the player. From wikipedia:
+    // The variable j is dependent on the age of the player. From wikipedia:
     // "Teenagers up to 20 years: `j = 5.0`, junior adults (21 – 25 years): `j = 10.0`, over-25-year-olds: `j = 15.0`"
     let j = match age {
         usize::MIN..=20 => 5.0,
