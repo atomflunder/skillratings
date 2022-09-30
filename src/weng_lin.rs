@@ -438,8 +438,8 @@ pub fn expected_score_teams(
     (e1 / (e1 + e2), e2 / (e1 + e2))
 }
 
+#[cfg(test)]
 mod tests {
-    #[allow(unused_imports)]
     use super::*;
 
     #[test]

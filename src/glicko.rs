@@ -317,8 +317,8 @@ fn d_value(q: f64, g: f64, e: f64) -> f64 {
     (q.powi(2) * g.powi(2) * e * (1.0 - e)).powi(-1)
 }
 
+#[cfg(test)]
 mod tests {
-    #[allow(unused_imports)]
     use super::*;
 
     #[test]

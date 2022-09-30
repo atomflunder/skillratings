@@ -441,8 +441,8 @@ fn new_rating(
     (800.0 / (e + matches_played)).mul_add(score - expected_score, old_rating)
 }
 
+#[cfg(test)]
 mod tests {
-    #[allow(unused_imports)]
     use super::*;
 
     #[test]

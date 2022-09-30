@@ -889,11 +889,10 @@ fn pdf(x: f64, mu: f64, sigma: f64) -> f64 {
     1.0 / (2.0 * PI).sqrt() * sigma.abs() * (-1.0 * (((x - mu) / sigma.abs()).powi(2) / 2.0)).exp()
 }
 
+#[cfg(test)]
 mod tests {
-    #[allow(unused_imports)]
     use super::*;
-    #[allow(unused_imports)]
-    use std::f64::{INFINITY, NAN, NEG_INFINITY};
+    use std::f64::{INFINITY, NEG_INFINITY};
 
     #[test]
     fn test_trueskill() {

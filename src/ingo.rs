@@ -211,7 +211,7 @@ fn performance(average_rating: f64, score: f64) -> f64 {
     average_rating - (100.0 * score - 50.0)
 }
 
-#[allow(unused_imports)]
+#[cfg(test)]
 mod tests {
     use crate::rating::EloRating;
 
