@@ -21,12 +21,44 @@
 //! The drawback is that the calculations are complex, and thus players may find it unintuitive in certain scenarios.  
 //! For example, players might gain rank(s) when losing a match due to the uncertainty value decreasing.
 //!
+//! # Quickstart
+//!
+//! This is the most basic example on how to use the TrueSkill Module.  
+//! Please take a look at the functions below to see more advanced use cases.
+//!
+//! ```
+//! use skillratings::{
+//!     trueskill::trueskill, outcomes::Outcomes, rating::TrueSkillRating, config::TrueSkillConfig
+//! };
+//!
+//! // Initialise a new player rating.
+//! let player_one = TrueSkillRating::new();
+//!
+//! // Or you can initialise it with your own values of course.
+//! // Imagine these numbers being pulled from a database.
+//! let (some_rating, some_uncertainty) = (34.2, 2.3);
+//! let player_two = TrueSkillRating{
+//!     rating: some_rating,
+//!     uncertainty: some_uncertainty,
+//! };
+//!
+//! // The outcome of the match is from the perspective of player one.
+//! let outcome = Outcomes::WIN;
+//!
+//! // The config allows you to specify certain values in the TrueSkill calculation.
+//! let config = TrueSkillConfig::new();
+//!
+//! // The trueskill function will calculate the new ratings for both players and return them.
+//! let (new_player_one, new_player_two) = trueskill(&player_one, &player_two, &outcome, &config);
+//! ```
+//!
 //! # More Information
 //! - [Wikipedia Article](https://en.wikipedia.org/wiki/TrueSkill)
 //! - [TrueSkill Ranking System](https://www.microsoft.com/en-us/research/project/trueskill-ranking-system/)
 //! - [Original Paper (PDF)](https://proceedings.neurips.cc/paper/2006/file/f44ee263952e65b3610b8ba51229d1f9-Paper.pdf)
 //! - [The math behind TrueSkill (PDF)](http://www.moserware.com/assets/computing-your-skill/The%20Math%20Behind%20TrueSkill.pdf)
 //! - [Moserware: Computing Your Skill](http://www.moserware.com/2010/03/computing-your-skill.html)
+
 use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 
 use crate::{config::TrueSkillConfig, outcomes::Outcomes, rating::TrueSkillRating};

@@ -1,10 +1,42 @@
 //! The Glicko-2 algorithm, an improvement on Glicko and widely used in online games,
 //! like Counter Strike: Global Offensive, Team Fortress 2, Splatoon 2 and most online chess platforms.
 //!
-//! For Glicko, please see [`crate::glicko`].
+//! If you are looking for the regular Glicko rating system, please see [`crate::glicko`].
 //!
 //! The main improvement over Glicko is the rating volatility which is the expected fluctuation of a players rating,
 //! based on how consistent a player is performing. The lower the volatility, the more consistent a player performs.
+//!
+//! # Quickstart
+//!
+//! This is the most basic example on how to use the Glicko-2 Module.  
+//! Please take a look at the functions below to see more advanced use cases.
+//!
+//! ```
+//! use skillratings::{
+//!     glicko2::glicko2, outcomes::Outcomes, rating::Glicko2Rating, config::Glicko2Config
+//! };
+//!
+//! // Initialise a new player rating.
+//! let player_one = Glicko2Rating::new();
+//!
+//! // Or you can initialise it with your own values of course.
+//! // Imagine these numbers being pulled from a database.
+//! let (some_rating, some_deviation, some_volatility) = (1325.0, 230.0, 0.05932);
+//! let player_two = Glicko2Rating{
+//!     rating: some_rating,
+//!     deviation: some_deviation,
+//!     volatility: some_volatility,
+//! };
+//!
+//! // The outcome of the match is from the perspective of player one.
+//! let outcome = Outcomes::WIN;
+//!
+//! // The config allows you to specify certain values in the Glicko-2 calculation.
+//! let config = Glicko2Config::new();
+//!
+//! // The glicko2 function will calculate the new ratings for both players and return them.
+//! let (new_player_one, new_player_two) = glicko2(&player_one, &player_two, &outcome, &config);
+//! ```
 //!
 //! # More Information
 //!

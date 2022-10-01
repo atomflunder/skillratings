@@ -5,6 +5,36 @@
 //! and negative values are possible, though unlikely.  
 //! A player with an Ingo rating of 0 has an equivalent Elo rating of 2840, and an Ingo rating of -1 equals 2848 Elo.
 //!
+//! # Quickstart
+//!
+//! This is the most basic example on how to use the Ingo Module.  
+//! Please take a look at the functions below to see more advanced use cases.
+//!
+//! ```
+//! use skillratings::{
+//!     ingo::ingo, outcomes::Outcomes, rating::IngoRating
+//! };
+//!
+//! // Initialise a new player rating.
+//! // We need to set the actual age for the player,
+//! // if you are unsure what to set here, choose something that is greater than 25.
+//! let player_one = IngoRating::new(19);
+//!
+//! // Or you can initialise it with your own values of course.
+//! // Imagine these numbers being pulled from a database.
+//! let (some_rating, some_age) = (150.4, 23);
+//! let player_two = IngoRating{
+//!     rating: some_rating,
+//!     age: some_age,
+//! };
+//!
+//! // The outcome of the match is from the perspective of player one.
+//! let outcome = Outcomes::WIN;
+//!
+//! // The ingo function will calculate the new ratings for both players and return them.
+//! let (new_player_one, new_player_two) = ingo(&player_one, &player_two, &outcome);
+//! ```
+//!
 //! # More Information
 //!
 //! - [Wikipedia Article (German, no english version available)](https://de.wikipedia.org/wiki/Ingo-Zahl)

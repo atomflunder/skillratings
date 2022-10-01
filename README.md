@@ -26,7 +26,7 @@ Add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-skillratings = "0.13.0"
+skillratings = "0.13.1"
 ```
 
 ## Basic Usage
@@ -34,7 +34,7 @@ skillratings = "0.13.0"
 **Quick disclaimer:** Below are the most basic use cases for each supported algorithm, in a 1-vs-1 format.  
 Each rating algorithm has *many* more associated functions, for example getting a rating using a list of outcomes, or getting the expected scores of a match.
 
-Head over [to the documentation](https://docs.rs/skillratings/) for more information.
+Head over [to the documentation](https://docs.rs/skillratings/) for more information and examples.
 
 ### Elo rating system
 
@@ -42,24 +42,28 @@ Head over [to the documentation](https://docs.rs/skillratings/) for more informa
 - [Wikipedia article](https://en.wikipedia.org/wiki/Elo_rating_system)
 
 ```rust
-extern crate skillratings;
-
 use skillratings::{
     elo::elo, outcomes::Outcomes, rating::EloRating, config::EloConfig
 };
 
-let player_one = EloRating { rating: 1000.0 };
-let player_two = EloRating { rating: 1000.0 };
+// Initialise a new player rating.
+let player_one = EloRating::new();
 
-// The outcome is from the perspective of player one.
+// Or you can initialise it with your own values of course.
+// Imagine these numbers being pulled from a database.
+let some_rating = 1325.0;
+let player_two = EloRating{
+    rating: some_rating,
+};
+
+// The outcome of the match is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
-// The config allows you to change certain adjustable values in the algorithms.
+// The config allows you to specify certain values in the Elo calculation.
 let config = EloConfig::new();
 
-let (player_one_new, player_two_new) = elo(&player_one, &player_two, &outcome, &config);
-assert!((player_one_new.rating - 1016.0).abs() < f64::EPSILON);
-assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
+// The elo function will calculate the new ratings for both players and return them.
+let (new_player_one, new_player_two) = elo(&player_one, &player_two, &outcome, &config);
 ```
 
 ### Glicko rating system
@@ -69,32 +73,25 @@ assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
 
 ```rust
 use skillratings::{
-    config::Glicko2Config, glicko::glicko, outcomes::Outcomes, rating::GlickoRating,
+    glicko::glicko, outcomes::Outcomes, rating::GlickoRating
 };
 
+// Initialise a new player rating.
+let player_one = GlickoRating::new();
 
-let player_one = GlickoRating {
-    rating: 1500.0,
-    deviation: 350.0,
-};
-let player_two = GlickoRating {
-    rating: 1500.0,
-    deviation: 350.0,
+// Or you can initialise it with your own values of course.
+// Imagine these numbers being pulled from a database.
+let (some_rating, some_deviation) = (1325.0, 230.0);
+let player_two = GlickoRating{
+    rating: some_rating,
+    deviation: some_deviation,
 };
 
-// The outcome is from the perspective of player one.
+// The outcome of the match is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
-// The config allows you to change certain adjustable values in the algorithms.
-let config = GlickoConfig::new();
-
-let (player_one_new, player_two_new) = glicko(&player_one, &player_two, &outcome, &config);
-
-assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
-assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
-
-assert!((player_two_new.rating.round() - 1338.0).abs() < f64::EPSILON);
-assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+// The glicko function will calculate the new ratings for both players and return them.
+let (new_player_one, new_player_two) = glicko(&player_one, &player_two, &outcome);
 ```
 
 ### Glicko-2 rating system
@@ -103,36 +100,30 @@ assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
 - [Wikipedia article](https://en.wikipedia.org/wiki/Glicko-2)
 
 ```rust
-extern crate skillratings;
-
 use skillratings::{
     glicko2::glicko2, outcomes::Outcomes, rating::Glicko2Rating, config::Glicko2Config
 };
 
-let player_one = Glicko2Rating { 
-    rating: 1500.0, 
-    deviation: 350.0, 
-    volatility: 0.06 
-};
-let player_two = Glicko2Rating { 
-    rating: 1500.0, 
-    deviation: 350.0, 
-    volatility: 0.06 
+// Initialise a new player rating.
+let player_one = Glicko2Rating::new();
+
+// Or you can initialise it with your own values of course.
+// Imagine these numbers being pulled from a database.
+let (some_rating, some_deviation, some_volatility) = (1325.0, 230.0, 0.05932);
+let player_two = Glicko2Rating{
+    rating: some_rating,
+    deviation: some_deviation,
+    volatility: some_volatility,
 };
 
-// The outcome is from the perspective of player one.
+// The outcome of the match is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
-// The config allows you to change certain adjustable values in the algorithms.
+// The config allows you to specify certain values in the Glicko-2 calculation.
 let config = Glicko2Config::new();
 
-let (player_one_new, player_two_new) = glicko2(&player_one, &player_two, &outcome, &config);
-
-assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
-assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
-
-assert!((player_two_new.rating.round() - 1338.0).abs() < f64::EPSILON);
-assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+// The glicko2 function will calculate the new ratings for both players and return them.
+let (new_player_one, new_player_two) = glicko2(&player_one, &player_two, &outcome, &config);
 ```
 
 ### TrueSkill rating system
@@ -149,28 +140,25 @@ use skillratings::{
     trueskill::trueskill, outcomes::Outcomes, rating::TrueSkillRating, config::TrueSkillConfig
 };
 
-let player_one = TrueSkillRating{
-    rating: 25.0,
-    uncertainty: 8.333,
-};
-let player_two = TrueSkillRating {
-    rating: 30.0,
-    uncertainty: 1.2,
+// Initialise a new player rating.
+let player_one = TrueSkillRating::new();
+
+// Or you can initialise it with your own values of course.
+// Imagine these numbers being pulled from a database.
+let (some_rating, some_uncertainty) = (34.2, 2.3);
+let player_two = TrueSkillRating{
+    rating: some_rating,
+    uncertainty: some_uncertainty,
 };
 
-// The config allows you to change certain adjustable values in the algorithms.
-let config = TrueSkillConfig::new();
-
-// The outcome is from the perspective of player one.
+// The outcome of the match is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
-let (p1, p2) = trueskill(&player_one, &player_two, &outcome, &config);
+// The config allows you to specify certain values in the TrueSkill calculation.
+let config = TrueSkillConfig::new();
 
-assert!(((p1.rating * 100.0).round() - 3300.0).abs() < f64::EPSILON);
-assert!(((p1.uncertainty * 100.0).round() - 597.0).abs() < f64::EPSILON);
-
-assert!(((p2.rating * 100.0).round() - 2983.0).abs() < f64::EPSILON);
-assert!(((p2.uncertainty * 100.0).round() - 120.0).abs() < f64::EPSILON);
+// The trueskill function will calculate the new ratings for both players and return them.
+let (new_player_one, new_player_two) = trueskill(&player_one, &player_two, &outcome, &config);
 ```
 
 ## Weng-Lin rating system
@@ -182,30 +170,28 @@ assert!(((p2.uncertainty * 100.0).round() - 120.0).abs() < f64::EPSILON);
 
 ```rust
 use skillratings::{
-    rating::WengLinRating, weng_lin::weng_lin, outcomes::Outcomes, config::WengLinConfig
+    weng_lin::weng_lin, outcomes::Outcomes, rating::WengLinRating, config::WengLinConfig
 };
 
-let player_one = WengLinRating {
-    rating: 42.0,
-    uncertainty: 1.3,
-};
-let player_two = WengLinRating {
-    rating: 25.0,
-    uncertainty: 8.333,
+// Initialise a new player rating.
+let player_one = WengLinRating::new();
+
+// Or you can initialise it with your own values of course.
+// Imagine these numbers being pulled from a database.
+let (some_rating, some_uncertainty) = (41.2, 2.12);
+let player_two = WengLinRating{
+    rating: some_rating,
+    uncertainty: some_uncertainty,
 };
 
-// The config allows you to change certain adjustable values in the algorithms.
-let config = WengLinConfig::new();
-
-// The outcome is from the perspective of player one.
+// The outcome of the match is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
-let (player_one, player_two) = weng_lin(&player_one, &player_two, &outcome, &config);
+// The config allows you to specify certain values in the Weng-Lin calculation.
+let config = WengLinConfig::new();
 
-assert!(((player_one.rating * 100.0).round() - 4203.0).abs() < f64::EPSILON);
-assert!(((player_one.uncertainty * 100.0).round() - 130.0).abs() < f64::EPSILON);
-assert!(((player_two.rating * 100.0).round() - 2391.0).abs() < f64::EPSILON);
-assert!(((player_two.uncertainty * 100.0).round() - 803.0).abs() < f64::EPSILON);
+// The weng_lin function will calculate the new ratings for both players and return them.
+let (new_player_one, new_player_two) = weng_lin(&player_one, &player_two, &outcome, &config);
 ```
 
 ### DWZ (Deutsche Wertungszahl) rating system
@@ -214,31 +200,29 @@ assert!(((player_two.uncertainty * 100.0).round() - 803.0).abs() < f64::EPSILON)
 - [Wikipedia article](https://en.wikipedia.org/wiki/Deutsche_Wertungszahl)
 
 ```rust
-use skillratings::{dwz::dwz, outcomes::Outcomes, rating::DWZRating};
-
-let player_one = DWZRating {
-    rating: 1500.0,
-    index: 42,
-    // The actual age of the player, if unavailable set this to >25.
-    // The lower the age, the more the rating will fluctuate.
-    age: 42,
-};
-let player_two = DWZRating {
-    rating: 1500.0,
-    index: 12,
-    age: 12,
+use skillratings::{
+    dwz::dwz, outcomes::Outcomes, rating::DWZRating
 };
 
-// The outcome is from the perspective of player one.
+// Initialise a new player rating.
+// We need to set the actual age for the player,
+// if you are unsure what to set here, choose something that is greater than 25.
+let player_one = DWZRating::new(19);
+
+// Or you can initialise it with your own values of course.
+// Imagine these numbers being pulled from a database.
+let (some_rating, some_index, some_age) = (1325.0, 51, 27);
+let player_two = DWZRating{
+    rating: some_rating,
+    index: some_index,
+    age: some_age,
+};
+
+// The outcome of the match is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
-let (player_one_new, player_two_new) = dwz(&player_one, &player_two, &outcome);
-
-assert!((player_one_new.rating.round() - 1519.0).abs() < f64::EPSILON);
-assert_eq!(player_one_new.index, 43);
-
-assert!((player_two_new.rating.round() - 1464.0).abs() < f64::EPSILON);
-assert_eq!(player_two_new.index, 13);
+// The dwz function will calculate the new ratings for both players and return them.
+let (new_player_one, new_player_two) = dwz(&player_one, &player_two, &outcome);
 ```
 
 ### Ingo rating system
@@ -247,27 +231,28 @@ assert_eq!(player_two_new.index, 13);
 - [Wikipedia article (in german, no english version available)](https://de.wikipedia.org/wiki/Ingo-Zahl)
 
 ```rust
-use skillratings::{ingo::ingo, outcomes::Outcomes, rating::IngoRating};
-
-let player_one = IngoRating {
-    // Note that a lower rating is more desirable.
-    rating: 130.0,
-    // The actual age of the player, if unavailable set this to >25.
-    // The lower the age, the more the rating will fluctuate.
-    age: 40,
-};
-let player_two = IngoRating {
-    rating: 160.0,
-    age: 40,
+use skillratings::{
+    ingo::ingo, outcomes::Outcomes, rating::IngoRating
 };
 
-// The outcome is from the perspective of player one.
+// Initialise a new player rating.
+// We need to set the actual age for the player,
+// if you are unsure what to set here, choose something that is greater than 25.
+let player_one = IngoRating::new(19);
+
+// Or you can initialise it with your own values of course.
+// Imagine these numbers being pulled from a database.
+let (some_rating, some_age) = (150.4, 23);
+let player_two = IngoRating{
+    rating: some_rating,
+    age: some_age,
+};
+
+// The outcome of the match is from the perspective of player one.
 let outcome = Outcomes::WIN;
 
-let (p1, p2) = ingo(&player_one, &player_two, &outcome);
-
-assert!((p1.rating.round() - 129.0).abs() < f64::EPSILON);
-assert!((p2.rating.round() - 161.0).abs() < f64::EPSILON);
+// The ingo function will calculate the new ratings for both players and return them.
+let (new_player_one, new_player_two) = ingo(&player_one, &player_two, &outcome);
 ```
 
 ## License

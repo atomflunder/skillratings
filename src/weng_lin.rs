@@ -7,9 +7,40 @@
 //! But the proper name would be `A Bayesian Approximation Method for Online Ranking`.
 //!
 //! Developed specifically for online games with multiple teams and multiple players,
-//! this algorithm aims to be simpler and faster than TrueSkill while yielding similar accuracy.
+//! this algorithm aims to be simpler and faster (~2.5 - 6.5x) than TrueSkill while yielding similar accuracy.
 //!
 //! While TrueSkill is based upon a Gaussian distibution, this algorithm is based upon a logistical distribution, the Bradley-Terry model.
+//!
+//! # Quickstart
+//!
+//! This is the most basic example on how to use the Weng-Lin Module.  
+//! Please take a look at the functions below to see more advanced use cases.
+//!
+//! ```
+//! use skillratings::{
+//!     weng_lin::weng_lin, outcomes::Outcomes, rating::WengLinRating, config::WengLinConfig
+//! };
+//!
+//! // Initialise a new player rating.
+//! let player_one = WengLinRating::new();
+//!
+//! // Or you can initialise it with your own values of course.
+//! // Imagine these numbers being pulled from a database.
+//! let (some_rating, some_uncertainty) = (41.2, 2.12);
+//! let player_two = WengLinRating{
+//!     rating: some_rating,
+//!     uncertainty: some_uncertainty,
+//! };
+//!
+//! // The outcome of the match is from the perspective of player one.
+//! let outcome = Outcomes::WIN;
+//!
+//! // The config allows you to specify certain values in the Weng-Lin calculation.
+//! let config = WengLinConfig::new();
+//!
+//! // The weng_lin function will calculate the new ratings for both players and return them.
+//! let (new_player_one, new_player_two) = weng_lin(&player_one, &player_two, &outcome, &config);
+//! ```
 //!
 //! # More Information
 //! - [Original Paper (PDF)](https://jmlr.csail.mit.edu/papers/volume12/weng11a/weng11a.pdf)

@@ -4,6 +4,36 @@
 //! The higher the Elo rating number, the stronger the player.
 //! Compared to other rating algorithms, Elo ratings are relatively static, but very transparent and simple to calculate.
 //!
+//! # Quickstart
+//!
+//! This is the most basic example on how to use the Elo Module.  
+//! Please take a look at the functions below to see more advanced use cases.
+//!
+//! ```
+//! use skillratings::{
+//!     elo::elo, outcomes::Outcomes, rating::EloRating, config::EloConfig
+//! };
+//!
+//! // Initialise a new player rating.
+//! let player_one = EloRating::new();
+//!
+//! // Or you can initialise it with your own values of course.
+//! // Imagine these numbers being pulled from a database.
+//! let some_rating = 1325.0;
+//! let player_two = EloRating{
+//!     rating: some_rating,
+//! };
+//!
+//! // The outcome of the match is from the perspective of player one.
+//! let outcome = Outcomes::WIN;
+//!
+//! // The config allows you to specify certain values in the Elo calculation.
+//! let config = EloConfig::new();
+//!
+//! // The elo function will calculate the new ratings for both players and return them.
+//! let (new_player_one, new_player_two) = elo(&player_one, &player_two, &outcome, &config);
+//! ```
+//!
 //! # More Information
 //!
 //! - [Wikipedia Article](https://en.wikipedia.org/wiki/Elo_rating_system)

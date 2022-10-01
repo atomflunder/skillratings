@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.13.1 - 2022-10-01
+
+- Add some benchmarks
+- Overhaul documentation
+
 ## v0.13.0 - 2022-09-25
 
 - All functions now use references instead of taking ownership unnecessarily

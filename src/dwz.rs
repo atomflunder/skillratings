@@ -6,6 +6,37 @@
 //!
 //! These factors make DWZ more dynamic than Elo while producing accurate ratings more quickly.
 //!
+//! # Quickstart
+//!
+//! This is the most basic example on how to use the DWZ Module.  
+//! Please take a look at the functions below to see more advanced use cases.
+//!
+//! ```
+//! use skillratings::{
+//!     dwz::dwz, outcomes::Outcomes, rating::DWZRating
+//! };
+//!
+//! // Initialise a new player rating.
+//! // We need to set the actual age for the player,
+//! // if you are unsure what to set here, choose something that is greater than 25.
+//! let player_one = DWZRating::new(19);
+//!
+//! // Or you can initialise it with your own values of course.
+//! // Imagine these numbers being pulled from a database.
+//! let (some_rating, some_index, some_age) = (1325.0, 51, 27);
+//! let player_two = DWZRating{
+//!     rating: some_rating,
+//!     index: some_index,
+//!     age: some_age,
+//! };
+//!
+//! // The outcome of the match is from the perspective of player one.
+//! let outcome = Outcomes::WIN;
+//!
+//! // The dwz function will calculate the new ratings for both players and return them.
+//! let (new_player_one, new_player_two) = dwz(&player_one, &player_two, &outcome);
+//! ```
+//!
 //! # More Information
 //!
 //! - [Wikipedia Article](https://en.wikipedia.org/wiki/Deutsche_Wertungszahl)

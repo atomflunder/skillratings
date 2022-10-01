@@ -1,12 +1,40 @@
 //! The Glicko algorithm, developed by Mark Glickman as an improvement on Elo.  
 //! It is still being used in some games in favor Glicko-2, such as Pokémon Showdown and Quake Live.
 //!
-//! For Glicko-2, please see [`crate::glicko2`].
+//! If you are looking for the updated Glicko-2 rating system, please see [`crate::glicko2`].
 //!
 //! The main improvement over Elo is the rating deviation introduced,
 //! which decreases over time as the player plays more matches and the rating becomes more reliable.
 //! This allows players to rise and fall through the ranks quickly at the beginning,
 //! and not gain or lose as much rating points after completing more matches.
+//!
+//! # Quickstart
+//!
+//! This is the most basic example on how to use the Glicko Module.  
+//! Please take a look at the functions below to see more advanced use cases.
+//!
+//! ```
+//! use skillratings::{
+//!     glicko::glicko, outcomes::Outcomes, rating::GlickoRating
+//! };
+//!
+//! // Initialise a new player rating.
+//! let player_one = GlickoRating::new();
+//!
+//! // Or you can initialise it with your own values of course.
+//! // Imagine these numbers being pulled from a database.
+//! let (some_rating, some_deviation) = (1325.0, 230.0);
+//! let player_two = GlickoRating{
+//!     rating: some_rating,
+//!     deviation: some_deviation,
+//! };
+//!
+//! // The outcome of the match is from the perspective of player one.
+//! let outcome = Outcomes::WIN;
+//!
+//! // The glicko function will calculate the new ratings for both players and return them.
+//! let (new_player_one, new_player_two) = glicko(&player_one, &player_two, &outcome);
+//! ```
 //!
 //! # More Information
 //!
