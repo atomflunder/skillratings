@@ -28,7 +28,7 @@
 //!
 //! If you are on Rust 1.62 or higher use `cargo add` to install the latest version:
 //!
-//! ```
+//! ```ignore
 //! cargo add skillratings
 //! ```
 //!
