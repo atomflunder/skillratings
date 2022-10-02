@@ -816,4 +816,23 @@ mod tests {
         assert!((opponent.deviation.round() - 176.0).abs() < f64::EPSILON);
         assert!(((opponent.volatility * 100_000.0).round() - 6_046.0).abs() < f64::EPSILON);
     }
+
+    #[test]
+    fn glicko_conversion() {
+        use crate::rating::GlickoRating;
+
+        let glicko2_player = Glicko2Rating::new();
+
+        let glicko1_player = GlickoRating::from(glicko2_player);
+
+        assert_eq!(glicko1_player, GlickoRating::new());
+
+        let other_glicko2_player = Glicko2Rating::from(GlickoRating {
+            rating: 350.0,
+            deviation: 40.0,
+        });
+
+        assert!((other_glicko2_player.rating - 350.0).abs() < f64::EPSILON);
+        assert!((other_glicko2_player.volatility - 0.06).abs() < f64::EPSILON);
+    }
 }

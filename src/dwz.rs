@@ -795,7 +795,7 @@ mod tests {
     }
 
     #[test]
-    fn test_from_elo() {
+    fn elo_conversion() {
         use crate::rating::EloRating;
 
         let player_one = EloRating { rating: 1200.0 };
@@ -805,6 +805,10 @@ mod tests {
         assert!((player_one_dwz.rating.round() - 1200.0).abs() < f64::EPSILON);
         assert_eq!(player_one_dwz.index, 6);
         assert_eq!(player_one_dwz.age, 26);
+
+        let player_one_back = EloRating::from(player_one_dwz);
+
+        assert!((player_one_back.rating.round() - 1200.0).abs() < f64::EPSILON);
     }
 
     #[test]

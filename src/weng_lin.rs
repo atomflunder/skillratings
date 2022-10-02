@@ -711,4 +711,22 @@ mod tests {
         assert!((normal_player.rating - rating_player.rating).abs() < f64::EPSILON);
         assert!((normal_player.uncertainty - rating_player.uncertainty).abs() < f64::EPSILON);
     }
+
+    #[test]
+    fn trueskill_conversion() {
+        use crate::rating::TrueSkillRating;
+
+        let weng_lin_player = WengLinRating::new();
+
+        let trueskill_player = TrueSkillRating::from(weng_lin_player);
+
+        assert_eq!(trueskill_player, TrueSkillRating::new());
+
+        let other_weng_lin_player = WengLinRating::from(TrueSkillRating {
+            rating: 35.0,
+            uncertainty: 4.0,
+        });
+
+        assert!((other_weng_lin_player.rating - 35.0).abs() < f64::EPSILON);
+    }
 }

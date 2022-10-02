@@ -31,6 +31,12 @@ impl From<IngoRating> for EloRating {
     }
 }
 
+impl From<DWZRating> for EloRating {
+    fn from(d: DWZRating) -> Self {
+        Self { rating: d.rating }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 /// The Glicko rating for a player.
 ///
@@ -59,6 +65,15 @@ impl GlickoRating {
 impl Default for GlickoRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl From<Glicko2Rating> for GlickoRating {
+    fn from(g: Glicko2Rating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
     }
 }
 
@@ -94,6 +109,16 @@ impl Glicko2Rating {
 impl Default for Glicko2Rating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl From<GlickoRating> for Glicko2Rating {
+    fn from(g: GlickoRating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+            ..Default::default()
+        }
     }
 }
 
@@ -136,8 +161,9 @@ impl From<EloRating> for DWZRating {
     fn from(e: EloRating) -> Self {
         Self {
             rating: e.rating,
+            // Recommended according to Wikipedia.
             index: 6,
-            age: 26,
+            ..Default::default()
         }
     }
 }
@@ -168,6 +194,15 @@ impl TrueSkillRating {
 impl Default for TrueSkillRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl From<WengLinRating> for TrueSkillRating {
+    fn from(w: WengLinRating) -> Self {
+        Self {
+            rating: w.rating,
+            uncertainty: w.uncertainty,
+        }
     }
 }
 
@@ -208,7 +243,7 @@ impl From<EloRating> for IngoRating {
     fn from(e: EloRating) -> Self {
         Self {
             rating: 355.0 - (e.rating / 8.0),
-            age: 26,
+            ..Default::default()
         }
     }
 }
@@ -241,5 +276,14 @@ impl WengLinRating {
 impl Default for WengLinRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl From<TrueSkillRating> for WengLinRating {
+    fn from(t: TrueSkillRating) -> Self {
+        Self {
+            rating: t.rating,
+            uncertainty: t.uncertainty,
+        }
     }
 }
