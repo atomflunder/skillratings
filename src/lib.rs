@@ -26,10 +26,17 @@
 //!
 //! # Installation
 //!
-//! Add the following to your `Cargo.toml` file:  
+//! If you are on Rust 1.62 or higher use `cargo add` to install the latest version:
+//!
+//! ```
+//! cargo add skillratings
+//! ```
+//!
+//! Alternatively, you can add the following to your `Cargo.toml` file manually:
+//!
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.13.1"
+//! skillratings = "0.13"
 //! ```
 //!
 //! # Quickstart
