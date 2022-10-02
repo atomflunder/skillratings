@@ -15,7 +15,7 @@ categories = ["game-development", "algorithms", "mathematics"]
 
 
 [dev-dependencies]
-criterion = { version = "0.3", features = ["html_reports"] }
+criterion = { version = "0.4", features = ["html_reports"] }
 
 [[bench]]
 name = "bench_main"
