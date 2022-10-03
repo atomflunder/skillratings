@@ -397,13 +397,17 @@ pub fn get_first_dwz(player_age: usize, results: &Vec<(DWZRating, Outcomes)>) ->
     ]);
 
     let mut new_rating = if p > 50 {
+        // If the performance is positive, we convert the values above to a positive number.
+        // The value for 30 is the same as for 70, but negative.
         let temp = probability_table.get(&(p - 100).abs())?;
 
         f64::abs(*temp) + average_rating
     } else {
+        // Else we just use the negative number above.
         probability_table.get(&p)? + average_rating
     };
 
+    // If the rating would be too low we revise it upwards.
     if new_rating <= 800.0 {
         new_rating = 700.0 + (new_rating / 8.0);
     }
@@ -423,7 +427,7 @@ fn e_value(rating: f64, age: usize, score: f64, expected_score: f64, index: usiz
     // The variable j is dependent on the age of the player. From wikipedia:
     // "Teenagers up to 20 years: `j = 5.0`, junior adults (21 – 25 years): `j = 10.0`, over-25-year-olds: `j = 15.0`"
     let j = match age {
-        usize::MIN..=20 => 5.0,
+        0..=20 => 5.0,
         21..=25 => 10.0,
         _ => 15.0,
     };

@@ -102,12 +102,7 @@ pub fn weng_lin(
         Outcomes::DRAW => 0.5,
         Outcomes::LOSS => 0.0,
     };
-
-    let outcome2 = match outcome {
-        Outcomes::WIN => 0.0,
-        Outcomes::DRAW => 0.5,
-        Outcomes::LOSS => 1.0,
-    };
+    let outcome2 = 1.0 - outcome1;
 
     let delta1 = (player_one.uncertainty.powi(2) / c) * (outcome1 - p1);
     // You could also set gamma to 1/k, with k being the amount of teams in a match.
@@ -296,12 +291,7 @@ pub fn weng_lin_teams(
         Outcomes::DRAW => 0.5,
         Outcomes::LOSS => 0.0,
     };
-
-    let outcome2 = match outcome {
-        Outcomes::WIN => 0.0,
-        Outcomes::DRAW => 0.5,
-        Outcomes::LOSS => 1.0,
-    };
+    let outcome2 = 1.0 - outcome1;
 
     let delta1 = (team_one_uncertainties / c) * (outcome1 - p1);
     let gamma1 = team_one_uncertainties.sqrt() / c;

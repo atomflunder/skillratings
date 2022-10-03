@@ -75,16 +75,15 @@ pub fn elo(
 ) -> (EloRating, EloRating) {
     let (one_expected, two_expected) = expected_score(player_one, player_two);
 
-    let o = match outcome {
+    let outcome1 = match outcome {
         Outcomes::WIN => 1.0,
         Outcomes::LOSS => 0.0,
         Outcomes::DRAW => 0.5,
     };
+    let outcome2 = 1.0 - outcome1;
 
-    let one_new_elo = config.k.mul_add(o - one_expected, player_one.rating);
-    let two_new_elo = config
-        .k
-        .mul_add((1.0 - o) - two_expected, player_two.rating);
+    let one_new_elo = config.k.mul_add(outcome1 - one_expected, player_one.rating);
+    let two_new_elo = config.k.mul_add(outcome2 - two_expected, player_two.rating);
 
     (
         EloRating {
@@ -138,13 +137,13 @@ pub fn elo_rating_period(
     for (opponent, result) in results {
         let (exp, _) = expected_score(&player, opponent);
 
-        let o = match result {
+        let outcome = match result {
             Outcomes::WIN => 1.0,
             Outcomes::LOSS => 0.0,
             Outcomes::DRAW => 0.5,
         };
 
-        player.rating = config.k.mul_add(o - exp, player.rating);
+        player.rating = config.k.mul_add(outcome - exp, player.rating);
     }
 
     player

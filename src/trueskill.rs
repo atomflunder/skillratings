@@ -115,39 +115,29 @@ pub fn trueskill(
         )
         .sqrt();
 
-    let winning_rating = if outcome == &Outcomes::WIN || outcome == &Outcomes::DRAW {
-        player_one.rating
+    // We need the rating of the winner minus the rating of the loser
+    let rating_delta = match outcome {
+        Outcomes::WIN | Outcomes::DRAW => player_one.rating - player_two.rating,
+        Outcomes::LOSS => player_two.rating - player_one.rating,
+    };
+
+    let (v, w) = if outcome == &Outcomes::DRAW {
+        (
+            v_draw(rating_delta, draw_margin, c),
+            w_draw(rating_delta, draw_margin, c),
+        )
     } else {
-        player_two.rating
-    };
-    let losing_rating = if outcome == &Outcomes::WIN || outcome == &Outcomes::DRAW {
-        player_two.rating
-    } else {
-        player_one.rating
+        (
+            v_non_draw(rating_delta, draw_margin, c),
+            w_non_draw(rating_delta, draw_margin, c),
+        )
     };
 
-    let rating_delta = winning_rating - losing_rating;
-
-    let v = if outcome == &Outcomes::DRAW {
-        v_draw(rating_delta, draw_margin, c)
-    } else {
-        v_non_draw(rating_delta, draw_margin, c)
-    };
-
-    let w = if outcome == &Outcomes::DRAW {
-        w_draw(rating_delta, draw_margin, c)
-    } else {
-        w_non_draw(rating_delta, draw_margin, c)
-    };
-
-    let rank_multiplier1 = match outcome {
-        Outcomes::DRAW | Outcomes::WIN => 1.0,
-        Outcomes::LOSS => -1.0,
-    };
-
-    let rank_multiplier2 = match outcome {
-        Outcomes::WIN | Outcomes::DRAW => -1.0,
-        Outcomes::LOSS => 1.0,
+    // We could add these to the rating_delta match statement above,
+    // but that would yield no noticeable performance gains while sacrificing readability.
+    let (rank_multiplier1, rank_multiplier2) = match outcome {
+        Outcomes::WIN | Outcomes::DRAW => (1.0, -1.0),
+        Outcomes::LOSS => (-1.0, 1.0),
     };
 
     let player_one_new = update_rating(
@@ -238,33 +228,25 @@ pub fn trueskill_rating_period(
             )
             .sqrt();
 
-        let winning_rating = if result == &Outcomes::WIN || result == &Outcomes::DRAW {
-            player.rating
-        } else {
-            opponent.rating
-        };
-        let losing_rating = if result == &Outcomes::WIN || result == &Outcomes::DRAW {
-            opponent.rating
-        } else {
-            player.rating
+        let rating_delta = match result {
+            Outcomes::WIN | Outcomes::DRAW => player.rating - opponent.rating,
+            Outcomes::LOSS => opponent.rating - player.rating,
         };
 
-        let rating_delta = winning_rating - losing_rating;
-
-        let v = if result == &Outcomes::DRAW {
-            v_draw(rating_delta, draw_margin, c)
+        let (v, w) = if result == &Outcomes::DRAW {
+            (
+                v_draw(rating_delta, draw_margin, c),
+                w_draw(rating_delta, draw_margin, c),
+            )
         } else {
-            v_non_draw(rating_delta, draw_margin, c)
-        };
-
-        let w = if result == &Outcomes::DRAW {
-            w_draw(rating_delta, draw_margin, c)
-        } else {
-            w_non_draw(rating_delta, draw_margin, c)
+            (
+                v_non_draw(rating_delta, draw_margin, c),
+                w_non_draw(rating_delta, draw_margin, c),
+            )
         };
 
         let rank_multiplier = match result {
-            Outcomes::DRAW | Outcomes::WIN => 1.0,
+            Outcomes::WIN | Outcomes::DRAW => 1.0,
             Outcomes::LOSS => -1.0,
         };
 
@@ -352,39 +334,26 @@ pub fn trueskill_teams(
         )
         .sqrt();
 
-    let winning_rating = if outcome == &Outcomes::WIN || outcome == &Outcomes::DRAW {
-        rating_one_sum
+    let rating_delta = match outcome {
+        Outcomes::WIN | Outcomes::DRAW => rating_one_sum - rating_two_sum,
+        Outcomes::LOSS => rating_two_sum - rating_one_sum,
+    };
+
+    let (v, w) = if outcome == &Outcomes::DRAW {
+        (
+            v_draw(rating_delta, draw_margin, c),
+            w_draw(rating_delta, draw_margin, c),
+        )
     } else {
-        rating_two_sum
-    };
-    let losing_rating = if outcome == &Outcomes::WIN || outcome == &Outcomes::DRAW {
-        rating_two_sum
-    } else {
-        rating_one_sum
+        (
+            v_non_draw(rating_delta, draw_margin, c),
+            w_non_draw(rating_delta, draw_margin, c),
+        )
     };
 
-    let rating_delta = winning_rating - losing_rating;
-
-    let v = if outcome == &Outcomes::DRAW {
-        v_draw(rating_delta, draw_margin, c)
-    } else {
-        v_non_draw(rating_delta, draw_margin, c)
-    };
-
-    let w = if outcome == &Outcomes::DRAW {
-        w_draw(rating_delta, draw_margin, c)
-    } else {
-        w_non_draw(rating_delta, draw_margin, c)
-    };
-
-    let rank_multiplier1 = match outcome {
-        Outcomes::DRAW | Outcomes::WIN => 1.0,
-        Outcomes::LOSS => -1.0,
-    };
-
-    let rank_multiplier2 = match outcome {
-        Outcomes::WIN | Outcomes::DRAW => -1.0,
-        Outcomes::LOSS => 1.0,
+    let (rank_multiplier1, rank_multiplier2) = match outcome {
+        Outcomes::WIN | Outcomes::DRAW => (1.0, -1.0),
+        Outcomes::LOSS => (-1.0, 1.0),
     };
 
     let new_team_one = update_rating_teams(

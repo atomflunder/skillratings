@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.13.4 - 2022-10-03
+
+- Improve performance of some functions
+
 ## v0.13.3 - 2022-10-03
 
 - Add Apache/MIT dual license

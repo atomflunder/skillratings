@@ -81,26 +81,26 @@ pub fn ingo(
     player_two: &IngoRating,
     outcome: &Outcomes,
 ) -> (IngoRating, IngoRating) {
-    let score1 = match outcome {
+    let outcome1 = match outcome {
         Outcomes::WIN => 1.0,
         Outcomes::DRAW => 0.5,
         Outcomes::LOSS => 0.0,
     };
 
-    let score2 = 1.0 - score1;
+    let outcome2 = 1.0 - outcome1;
 
-    let perf1 = performance(player_two.rating, score1);
-    let perf2 = performance(player_one.rating, score2);
+    let perf1 = performance(player_two.rating, outcome1);
+    let perf2 = performance(player_one.rating, outcome2);
 
     // Similar to the DWZ algorithm, we use the age of the player to get the development coefficient.
     let development1 = match player_one.age {
-        usize::MIN..=20 => 10.0,
+        0..=20 => 10.0,
         21..=25 => 15.0,
         _ => 20.0,
     };
 
     let development2 = match player_two.age {
-        usize::MIN..=20 => 10.0,
+        0..=20 => 10.0,
         21..=25 => 15.0,
         _ => 20.0,
     };
@@ -175,7 +175,7 @@ pub fn ingo_rating_period(
     results: &Vec<(IngoRating, Outcomes)>,
 ) -> IngoRating {
     let development = match player.age {
-        usize::MIN..=20 => 10.0,
+        0..=20 => 10.0,
         21..=25 => 15.0,
         _ => 20.0,
     };

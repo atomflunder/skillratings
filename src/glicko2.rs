@@ -500,7 +500,6 @@ fn new_rating(rating: f64, new_deviation: f64, outcome: f64, g_value: f64, e_val
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::outcomes::Outcomes;
 
     #[test]
     fn test_equal_glicko2() {
