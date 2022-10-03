@@ -192,7 +192,7 @@ assert_eq!(new_player.rating.round(), 1362.0);
 
 Contributions of any kind are always welcome!  
 
-Found a bug or have a feature request? [Submit a new issue](https://github.com/atomflunder/skillratings/issues/new).  
+Found a bug or have a feature request? [Submit a new issue](https://github.com/atomflunder/skillratings/issues/).  
 Alternatively, [open a pull request](https://github.com/atomflunder/skillratings/pulls) if you want to add features or fix bugs.  
 Leaving other feedback is of course also appreciated.
 
