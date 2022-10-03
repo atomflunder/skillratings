@@ -10,13 +10,13 @@ This library is incredibly lightweight, user-friendly, and of course, *blazingly
 
 Currently supported algorithms:
 
-- [Elo](#elo-rating-system)
-- [Glicko](#glicko-rating-system)
-- [Glicko-2](#glicko-2-rating-system)
-- [TrueSkill](#trueskill-rating-system)
-- [Weng-Lin (Bayesian Approxmation Method)](#weng-lin-rating-system)
-- [DWZ (Deutsche Wertungszahl)](#dwz-deutsche-wertungszahl-rating-system)
-- [Ingo](#ingo-rating-system)
+- [Elo](https://docs.rs/skillratings/latest/skillratings/elo/index.html)
+- [Glicko](https://docs.rs/skillratings/latest/skillratings/glicko/index.html)
+- [Glicko-2](https://docs.rs/skillratings/latest/skillratings/glicko2/index.html)
+- [TrueSkill](https://docs.rs/skillratings/latest/skillratings/trueskill/index.html)
+- [Weng-Lin (Bayesian Approxmation Method)](https://docs.rs/skillratings/latest/skillratings/weng_lin/index.html)
+- [DWZ (Deutsche Wertungszahl)](https://docs.rs/skillratings/latest/skillratings/dwz/index.html)
+- [Ingo](https://docs.rs/skillratings/latest/skillratings/ingo/index.html)
 
 These are mainly known from their usage in chess and online games.
 
