@@ -1,11 +1,13 @@
 [package]
 name = "skillratings"
-version = "0.13.2"
+version = "0.13.3"
 edition = "2021"
 description = "Calculate a player's skill rating using algorithms like Elo, Glicko, Glicko-2, TrueSkill and many more."
 readme = "README.md"
 repository = "https://github.com/atomflunder/skillratings"
-license = "MIT"
+homepage = "https://github.com/atomflunder/skillratings"
+documentation = "https://docs.rs/skillratings/"
+license = "MIT OR Apache-2.0"
 keywords = ["elo", "glicko", "glicko-2", "trueskill", "rating"]
 categories = ["game-development", "algorithms", "mathematics"]
 

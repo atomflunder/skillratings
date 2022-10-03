@@ -188,6 +188,16 @@ let new_player = elo_rating_period(&player, &results, &EloConfig::new());
 assert_eq!(new_player.rating.round(), 1362.0);
 ```
 
+## Contributing
+
+Contributions of any kind are always welcome!  
+
+Found a bug or have a feature request? [Submit a new issue](https://github.com/atomflunder/skillratings/issues/new).  
+Alternatively, [open a pull request](https://github.com/atomflunder/skillratings/pulls) if you want to add features or fix bugs.  
+Leaving other feedback is of course also appreciated.
+
+Thanks to everyone who takes their time to contribute.
+
 ## License
 
-This project is licensed under the [MIT License](/LICENSE).
+This project is licensed under either the [MIT License](/LICENSE-MIT), or the [Apache License, Version 2.0](/LICENSE-APACHE).

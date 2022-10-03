@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.13.3 - 2022-10-03
+
+- Add Apache/MIT dual license
+- Add some GitHub templates
+
 ## v0.13.2 - 2022-10-03
 
 - Implement more From traits for Ratings
