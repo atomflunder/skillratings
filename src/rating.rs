@@ -77,6 +77,15 @@ impl From<Glicko2Rating> for GlickoRating {
     }
 }
 
+impl From<StickoRating> for GlickoRating {
+    fn from(s: StickoRating) -> Self {
+        Self {
+            rating: s.rating,
+            deviation: s.deviation,
+        }
+    }
+}
+
 /// The Glicko-2 rating of a player.
 ///
 /// For the Glicko rating, please see [`GlickoRating`].
@@ -117,6 +126,16 @@ impl From<GlickoRating> for Glicko2Rating {
         Self {
             rating: g.rating,
             deviation: g.deviation,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<StickoRating> for Glicko2Rating {
+    fn from(s: StickoRating) -> Self {
+        Self {
+            rating: s.rating,
+            deviation: s.deviation,
             ..Default::default()
         }
     }
@@ -284,6 +303,55 @@ impl From<TrueSkillRating> for WengLinRating {
         Self {
             rating: t.rating,
             uncertainty: t.uncertainty,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The Sticko rating of a player.
+///
+/// Similar to [`GlickoRating`].
+///
+/// The default rating is 1500.0.
+/// The default deviation is 350.0.
+pub struct StickoRating {
+    /// The player's Sticko rating number, by default 1500.0.
+    pub rating: f64,
+    /// The player's Sticko deviation number, by default 350.0.
+    pub deviation: f64,
+}
+
+impl StickoRating {
+    #[must_use]
+    /// Initialize a new `GlickoRating` with a rating of 1500.0 and a deviation of 350.0.
+    pub const fn new() -> Self {
+        Self {
+            rating: 1500.0,
+            deviation: 350.0,
+        }
+    }
+}
+
+impl Default for StickoRating {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<GlickoRating> for StickoRating {
+    fn from(g: GlickoRating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
+    }
+}
+
+impl From<Glicko2Rating> for StickoRating {
+    fn from(g: Glicko2Rating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
         }
     }
 }

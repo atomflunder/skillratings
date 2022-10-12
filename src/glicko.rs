@@ -1,7 +1,7 @@
 //! The Glicko algorithm, developed by Mark Glickman as an improvement on Elo.  
 //! It is still being used in some games in favor Glicko-2, such as Pokémon Showdown and Quake Live.
 //!
-//! If you are looking for the updated Glicko-2 rating system, please see [`crate::glicko2`].
+//! If you are looking for the updated Glicko-2 rating system, please see [`Glicko-2`](crate::glicko2).
 //!
 //! The main improvement over Elo is the rating deviation introduced,
 //! which decreases over time as the player plays more matches and the rating becomes more reliable.
@@ -48,7 +48,7 @@ use std::f64::consts::PI;
 #[must_use]
 /// Calculates the [`GlickoRating`]s of two players based on their old ratings, deviations, and the outcome of the game.
 ///
-/// Please see [`crate::glicko2::glicko2`] for calculating with the improved version.
+/// Please see [`Glicko-2`](crate::glicko2) for calculating with the improved version.
 ///
 /// Takes in two players as [`GlickoRating`]s, and an [`Outcome`](Outcomes).
 ///

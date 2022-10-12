@@ -16,6 +16,7 @@
 //! - **[`Glicko-2`](crate::glicko2)**
 //! - **[`TrueSkill`](crate::trueskill)**
 //! - **[`Weng-Lin`](crate::weng_lin)**
+//! - **[`Sticko`](crate::sticko)**
 //! - **[`DWZ (Deutsche Wertungszahl)`](crate::dwz)**
 //! - **[`Ingo`](crate::ingo)**
 //!
@@ -28,7 +29,7 @@
 //!
 //! If you are on Rust 1.62 or higher use `cargo add` to install the latest version:
 //!
-//! ```ignore
+//! ```bash
 //! cargo add skillratings
 //! ```
 //!
@@ -36,7 +37,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.13"
+//! skillratings = "0.14"
 //! ```
 //!
 //! # Examples
@@ -200,5 +201,6 @@ pub mod glicko2;
 pub mod ingo;
 pub mod outcomes;
 pub mod rating;
+pub mod sticko;
 pub mod trueskill;
 pub mod weng_lin;

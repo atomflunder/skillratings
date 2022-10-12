@@ -1,6 +1,6 @@
 //! Contains structs to configure key variables used in the different rating algorithms.
 
-/// Constants used in the Elo calculation.
+/// Constants used in the Elo calculations.
 pub struct EloConfig {
     /// The k-value is the maximum amount of rating change from a single match.
     /// In chess, k-values from 40 to 10 are used, with the most common being 32, 24, 16 or 10.
@@ -23,7 +23,7 @@ impl Default for EloConfig {
     }
 }
 
-/// Constants used in the Glicko calculation.
+/// Constants used in the Glicko calculations.
 pub struct GlickoConfig {
     /// The c value describes how much the rating deviation should decay in each step.
     /// The higher the value, the more the rating deviation will decay.  
@@ -46,7 +46,7 @@ impl Default for GlickoConfig {
     }
 }
 
-/// Constants used in the Glicko-2 calculation.
+/// Constants used in the Glicko-2 calculations.
 pub struct Glicko2Config {
     /// The tau constant constrains the change in volatility over time.
     /// To cite Mark Glickman himself: "Reasonable choices are between 0.3 and 1.2".
@@ -76,7 +76,7 @@ impl Default for Glicko2Config {
     }
 }
 
-/// Constants used in the TrueSkill calculation.
+/// Constants used in the TrueSkill calculations.
 pub struct TrueSkillConfig {
     /// The probability of draws occurring in match.
     /// The higher the probability, the bigger the updates to the ratings in a non-drawn outcome.  
@@ -143,6 +143,65 @@ impl WengLinConfig {
 }
 
 impl Default for WengLinConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Constants used in the Sticko calculations.  
+/// If all of these are set to `0.0`, this will behave exactly like the [`Glicko`](crate::glicko::glicko) calculations.
+pub struct StickoConfig {
+    /// Controls player deviations across time.  
+    /// The higher this number, the higher the deviation is going to be.  
+    /// By default set to `10.0`.  
+    /// If you want to mimic the [`GlickoConfig`], set this to `0.0`.
+    /// Do not set this to a negative value.
+    pub h: f64,
+    /// A bonus parameter, which gives a rating boost for just participating.  
+    /// Note that setting this to a positive number will create rating inflation over time.  
+    /// By default set to `0.0`.  
+    /// If you want to mimic the [`GlickoConfig`], set this to `0.0`.
+    /// Do not set this to a negative value.
+    pub beta: f64,
+    /// The neighborhood parameter, which shrinks player ratings towards their opponent.  
+    /// By default set to `2.0`.  
+    /// If you want to mimic the [`GlickoConfig`], set this to `0.0`.
+    /// Do not set this to a negative value.
+    pub lambda: f64,
+    /// The advantage parameter of the first player.  
+    /// If your game is biased towards player one set this to a positive number,
+    /// or set this to a negative number if the second player has an advantage.  
+    /// With this you could represent the advantage of playing white in chess,
+    /// or home-team advantage in sports like football and so on.  
+    /// In chess, a value of `30.0` seems to be about correct.  
+    /// By default set to `0.0`.  
+    /// If you want to mimic the [`GlickoConfig`], set this to `0.0`.
+    pub gamma: f64,
+    /// The c value describes how much the rating deviation should decay in each step.
+    /// The higher the value, the more the rating deviation will decay.  
+    /// This is similar to the c value in [`GlickoConfig`].
+    /// Keep in mind this needs to be set lower than the c in the [`GlickoConfig`] if the h value here is not equal to zero.  
+    /// By default set to `10.0`.
+    /// If you want to mimic the [`GlickoConfig`] set this to `63.2`.
+    pub c: f64,
+}
+
+impl StickoConfig {
+    #[must_use]
+    /// Initialize a new `StickoConfig` with a h value of `10.0`, a beta value of `0.0`,
+    /// a lambda value of `2.0` and a gamma value of `0.0`.
+    pub const fn new() -> Self {
+        Self {
+            h: 10.0,
+            beta: 0.0,
+            lambda: 2.0,
+            gamma: 0.0,
+            c: 10.0,
+        }
+    }
+}
+
+impl Default for StickoConfig {
     fn default() -> Self {
         Self::new()
     }

@@ -1,4 +1,4 @@
-//! The TrueSkill rating algorithm, developed by Microsoft for Halo 3.
+//! The TrueSkill rating algorithm, developed by Microsoft for Halo 3.  
 //! Used in the Halo games, the Forza Games, Tom Clancy's: Rainbow Six Siege, and most Xbox Live games.
 //!
 //! Developed specifically for online games with multiple teams and multiple players.

@@ -1,7 +1,7 @@
 //! The Glicko-2 algorithm, an improvement on Glicko and widely used in online games,
 //! like Counter Strike: Global Offensive, Team Fortress 2, Splatoon 2 and most online chess platforms.
 //!
-//! If you are looking for the regular Glicko rating system, please see [`crate::glicko`].
+//! If you are looking for the regular Glicko rating system, please see [`Glicko`](crate::glicko).
 //!
 //! The main improvement over Glicko is the rating volatility which is the expected fluctuation of a players rating,
 //! based on how consistent a player is performing. The lower the volatility, the more consistent a player performs.
@@ -49,7 +49,7 @@ use std::f64::consts::PI;
 
 /// Calculates the [`Glicko2Rating`]s of two players based on their old ratings, deviations, volatilities, and the outcome of the game.
 ///
-/// For the original version, please see [`crate::glicko::glicko`].
+/// For the original version, please see [`Glicko`](crate::glicko).
 ///
 /// Takes in two players as [`Glicko2Rating`]s, an [`Outcome`](Outcomes), and a [`Glicko2Config`].
 ///
