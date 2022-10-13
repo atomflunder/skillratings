@@ -17,6 +17,7 @@
 //! - **[`TrueSkill`](crate::trueskill)**
 //! - **[`Weng-Lin`](crate::weng_lin)**
 //! - **[`Sticko`](crate::sticko)**
+//! - **[`EGF (European Go Federation)`](crate::egf)**
 //! - **[`DWZ (Deutsche Wertungszahl)`](crate::dwz)**
 //! - **[`Ingo`](crate::ingo)**
 //!
@@ -37,7 +38,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.14"
+//! skillratings = "0.15"
 //! ```
 //!
 //! # Examples
@@ -195,6 +196,7 @@
 
 pub mod config;
 pub mod dwz;
+pub mod egf;
 pub mod elo;
 pub mod glicko;
 pub mod glicko2;

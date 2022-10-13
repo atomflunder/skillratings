@@ -14,12 +14,13 @@ Currently supported algorithms:
 - [Glicko](https://docs.rs/skillratings/latest/skillratings/glicko/index.html)
 - [Glicko-2](https://docs.rs/skillratings/latest/skillratings/glicko2/index.html)
 - [TrueSkill](https://docs.rs/skillratings/latest/skillratings/trueskill/index.html)
-- [Weng-Lin (Bayesian Approxmation Method)](https://docs.rs/skillratings/latest/skillratings/weng_lin/index.html)
+- [Weng-Lin (Bayesian Approxmation System)](https://docs.rs/skillratings/latest/skillratings/weng_lin/index.html)
 - [Sticko (Stephenson Rating System)](https://docs.rs/skillratings/latest/skillratings/sticko/index.html)
+- [EGF (European Go Federation)](https://docs.rs/skillratings/latest/skillratings/egf/index.html)
 - [DWZ (Deutsche Wertungszahl)](https://docs.rs/skillratings/latest/skillratings/dwz/index.html)
 - [Ingo](https://docs.rs/skillratings/latest/skillratings/ingo/index.html)
 
-These are mainly known from their usage in chess and online games.
+These are mainly known from their usage in chess and other games.
 
 ## Installation
 
@@ -33,7 +34,7 @@ Alternatively, you can add the following to your `Cargo.toml` file manually:
 
 ```toml
 [dependencies]
-skillratings = "0.14"
+skillratings = "0.15"
 ```
 
 ## Usage and Examples

@@ -32,7 +32,13 @@
 //! let outcome = Outcomes::WIN;
 //!
 //! // The config allows you to specify certain values in the Glicko-2 calculation.
-//! let config = Glicko2Config::new();
+//! // Here we set the Tau value to 0.9, instead of the default 0.5.
+//! // This will increase the change in volatility over time.
+//! // According to Mark Glickman, values between 0.3 and 1.2 are reasonable.
+//! let config = Glicko2Config {
+//!     tau: 0.9,
+//!     ..Default::default()
+//! };
 //!
 //! // The glicko2 function will calculate the new ratings for both players and return them.
 //! let (new_player_one, new_player_two) = glicko2(&player_one, &player_two, &outcome, &config);

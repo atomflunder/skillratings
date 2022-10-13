@@ -28,7 +28,9 @@
 //! let outcome = Outcomes::WIN;
 //!
 //! // The config allows you to specify certain values in the Elo calculation.
-//! let config = EloConfig::new();
+//! // Here we modify the k-value to be 20.0, instead of the usual 32.0.
+//! // To simplify massively: This means the ratings will not change as much.
+//! let config = EloConfig { k: 20.0 } ;
 //!
 //! // The elo function will calculate the new ratings for both players and return them.
 //! let (new_player_one, new_player_two) = elo(&player_one, &player_two, &outcome, &config);
@@ -54,8 +56,8 @@ use crate::{config::EloConfig, outcomes::Outcomes, rating::EloRating};
 /// ```
 /// use skillratings::{elo::elo, outcomes::Outcomes, rating::EloRating, config::EloConfig};
 ///
-/// let player_one = EloRating { rating: 1000.0 };
-/// let player_two = EloRating { rating: 1000.0 };
+/// let player_one = EloRating { rating: 600.0 };
+/// let player_two = EloRating { rating: 711.0 };
 ///
 /// let outcome = Outcomes::WIN;
 ///
@@ -63,8 +65,8 @@ use crate::{config::EloConfig, outcomes::Outcomes, rating::EloRating};
 ///
 /// let (player_one_new, player_two_new) = elo(&player_one, &player_two, &outcome, &config);
 ///
-/// assert!((player_one_new.rating - 1016.0).abs() < f64::EPSILON);
-/// assert!((player_two_new.rating - 984.0).abs() < f64::EPSILON);
+/// assert!((player_one_new.rating.round() - 621.0).abs() < f64::EPSILON);
+/// assert!((player_two_new.rating.round() - 690.0).abs() < f64::EPSILON);
 /// ```
 #[must_use]
 pub fn elo(
@@ -108,8 +110,9 @@ pub fn elo(
 /// ```
 /// use skillratings::{elo::elo_rating_period, outcomes::Outcomes, rating::EloRating, config::EloConfig};
 ///
-/// let player = EloRating::new();
+/// let player = EloRating { rating: 1204.0 };
 ///
+/// // Here we assume that we just play against 3 new players, for simplicity.
 /// let opponent1 = EloRating::new();
 /// let opponent2 = EloRating::new();
 /// let opponent3 = EloRating::new();
@@ -118,13 +121,13 @@ pub fn elo(
 ///     &player,
 ///     &vec![
 ///         (opponent1, Outcomes::WIN),
-///         (opponent2, Outcomes::WIN),
+///         (opponent2, Outcomes::DRAW),
 ///         (opponent3, Outcomes::WIN),
 ///     ],
 ///     &EloConfig::new(),
 /// );
 ///
-/// assert!((new_player.rating.round() - 1046.0).abs() < f64::EPSILON);
+/// assert!((new_player.rating.round() - 1210.0).abs() < f64::EPSILON);
 /// ```
 #[must_use]
 pub fn elo_rating_period(

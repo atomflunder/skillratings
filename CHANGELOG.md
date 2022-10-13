@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.15.0 - 2022-10-13
+
+- Add EGF rating algorithm
+
 ## v0.14.0 - 2022-10-13
 
 - Add Sticko rating algorithm

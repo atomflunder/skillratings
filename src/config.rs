@@ -1,5 +1,8 @@
 //! Contains structs to configure key variables used in the different rating algorithms.
+//!
+//! Not every algorithm needs a config for its calculations.
 
+#[derive(Clone, Copy, Debug)]
 /// Constants used in the Elo calculations.
 pub struct EloConfig {
     /// The k-value is the maximum amount of rating change from a single match.
@@ -23,6 +26,7 @@ impl Default for EloConfig {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 /// Constants used in the Glicko calculations.
 pub struct GlickoConfig {
     /// The c value describes how much the rating deviation should decay in each step.
@@ -46,6 +50,7 @@ impl Default for GlickoConfig {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 /// Constants used in the Glicko-2 calculations.
 pub struct Glicko2Config {
     /// The tau constant constrains the change in volatility over time.
@@ -76,6 +81,7 @@ impl Default for Glicko2Config {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 /// Constants used in the TrueSkill calculations.
 pub struct TrueSkillConfig {
     /// The probability of draws occurring in match.
@@ -115,6 +121,7 @@ impl Default for TrueSkillConfig {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 /// Constants used in the Weng-Lin calculations.
 pub struct WengLinConfig {
     /// The skill-class width, aka the number of difference in rating points
@@ -148,6 +155,7 @@ impl Default for WengLinConfig {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 /// Constants used in the Sticko calculations.  
 /// If all of these are set to `0.0`, this will behave exactly like the [`Glicko`](crate::glicko::glicko) calculations.
 pub struct StickoConfig {
@@ -202,6 +210,37 @@ impl StickoConfig {
 }
 
 impl Default for StickoConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Constants used in the EGF Calculations.
+pub struct EGFConfig {
+    /// The [handicap](https://en.wikipedia.org/wiki/Handicapping_in_Go), of the perspective of player one.  
+    /// As a general rule, one handicap point is about equal to a 100 rating point difference.  
+    ///
+    /// If player one has a handicap in the game,
+    /// you can set this number to the amount of handicap stones given to the opponent.  
+    /// If player two is the one with the handicap, set this number to the negative amount of stones given.  
+    /// If an equal game is played, this value should be 0.0.  
+    /// For example, if player two has a handicap of 4 points (player one starts with 4 stones), set this number to -4.0.  
+    ///
+    /// The maximum number should not exceed 9.0 or -9.0.  
+    /// By default set to 0.0.
+    pub handicap: f64,
+}
+
+impl EGFConfig {
+    #[must_use]
+    /// Initializes a new `EGFConfig` with a handicap value of `0.0`.
+    pub const fn new() -> Self {
+        Self { handicap: 0.0 }
+    }
+}
+
+impl Default for EGFConfig {
     fn default() -> Self {
         Self::new()
     }

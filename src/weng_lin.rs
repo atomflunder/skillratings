@@ -36,7 +36,15 @@
 //! let outcome = Outcomes::WIN;
 //!
 //! // The config allows you to specify certain values in the Weng-Lin calculation.
-//! let config = WengLinConfig::new();
+//! // Here we change the beta value from the default of 25 / 6 ≈ 4.167.
+//! // The beta value measures the difference you need in rating points
+//! // to achieve an 80% win-rate over another player.
+//! // Lower this value if your game is heavily reliant on pure skill,
+//! // or increase it if randomness plays a big factor in the outcome of the game.
+//! let config = WengLinConfig {
+//!     beta: 25.0 / 12.0,
+//!     ..Default::default()
+//! };
 //!
 //! // The weng_lin function will calculate the new ratings for both players and return them.
 //! let (new_player_one, new_player_two) = weng_lin(&player_one, &player_two, &outcome, &config);

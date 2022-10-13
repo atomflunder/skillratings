@@ -149,7 +149,7 @@ impl From<StickoRating> for Glicko2Rating {
 ///
 /// The default rating is 1000.0.
 pub struct DWZRating {
-    /// The player's DWZ rating number.
+    /// The player's DWZ rating number, by default 1000.0.
     pub rating: f64,
     /// The player's DWZ index, how many "events" they have completed.
     pub index: usize,
@@ -353,5 +353,33 @@ impl From<Glicko2Rating> for StickoRating {
             rating: g.rating,
             deviation: g.deviation,
         }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The EGF (European Go Federation) Rating for a player.
+///
+/// If the player has a Go rank or similar,
+/// you can set the rating value manually approximately according to
+/// [this inofficial comparison table](https://forums.online-go.com/t/go-ranks-vs-chess-ratings/41594/42).  
+/// Keep in mind that here, the lowest possible rating is -900.0.
+///
+/// The default rating is 0.0.
+pub struct EGFRating {
+    /// The player's EGF rating number, by default 0.0.
+    pub rating: f64,
+}
+
+impl EGFRating {
+    #[must_use]
+    /// Initialize a new `EGFRating` with a rating of 0.0.
+    pub const fn new() -> Self {
+        Self { rating: 0.0 }
+    }
+}
+
+impl Default for EGFRating {
+    fn default() -> Self {
+        Self::new()
     }
 }

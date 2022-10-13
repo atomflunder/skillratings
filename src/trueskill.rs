@@ -46,7 +46,14 @@
 //! let outcome = Outcomes::WIN;
 //!
 //! // The config allows you to specify certain values in the TrueSkill calculation.
-//! let config = TrueSkillConfig::new();
+//! // We set the draw probability to 0.05 (5%) instead of the default 0.1 (10%).
+//! // This means that in our game, draws will be very rare to occur.
+//! // Change this value to reflect the outcomes of your game.
+//! // For example in chess, it might be a good idea to increase this value.
+//! let config = TrueSkillConfig {
+//!     draw_probability: 0.05,
+//!     ..Default::default()
+//! };
 //!
 //! // The trueskill function will calculate the new ratings for both players and return them.
 //! let (new_player_one, new_player_two) = trueskill(&player_one, &player_two, &outcome, &config);

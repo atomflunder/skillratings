@@ -115,6 +115,8 @@ pub fn sticko(
     outcome: &Outcomes,
     config: &StickoConfig,
 ) -> (StickoRating, StickoRating) {
+    // The calculations here are very similar to the glicko calculations by design.
+    // Sticko is more or less the same as Glicko, but with a few additional parameters.
     let q = 10.0_f64.ln() / 400.0;
 
     let outcome1 = match outcome {
