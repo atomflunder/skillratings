@@ -91,11 +91,11 @@ use std::f64::consts::PI;
 ///
 /// assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
 /// assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
-/// assert!((player_one_new.volatility - 0.05999578094735206).abs() < f64::EPSILON);
+/// assert!((player_one_new.volatility - 0.05999967537233814).abs() < f64::EPSILON);
 ///
 /// assert!((player_two_new.rating.round() - 1338.0).abs() < f64::EPSILON);
 /// assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
-/// assert!((player_two_new.volatility - 0.05999578094735206).abs() < f64::EPSILON);
+/// assert!((player_two_new.volatility - 0.05999967537233814).abs() < f64::EPSILON);
 /// ```
 #[must_use]
 pub fn glicko2(
@@ -217,7 +217,7 @@ pub fn glicko2(
 ///
 /// assert!((new_player.rating.round() - 1464.0).abs() < f64::EPSILON);
 /// assert!((new_player.deviation.round() - 152.0).abs() < f64::EPSILON);
-/// assert!((new_player.volatility - 0.059_982_355_058_921_626).abs() < f64::EPSILON);
+/// assert!((new_player.volatility - 0.059997514049860735).abs() < f64::EPSILON);
 /// ```
 #[must_use]
 pub fn glicko2_rating_period(
