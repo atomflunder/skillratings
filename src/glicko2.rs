@@ -112,11 +112,7 @@ pub fn glicko2(
     let player_one_deviation = player_one.deviation / 173.7178;
     let player_two_deviation = player_two.deviation / 173.7178;
 
-    let outcome1 = match outcome {
-        Outcomes::WIN => 1.0,
-        Outcomes::DRAW => 0.5,
-        Outcomes::LOSS => 0.0,
-    };
+    let outcome1 = outcome.to_chess_points();
     let outcome2 = 1.0 - outcome1;
 
     // We always need the deviation of the opponent in the g function.
@@ -241,11 +237,7 @@ pub fn glicko2_rating_period(
         let opponent_rating = (opponent.rating - 1500.0) / 173.7178;
         let opponent_deviation = opponent.deviation / 173.7178;
 
-        let outcome = match outcome {
-            Outcomes::WIN => 1.0,
-            Outcomes::DRAW => 0.5,
-            Outcomes::LOSS => 0.0,
-        };
+        let outcome = outcome.to_chess_points();
 
         let g = g_value(opponent_deviation);
 
@@ -253,7 +245,9 @@ pub fn glicko2_rating_period(
 
         let v = v_value(g, e);
 
-        let new_volatility = new_volatility(
+        // We need the new volatility in the pre_deviation calculations, and the new deviation in the rating calculations,
+        // as opposed to calculating with the old values like in most other algorithms here.
+        player_volatility = new_volatility(
             player_volatility,
             delta_value(outcome, v, g, e),
             player_deviation,
@@ -261,14 +255,8 @@ pub fn glicko2_rating_period(
             config.tau,
             config.convergence_tolerance,
         );
-
-        let new_deviation = new_deviation(new_pre_deviation(player_deviation, new_volatility), v);
-
-        let new_rating = new_rating(player_rating, new_deviation, outcome, g, e);
-
-        player_rating = new_rating;
-        player_deviation = new_deviation;
-        player_volatility = new_volatility;
+        player_deviation = new_deviation(new_pre_deviation(player_deviation, player_volatility), v);
+        player_rating = new_rating(player_rating, player_deviation, outcome, g, e);
     }
 
     Glicko2Rating {
@@ -312,23 +300,13 @@ pub fn expected_score(player_one: &Glicko2Rating, player_two: &Glicko2Rating) ->
     let player_one_deviation = player_one.deviation / 173.7178;
     let player_two_deviation = player_two.deviation / 173.7178;
 
-    let a1 = a_value(
-        player_one_deviation,
-        player_two_deviation,
-        player_one_rating,
-        player_two_rating,
-    );
-    let a2 = a_value(
-        player_two_deviation,
-        player_one_deviation,
-        player_two_rating,
-        player_one_rating,
-    );
+    let a1 = g_value(player_two_deviation.hypot(player_one_deviation))
+        * (player_one_rating - player_two_rating);
 
-    (
-        (1.0 + (-1.0 * a1).exp()).recip(),
-        (1.0 + (-1.0 * a2).exp()).recip(),
-    )
+    let exp_one = (1.0 + (-a1).exp()).recip();
+    let exp_two = 1.0 - exp_one;
+
+    (exp_one, exp_two)
 }
 
 /// Decays a Rating Deviation Value for a player, if they missed playing in a certain rating period.
@@ -400,7 +378,7 @@ fn g_value(deviation: f64) -> f64 {
 }
 
 fn e_value(rating: f64, opponent_rating: f64, g: f64) -> f64 {
-    (1.0 + (-1.0 * g * (rating - opponent_rating)).exp()).recip()
+    (1.0 + (-g * (rating - opponent_rating)).exp()).recip()
 }
 
 fn v_value(g: f64, e: f64) -> f64 {
@@ -419,23 +397,12 @@ fn f_value(
     volatility: f64,
     tau: f64,
 ) -> f64 {
-    let one = {
-        let i = x.exp() * (delta_square - deviation_square - v - x.exp());
-        let j = 2.0 * (deviation_square + v + x.exp());
-        i / j
-    };
+    let i = (x.exp() * (delta_square - deviation_square - v - x.exp()))
+        / (2.0 * (deviation_square + v + x.exp()).powi(2));
 
-    let two = {
-        let i = x - volatility.powi(2).ln();
-        let j = tau.powi(2);
-        i / j
-    };
+    let j = (x - volatility.powi(2).ln()) / tau.powi(2);
 
-    one - two
-}
-
-fn a_value(deviation: f64, opponent_deviation: f64, rating: f64, opponent_rating: f64) -> f64 {
-    g_value(opponent_deviation.hypot(deviation)) * (rating - opponent_rating)
+    i - j
 }
 
 fn new_volatility(
@@ -446,9 +413,10 @@ fn new_volatility(
     tau: f64,
     convergence_tolerance: f64,
 ) -> f64 {
-    let mut a = old_volatility.powi(2).ln();
     let delta_squared = delta.powi(2);
     let deviation_squared = deviation.powi(2);
+
+    let mut a = old_volatility.powi(2).ln();
     let mut b = if delta_squared > deviation_squared + v {
         (delta_squared - deviation_squared - v).ln()
     } else {
@@ -456,7 +424,7 @@ fn new_volatility(
         while f_value(
             a - k * tau,
             delta_squared,
-            deviation,
+            deviation_squared,
             v,
             old_volatility,
             tau,
@@ -521,8 +489,12 @@ mod tests {
             volatility: 0.06,
         };
 
-        let (player1new, player2new) =
-            glicko2(&player1, &player2, &Outcomes::WIN, &Glicko2Config::new());
+        let config = Glicko2Config {
+            //convergence_tolerance: 0.000_000_000_000_001,
+            ..Default::default()
+        };
+
+        let (player1new, player2new) = glicko2(&player1, &player2, &Outcomes::WIN, &config);
 
         assert!((player1new.rating.round() - 1653.0).abs() < f64::EPSILON);
         assert!((player1new.deviation.round() - 292.0).abs() < f64::EPSILON);
@@ -616,7 +588,7 @@ mod tests {
 
         assert!((player.rating.round() - 1464.0).abs() < f64::EPSILON);
         assert!((player.deviation.round() - 152.0).abs() < f64::EPSILON);
-        assert!((player.volatility - 0.059_982_355_058_921_626).abs() < f64::EPSILON);
+        assert!((player.volatility - 0.059_997_514_049_860_735).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -655,7 +627,7 @@ mod tests {
 
         assert!((new_player.rating.round() - 1527.0).abs() < f64::EPSILON);
         assert!((new_player.deviation.round() - 151.0).abs() < f64::EPSILON);
-        assert!((new_player.volatility - 0.059_972_246_523_740_25).abs() < f64::EPSILON);
+        assert!((new_player.volatility - 0.059_995_448_402_862_785).abs() < f64::EPSILON);
 
         let player = Glicko2Rating {
             rating: 1250.0,
@@ -796,11 +768,11 @@ mod tests {
 
         assert!((player.rating.round() - 1397.0).abs() < f64::EPSILON);
         assert!((player.deviation.round() - 212.0).abs() < f64::EPSILON);
-        assert!(((player.volatility * 100_000.0).round() - 6_016.0).abs() < f64::EPSILON);
+        assert!(((player.volatility * 1_000_000.0).round() - 60_004.0).abs() < f64::EPSILON);
 
         assert!((opponent.rating.round() - 1603.0).abs() < f64::EPSILON);
         assert!((opponent.deviation.round() - 212.0).abs() < f64::EPSILON);
-        assert!(((opponent.volatility * 100_000.0).round() - 6_016.0).abs() < f64::EPSILON);
+        assert!(((opponent.volatility * 1_000_000.0).round() - 60_004.0).abs() < f64::EPSILON);
 
         let mut player = Glicko2Rating::new();
 
@@ -815,11 +787,11 @@ mod tests {
 
         assert!((player.rating.round() - 1248.0).abs() < f64::EPSILON);
         assert!((player.deviation.round() - 176.0).abs() < f64::EPSILON);
-        assert!(((player.volatility * 100_000.0).round() - 6_046.0).abs() < f64::EPSILON);
+        assert!(((player.volatility * 1_000_000.0).round() - 60_001.0).abs() < f64::EPSILON);
 
         assert!((opponent.rating.round() - 1752.0).abs() < f64::EPSILON);
         assert!((opponent.deviation.round() - 176.0).abs() < f64::EPSILON);
-        assert!(((opponent.volatility * 100_000.0).round() - 6_046.0).abs() < f64::EPSILON);
+        assert!(((opponent.volatility * 1_000_000.0).round() - 60_001.0).abs() < f64::EPSILON);
     }
 
     #[test]

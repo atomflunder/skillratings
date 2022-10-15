@@ -77,11 +77,7 @@ pub fn elo(
 ) -> (EloRating, EloRating) {
     let (one_expected, two_expected) = expected_score(player_one, player_two);
 
-    let outcome1 = match outcome {
-        Outcomes::WIN => 1.0,
-        Outcomes::LOSS => 0.0,
-        Outcomes::DRAW => 0.5,
-    };
+    let outcome1 = outcome.to_chess_points();
     let outcome2 = 1.0 - outcome1;
 
     let one_new_elo = config.k.mul_add(outcome1 - one_expected, player_one.rating);
@@ -135,21 +131,22 @@ pub fn elo_rating_period(
     results: &Vec<(EloRating, Outcomes)>,
     config: &EloConfig,
 ) -> EloRating {
-    let mut player = *player;
+    let mut player_rating = player.rating;
 
     for (opponent, result) in results {
-        let (exp, _) = expected_score(&player, opponent);
+        // Normally we would just call expected_points(),
+        // but we would have to construct a rating first which seems inefficent.
+        // So we are just calculating it ourselves.
+        let exp = (1.0 + 10_f64.powf((opponent.rating - player_rating) / 400.0)).recip();
 
-        let outcome = match result {
-            Outcomes::WIN => 1.0,
-            Outcomes::LOSS => 0.0,
-            Outcomes::DRAW => 0.5,
-        };
+        let outcome = result.to_chess_points();
 
-        player.rating = config.k.mul_add(outcome - exp, player.rating);
+        player_rating = config.k.mul_add(outcome - exp, player_rating);
     }
 
-    player
+    EloRating {
+        rating: player_rating,
+    }
 }
 
 /// Calculates the expected score of two players based on their elo rating.
@@ -173,10 +170,10 @@ pub fn elo_rating_period(
 /// ```
 #[must_use]
 pub fn expected_score(player_one: &EloRating, player_two: &EloRating) -> (f64, f64) {
-    (
-        1.0 / (1.0 + 10_f64.powf((player_two.rating - player_one.rating) / 400.0)),
-        1.0 / (1.0 + 10_f64.powf((player_one.rating - player_two.rating) / 400.0)),
-    )
+    let exp_one = (1.0 + 10_f64.powf((player_two.rating - player_one.rating) / 400.0)).recip();
+    let exp_two = 1.0 - exp_one;
+
+    (exp_one, exp_two)
 }
 
 #[cfg(test)]

@@ -94,11 +94,7 @@ pub fn dwz(
     player_two: &DWZRating,
     outcome: &Outcomes,
 ) -> (DWZRating, DWZRating) {
-    let outcome1 = match outcome {
-        Outcomes::WIN => 1.0,
-        Outcomes::DRAW => 0.5,
-        Outcomes::LOSS => 0.0,
-    };
+    let outcome1 = outcome.to_chess_points();
     let outcome2 = 1.0 - outcome1;
 
     let (exp1, exp2) = expected_score(player_one, player_two);
@@ -185,14 +181,8 @@ pub fn dwz(
 /// assert_eq!(new_player.index, 18);
 /// ```
 pub fn dwz_rating_period(player: &DWZRating, results: &Vec<(DWZRating, Outcomes)>) -> DWZRating {
-    let points = results
-        .iter()
-        .map(|r| match r.1 {
-            Outcomes::WIN => 1.0,
-            Outcomes::DRAW => 0.5,
-            Outcomes::LOSS => 0.0,
-        })
-        .sum::<f64>();
+    // DWZ was designed to be used in tournaments, so we do not need to loop over the opponents here.
+    let points = results.iter().map(|r| r.1.to_chess_points()).sum::<f64>();
 
     let expected_points = results
         .iter()
@@ -246,12 +236,12 @@ pub fn dwz_rating_period(player: &DWZRating, results: &Vec<(DWZRating, Outcomes)
 /// assert!(((exp_two * 100.0).round() - 9.0).abs() < f64::EPSILON);
 /// ```
 pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f64) {
-    (
-        (1.0 + 10.0_f64.powf(-1.0 * (1.0 / 400.0) * (player_one.rating - player_two.rating)))
-            .recip(),
-        (1.0 + 10.0_f64.powf(-1.0 * (1.0 / 400.0) * (player_two.rating - player_one.rating)))
-            .recip(),
-    )
+    let exp_one = (1.0
+        + 10.0_f64.powf(-(400.0_f64.recip()) * (player_one.rating - player_two.rating)))
+    .recip();
+    let exp_two = 1.0 - exp_one;
+
+    (exp_one, exp_two)
 }
 
 #[allow(clippy::as_conversions, clippy::cast_precision_loss)]
@@ -318,14 +308,7 @@ pub fn get_first_dwz(player_age: usize, results: &Vec<(DWZRating, Outcomes)>) ->
         return None;
     }
 
-    let points = results
-        .iter()
-        .map(|r| match r.1 {
-            Outcomes::WIN => 1.0,
-            Outcomes::DRAW => 0.5,
-            Outcomes::LOSS => 0.0,
-        })
-        .sum::<f64>();
+    let points = results.iter().map(|r| r.1.to_chess_points()).sum::<f64>();
 
     // If you have a 100% or 0% win rate, we return None.
     if (points - results.len() as f64).abs() < f64::EPSILON || points == 0.0 {
@@ -339,7 +322,7 @@ pub fn get_first_dwz(player_age: usize, results: &Vec<(DWZRating, Outcomes)>) ->
     let p = ((points / results.len() as f64) * 100.0).round() as i64;
 
     // We need to look up the points value in a lookup table:
-    // <https://www.schachbund.de/wertungsordnung-anhang-2-tabellen/articles/wertungsordnung-anhang-21-wahrscheinlichkeitstabelle.html>
+    // https://www.schachbund.de/wertungsordnung-anhang-2-tabellen/articles/wertungsordnung-anhang-21-wahrscheinlichkeitstabelle.html
     // There seems to be no real way to solve this in a better way, sorry.
     // At least we only need one half of this table.
     let probability_table = HashMap::from([

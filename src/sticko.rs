@@ -119,11 +119,7 @@ pub fn sticko(
     // Sticko is more or less the same as Glicko, but with a few additional parameters.
     let q = 10.0_f64.ln() / 400.0;
 
-    let outcome1 = match outcome {
-        Outcomes::WIN => 1.0,
-        Outcomes::DRAW => 0.5,
-        Outcomes::LOSS => 0.0,
-    };
+    let outcome1 = outcome.to_chess_points();
     let outcome2 = 1.0 - outcome1;
 
     let colour1 = 1.0;
@@ -256,11 +252,7 @@ pub fn sticko_rating_period(
     let mut player_deviation = player.deviation;
 
     for (opponent, outcome) in results {
-        let outcome = match outcome {
-            Outcomes::WIN => 1.0,
-            Outcomes::DRAW => 0.5,
-            Outcomes::LOSS => 0.0,
-        };
+        let outcome = outcome.to_chess_points();
 
         let g = g_value(q, opponent.deviation);
 
@@ -270,7 +262,7 @@ pub fn sticko_rating_period(
 
         let lambda = (config.lambda / 100.0) * (opponent.rating - player_rating);
 
-        let new_rating = new_rating(
+        player_rating = new_rating(
             player_rating,
             player_deviation,
             q,
@@ -281,11 +273,7 @@ pub fn sticko_rating_period(
             config.beta,
             lambda,
         );
-
-        let new_deviation = new_deviation(player_deviation, d, config.h);
-
-        player_rating = new_rating;
-        player_deviation = new_deviation;
+        player_deviation = new_deviation(player_deviation, d, config.h);
     }
 
     StickoRating {
@@ -334,11 +322,12 @@ pub fn expected_score(
     let q = 10_f64.ln() / 400.0;
     let g = g_value(q, player_one.deviation.hypot(player_two.deviation));
 
-    let expected_one = (1.0
-        + 10_f64.powf(-1.0 * g * (player_one.rating + config.gamma - player_two.rating) / 400.0))
+    let exp_one = (1.0
+        + 10_f64.powf(-g * (player_one.rating + config.gamma - player_two.rating) / 400.0))
     .recip();
+    let exp_two = 1.0 - exp_one;
 
-    (expected_one, (1.0 - expected_one))
+    (exp_one, exp_two)
 }
 
 #[must_use]
@@ -430,8 +419,7 @@ fn g_value(q: f64, opponent_deviation: f64) -> f64 {
 }
 
 fn e_value(g: f64, rating: f64, opponent_rating: f64, advantage: f64, colour: f64) -> f64 {
-    (1.0 + (10_f64.powf(-1.0 * g * advantage.mul_add(colour, rating - opponent_rating) / 400.0)))
-        .recip()
+    (1.0 + (10_f64.powf(-g * advantage.mul_add(colour, rating - opponent_rating) / 400.0))).recip()
 }
 
 fn d_value(q: f64, g: f64, e: f64) -> f64 {

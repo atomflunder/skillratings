@@ -91,11 +91,7 @@ pub fn glicko(
 ) -> (GlickoRating, GlickoRating) {
     let q = 10_f64.ln() / 400.0;
 
-    let outcome1 = match outcome {
-        Outcomes::WIN => 1.0,
-        Outcomes::DRAW => 0.5,
-        Outcomes::LOSS => 0.0,
-    };
+    let outcome1 = outcome.to_chess_points();
     let outcome2 = 1.0 - outcome1;
 
     let g1 = g_value(q, player_two.deviation);
@@ -204,11 +200,7 @@ pub fn glicko_rating_period(
     let mut player_deviation = player.deviation;
 
     for (opponent, outcome) in results {
-        let outcome = match outcome {
-            Outcomes::WIN => 1.0,
-            Outcomes::DRAW => 0.5,
-            Outcomes::LOSS => 0.0,
-        };
+        let outcome = outcome.to_chess_points();
 
         let g = g_value(q, opponent.deviation);
 
@@ -216,12 +208,8 @@ pub fn glicko_rating_period(
 
         let d = d_value(q, g, e);
 
-        let new_rating = new_rating(player_rating, player_deviation, outcome, q, g, e, d);
-
-        let new_deviation = new_deviation(player_deviation, d);
-
-        player_rating = new_rating;
-        player_deviation = new_deviation;
+        player_rating = new_rating(player_rating, player_deviation, outcome, q, g, e, d);
+        player_deviation = new_deviation(player_deviation, d);
     }
 
     GlickoRating {
@@ -257,10 +245,10 @@ pub fn expected_score(player_one: &GlickoRating, player_two: &GlickoRating) -> (
     let q = 10_f64.ln() / 400.0;
     let g = g_value(q, player_one.deviation.hypot(player_two.deviation));
 
-    let expected_one =
-        (1.0 + 10_f64.powf(-1.0 * g * (player_one.rating - player_two.rating) / 400.0)).recip();
+    let exp_one = (1.0 + 10_f64.powf(-g * (player_one.rating - player_two.rating) / 400.0)).recip();
+    let exp_two = 1.0 - exp_one;
 
-    (expected_one, (1.0 - expected_one))
+    (exp_one, exp_two)
 }
 
 #[must_use]
@@ -338,7 +326,7 @@ fn g_value(q: f64, opponent_deviation: f64) -> f64 {
 }
 
 fn e_value(g: f64, rating: f64, opponent_rating: f64) -> f64 {
-    (1.0 + (10_f64.powf(-1.0 * g * (rating - opponent_rating) / 400.0))).recip()
+    (1.0 + (10_f64.powf(-g * (rating - opponent_rating) / 400.0))).recip()
 }
 
 fn d_value(q: f64, g: f64, e: f64) -> f64 {

@@ -1,7 +1,7 @@
 //! The EGF (European Go Federation) rating system is a variation of the Elo rating system, adapted for playing Go.  
 //! Used for calculating Go player ratings in Europe since 1998.
 //!
-//! The ratings are loosely centered around the Go ranks, ranging from 30 *kyu* to 9 *dan*.  
+//! The ratings are loosely centered around the Go ranks, ranging from 30 *kyu* (lowest) to 9 *dan* (highest).  
 //! A rating of 2100 equals a rank of 1 *dan*, and 1 rank up and down equals a gain or loss of around 100 points.  
 //! So a 2 *dan* rank would equal around 2200 points, and so on. The lowest rank, 30 *kyu*, is equal to -900 points.  
 //! You start at a rating of 0, around 21 *kyu*.
@@ -94,11 +94,7 @@ pub fn egf(
 
     let (exp1, exp2) = expected_score(player_one, player_two, config);
 
-    let outcome1 = match outcome {
-        Outcomes::WIN => 1.0,
-        Outcomes::LOSS => 0.0,
-        Outcomes::DRAW => 0.5,
-    };
+    let outcome1 = outcome.to_chess_points();
     let outcome2 = 1.0 - outcome1;
 
     let new_rating1 = new_rating(player_one.rating, con1, outcome1, exp1, bonus1);
@@ -122,9 +118,9 @@ pub fn egf(
 ///
 /// ---
 ///
-/// ⚠ _**Important note:**_ The parameters intentionally work different from other rating_period functions here.  
-/// In most cases the config is a separate parameter, because holds static values that should not change from game-to-game.
-/// Here the config is in the tuple together with the results, because the handicaps will change in each game if they are used.  
+/// 📌 _**Important note:**_ The parameters intentionally work different from other rating_period functions here.  
+/// In most cases the config is a separate parameter, because it holds static values that should not change from game-to-game.  
+/// Here, the config is in the tuple together with the results, because the handicaps will likely change each game, if used.  
 /// Thus it would not make sense to have the config as its own separate parameter, disconnected from the game results.
 ///
 /// ---
@@ -136,7 +132,7 @@ pub fn egf(
 /// the rating will not update in between games of a tournament, in contrast to the other rating_period algorithms.  
 /// That means that for example, in game 5 of a tournament,
 /// the ratings will still be calculated with the ratings *before* game 1,
-/// and not after game 4, as you might expect.
+/// and not with the ratings after game 4, as you might expect.
 ///
 /// # Examples
 /// ```
@@ -179,13 +175,9 @@ pub fn egf_rating_period(
     for (opponent, result, config) in results {
         let (exp1, _) = expected_score(player, opponent, config);
 
-        let outcome1 = match result {
-            Outcomes::WIN => 1.0,
-            Outcomes::LOSS => 0.0,
-            Outcomes::DRAW => 0.5,
-        };
+        let outcome = result.to_chess_points();
 
-        rating_change += new_rating(player.rating, con, outcome1, exp1, bonus) - player.rating;
+        rating_change += new_rating(player.rating, con, outcome, exp1, bonus) - player.rating;
     }
 
     EGFRating {
@@ -227,7 +219,7 @@ pub fn expected_score(
         (0.0, config.handicap.abs())
     };
 
-    let exp_one = 1.0 / (1.0 + (beta(player_two.rating, h2) - beta(player_one.rating, h1)).exp());
+    let exp_one = (1.0 + (beta(player_two.rating, h2) - beta(player_one.rating, h1)).exp()).recip();
 
     (exp_one, 1.0 - exp_one)
 }
@@ -237,6 +229,8 @@ fn new_rating(rating: f64, con: f64, score: f64, exp_score: f64, bonus: f64) -> 
     (con.mul_add(score - exp_score, rating) + bonus).max(-900.0)
 }
 
+/// This factor determines the rating volatility.
+/// Think of it like the k-value in Elo, but dynamic to your rating.
 fn con(rating: f64) -> f64 {
     ((3300.0 - rating) / 200.0).powf(1.6)
 }

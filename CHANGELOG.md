@@ -2,6 +2,12 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.15.1 - 2022-10-15
+
+- Increase performance and readability of some functions
+- Added `to_chess_points()` function to `Outcomes` enum
+- Fix slight inaccuracy (<0.01%) in Glicko-2 volatility calculations
+
 ## v0.15.0 - 2022-10-13
 
 - Add EGF rating algorithm

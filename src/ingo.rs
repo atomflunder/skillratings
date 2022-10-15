@@ -81,29 +81,14 @@ pub fn ingo(
     player_two: &IngoRating,
     outcome: &Outcomes,
 ) -> (IngoRating, IngoRating) {
-    let outcome1 = match outcome {
-        Outcomes::WIN => 1.0,
-        Outcomes::DRAW => 0.5,
-        Outcomes::LOSS => 0.0,
-    };
-
+    let outcome1 = outcome.to_chess_points();
     let outcome2 = 1.0 - outcome1;
 
     let perf1 = performance(player_two.rating, outcome1);
     let perf2 = performance(player_one.rating, outcome2);
 
-    // Similar to the DWZ algorithm, we use the age of the player to get the development coefficient.
-    let development1 = match player_one.age {
-        0..=20 => 10.0,
-        21..=25 => 15.0,
-        _ => 20.0,
-    };
-
-    let development2 = match player_two.age {
-        0..=20 => 10.0,
-        21..=25 => 15.0,
-        _ => 20.0,
-    };
+    let development1 = age_to_devcoefficent(player_one.age);
+    let development2 = age_to_devcoefficent(player_two.age);
 
     let new_rating1 = perf1.mul_add(1.0, player_one.rating * development1) / (1.0 + development1);
     let new_rating2 = perf2.mul_add(1.0, player_two.rating * development2) / (1.0 + development2);
@@ -174,21 +159,11 @@ pub fn ingo_rating_period(
     player: &IngoRating,
     results: &Vec<(IngoRating, Outcomes)>,
 ) -> IngoRating {
-    let development = match player.age {
-        0..=20 => 10.0,
-        21..=25 => 15.0,
-        _ => 20.0,
-    };
+    // Ingo was meant to be used in tournaments, so we do not need to loop over the opponents here.
+    let development = age_to_devcoefficent(player.age);
 
-    let average_points = results
-        .iter()
-        .map(|r| match r.1 {
-            Outcomes::WIN => 1.0,
-            Outcomes::DRAW => 0.5,
-            Outcomes::LOSS => 0.0,
-        })
-        .sum::<f64>()
-        / results.len() as f64;
+    let average_points =
+        results.iter().map(|r| r.1.to_chess_points()).sum::<f64>() / results.len() as f64;
 
     let average_opponent_rating =
         results.iter().map(|r| r.0.rating).sum::<f64>() / results.len() as f64;
@@ -233,12 +208,22 @@ pub fn ingo_rating_period(
 /// ```
 pub fn expected_score(player_one: &IngoRating, player_two: &IngoRating) -> (f64, f64) {
     let exp_one = 0.5 + (player_two.rating - player_one.rating) / 100.0;
+    let exp_two = 1.0 - exp_one;
 
-    (exp_one, 1.0 - exp_one)
+    (exp_one, exp_two)
 }
 
 fn performance(average_rating: f64, score: f64) -> f64 {
     average_rating - (100.0 * score - 50.0)
+}
+
+/// Similar to the DWZ algorithm, we use the age of the player to get the development coefficient.
+const fn age_to_devcoefficent(age: usize) -> f64 {
+    match age {
+        0..=20 => 10.0,
+        21..=25 => 15.0,
+        _ => 20.0,
+    }
 }
 
 #[cfg(test)]
