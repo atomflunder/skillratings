@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.15.2 - 2022-10-16
+
+- Calculating Glicko rating period and Glicko-2 rating period properly now
+
 ## v0.15.1 - 2022-10-15
 
 - Increase performance and readability of some functions

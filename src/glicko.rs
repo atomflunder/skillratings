@@ -139,6 +139,10 @@ pub fn glicko(
 
 /// The "traditional" way of calculating a [`GlickoRating`] of a player in a rating period.
 ///
+/// Note that in this case, all of the matches are considered to be played at once.  
+/// This means that the player will not get updated in-between matches, as you might expect.  
+/// This will result in *slightly* different results than if you were to use the [`glicko`] function in a loop.
+///
 /// Takes in a player as an [`GlickoRating`] and their results as a Vec of tuples containing the opponent as an [`GlickoRating`],
 /// the outcome of the game as an [`Outcome`](Outcomes) and a [`GlickoConfig`].
 ///
@@ -182,7 +186,7 @@ pub fn glicko(
 /// let new_player = glicko_rating_period(&player, &results, &config);
 ///
 /// assert!((new_player.rating.round() - 1464.0).abs() < f64::EPSILON);
-/// assert!((new_player.deviation - 151.253_743_431_783_2).abs() < f64::EPSILON);
+/// assert!((new_player.deviation.round() - 151.0).abs() < f64::EPSILON);
 /// ```
 #[must_use]
 pub fn glicko_rating_period(
@@ -196,25 +200,41 @@ pub fn glicko_rating_period(
         return decay_deviation(player, config);
     }
 
-    let mut player_rating = player.rating;
-    let mut player_deviation = player.deviation;
+    let d_sq: f64 = (q.powi(2)
+        * results
+            .iter()
+            .map(|r| {
+                let g = g_value(q, r.0.deviation);
 
-    for (opponent, outcome) in results {
-        let outcome = outcome.to_chess_points();
+                let e = e_value(g, player.rating, r.0.rating);
 
-        let g = g_value(q, opponent.deviation);
+                g.powi(2) * e * (1.0 - e)
+            })
+            .sum::<f64>())
+    .recip();
 
-        let e = e_value(g, player_rating, opponent.rating);
+    let m = results
+        .iter()
+        .map(|r| {
+            let g = g_value(q, r.0.deviation);
 
-        let d = d_value(q, g, e);
+            let e = e_value(g, player.rating, r.0.rating);
 
-        player_rating = new_rating(player_rating, player_deviation, outcome, q, g, e, d);
-        player_deviation = new_deviation(player_deviation, d);
-    }
+            let s = r.1.to_chess_points();
+
+            g * (s - e)
+        })
+        .sum::<f64>();
+
+    let new_rating =
+        (q / (player.deviation.powi(2).recip() + d_sq.recip())).mul_add(m, player.rating);
+    let new_deviation = (player.deviation.powi(2).recip() + d_sq.recip())
+        .recip()
+        .sqrt();
 
     GlickoRating {
-        rating: player_rating,
-        deviation: player_deviation,
+        rating: new_rating,
+        deviation: new_deviation,
     }
 }
 
@@ -338,8 +358,6 @@ mod tests {
     use super::*;
 
     #[test]
-    /// This test is taken directly from the official glicko example.  
-    /// <http://www.glicko.net/glicko/glicko.pdf>
     fn test_glicko() {
         let player1 = GlickoRating {
             rating: 1500.0,
@@ -372,6 +390,8 @@ mod tests {
     }
 
     #[test]
+    /// This test is taken directly from the official glicko example.  
+    /// <http://www.glicko.net/glicko/glicko.pdf>
     fn test_glicko_rating_period() {
         let player = GlickoRating {
             rating: 1500.0,
@@ -395,14 +415,14 @@ mod tests {
 
         let results = vec![
             (opponent1, Outcomes::WIN),
-            (opponent2, Outcomes::DRAW),
+            (opponent2, Outcomes::LOSS),
             (opponent3, Outcomes::LOSS),
         ];
 
         let new_player = glicko_rating_period(&player, &results, &GlickoConfig::new());
 
-        assert!((new_player.rating.round() - 1527.0).abs() < f64::EPSILON);
-        assert!((new_player.deviation - 150.607_779_021_875_13).abs() < f64::EPSILON);
+        assert!((new_player.rating.round() - 1464.0).abs() < f64::EPSILON);
+        assert!((new_player.deviation - 151.398_902_447_969_33).abs() < f64::EPSILON);
 
         let player = GlickoRating {
             rating: 1500.0,
