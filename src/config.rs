@@ -156,8 +156,10 @@ impl Default for WengLinConfig {
 }
 
 #[derive(Clone, Copy, Debug)]
-/// Constants used in the Sticko calculations.  
-/// If all of these are set to `0.0`, this will behave exactly like the [`Glicko`](crate::glicko::glicko) calculations.
+/// Constants used in the Sticko calculations.
+///
+/// If the `h`, `beta`, `lambda` and `gamma` parameters are set to `0.0`,
+/// this will behave exactly like the [`Glicko`](crate::glicko::glicko) calculations.
 pub struct StickoConfig {
     /// Controls player deviations across time.  
     /// The higher this number, the higher the deviation is going to be.  
@@ -241,6 +243,65 @@ impl EGFConfig {
 }
 
 impl Default for EGFConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Constants used in the Glicko-Boost calculations.
+///
+/// If the `eta` parameter is set to `0.0`,
+/// this will behave exactly like the [`Glicko`](crate::glicko::glicko) calculations.
+pub struct GlickoBoostConfig {
+    /// The advantage parameter of the first player.  
+    /// If your game is biased towards player one set this to a positive number,
+    /// or set this to a negative number if the second player has an advantage.  
+    /// With this you could represent the advantage of playing white in chess,
+    /// or home-team advantage in sports like football and so on.  
+    /// In chess, a value of `30.0` seems to be about correct.  
+    /// By default set to `0.0`.  
+    /// If you want to mimic the [`GlickoConfig`], set this to `0.0`.
+    pub eta: f64,
+    /// The "exceptional performance" threshold.  
+    /// For outstanding performances, the rating deviation of the player will get boosted by the b values.
+    /// By default set to `1.96`, which is approximately equal to 2.5% of performances.  
+    /// The higher this value, the harder it is to reach the threshold.  
+    /// If you want to mimic the [`GlickoConfig`], set this to `0.0`.
+    pub k: f64,
+    /// The rating deviation boost factors. A tuple of 2 [`f64`]s.
+    /// The first value is multiplicative, the second additive.  
+    /// By default set to 0.20139 and 17.5.  
+    /// If k is set to 0, these will do nothing.  
+    /// If you want to mimic the [`GlickoConfig`], set both of these to `0.0`.
+    pub b: (f64, f64),
+    /// The rating deviation increase factors. A tuple of 5 [`f64`]s.
+    /// These values regulate the rating deviation increase of player's who have not played in a rating period.  
+    /// By default set to 5.83733, -1.75374e-04, -7.080124e-05, 0.001733792, and 0.00026706.
+    pub alpha: (f64, f64, f64, f64, f64),
+}
+
+impl GlickoBoostConfig {
+    #[must_use]
+    /// Initialize a new `GlickoBoostConfig` with a eta value of 30.0, a k value of 1.96,
+    /// b values of 0.20139 and 17.5, and alpha values of 5.83733, -1.75374e-04, -7.080124e-05, 0.001733792, 0.00026706.
+    pub const fn new() -> Self {
+        Self {
+            eta: 30.0,
+            k: 1.96,
+            b: (0.20139, 17.5),
+            alpha: (
+                5.837_33,
+                -1.753_74e-04,
+                -7.080_124e-05,
+                0.001_733_792,
+                0.000_267_06,
+            ),
+        }
+    }
+}
+
+impl Default for GlickoBoostConfig {
     fn default() -> Self {
         Self::new()
     }

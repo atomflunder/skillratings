@@ -353,7 +353,7 @@ pub fn decay_deviation(player: &Glicko2Rating) -> Glicko2Rating {
 
     Glicko2Rating {
         rating: player.rating,
-        deviation: new_player_deviation * 173.7178,
+        deviation: (new_player_deviation * 173.7178).min(350.0),
         volatility: player.volatility,
     }
 }
@@ -729,6 +729,28 @@ mod tests {
         assert!((player_two_decayed.deviation.round() - 96.0).abs() < f64::EPSILON);
         assert!((player_three_decayed.deviation.round() - 37.0).abs() < f64::EPSILON);
         assert!((player_three_decayed_2.deviation.round() - 38.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_single_rp() {
+        let player = Glicko2Rating {
+            rating: 1200.0,
+            deviation: 25.0,
+            volatility: 0.05999,
+        };
+        let opponent = Glicko2Rating {
+            rating: 1500.0,
+            deviation: 34.0,
+            volatility: 0.05923,
+        };
+
+        let config = Glicko2Config::new();
+
+        let (np, _) = glicko2(&player, &opponent, &Outcomes::WIN, &config);
+
+        let rp = glicko2_rating_period(&player, &vec![(opponent, Outcomes::WIN)], &config);
+
+        assert_eq!(rp, np);
     }
 
     #[test]

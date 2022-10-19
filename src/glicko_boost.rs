@@ -1,0 +1,832 @@
+//! The Glicko-Boost rating algorithm, an improvement on the Glicko rating system designed specifically for chess.  
+//! Allows for player advantages, designed for a chess outcome prediction competition.
+//!
+//! For the original Glicko algorithm, please see [`Glicko`](crate::glicko), or [`Glicko-2`](crate::glicko2).  
+//! For an alternative update to the Glicko system, please see [`Sticko`](crate::sticko).
+//!
+//! In 2012, the data prediction website [Kaggle](https://kaggle.com) hosted the "FIDE/Deloitte Chess Rating Challenge"
+//!  where competitors where asked to create a new, more accurate chess rating system.  
+//! This is the improved Glicko rating system that Mark Glickman entered.
+//!
+//! The main improvement over Glicko are the new configurable parameters found in the [`GlickoBoostConfig`]:
+//!
+//! - Eta (η) an advantage parameter that accounts for inherent advantages in-game (White in Chess, etc.)
+//! - B1 and B2 are boost parameters that increase Rating Deviations for "exceptional performances", controlled by the k-parameter
+//! - Alpha (α) 0-4 are five parameters to decay idle player's Rating Deviations more accurately.
+//!
+//! These make Glicko-Boost more configurable and possibly more accurate than the Glicko algorithm.
+//! The Rating Boost allows over-achieving players to climb incredibly quickly.  
+//! When all parameters (except Alpha (α)) are set to 0, the Glicko-Boost algorithm will produce the exact same results as Glicko.
+//!
+//! Please note that in this implementation, it does not make much sense to re-rate the player's as described in the [original paper](http://glicko.net/glicko/glicko-boost.pdf),
+//! due to the fact that we only play each player once, and not rate a whole tournament.  
+//! This means that compared to Table 3 in the original paper, we "skip" Steps 2 and 4, the ratings that are calculated here are comparable to the ratings described in Step 3.
+//!
+//! # Quickstart
+//!
+//! ```
+//! use skillratings::{
+//!     glicko_boost::glicko_boost,
+//!     outcomes::Outcomes,
+//!     rating::GlickoBoostRating,
+//!     config::GlickoBoostConfig,
+//! };
+//!
+//! // Initialize a new player rating.
+//! let player_one = GlickoBoostRating::new();
+//!
+//! // Or you can initialize it with your own values of course.
+//! // Imagine these numbers being pulled from a database.
+//! let (some_rating, some_deviation) = (1325.0, 230.0);
+//! let player_two = GlickoBoostRating{
+//!     rating: some_rating,
+//!     deviation: some_deviation,
+//! };
+//!
+//! // The outcome of the match is from the perspective of player one.
+//! let outcome = Outcomes::WIN;
+//!
+//! // The config allows you to specify certain values in the Glicko-Boost calculation.
+//! let config = GlickoBoostConfig {
+//!     // The eta value describes the advantage of player_one.
+//!     // 30.0 is roughly accurate for playing White in Chess.
+//!     // If player_two was to play White, change this to -30.0.
+//!     // By default it is set to 30.0.
+//!     // We set this to 0 here to rate an equal game.
+//!     eta: 0.0,
+//!     // We leave the other settings at their default values.
+//!     ..Default::default()
+//! };
+//!
+//! // The glicko_boost function will calculate the new ratings for both players and return them.
+//! let (new_one, new_two) = glicko_boost(&player_one, &player_two, &outcome, &config);
+//! ```
+//!
+//! # More Information
+//!
+//! - [Original Paper (PDF)](http://glicko.net/glicko/glicko-boost.pdf)
+//! - [FIDE/Deloitte Chess Rating Challenge](https://www.kaggle.com/c/ChessRatings2)
+//! - [Wikipedia Article for Glicko and Glicko-2](https://en.wikipedia.org/wiki/Glicko_rating_system)
+
+use std::f64::consts::PI;
+
+use crate::{config::GlickoBoostConfig, outcomes::Outcomes, rating::GlickoBoostRating};
+
+#[must_use]
+/// Calculates the [`GlickoBoostRating`]s of two players based on their old ratings, deviations, and the outcome of the game.
+///
+/// Please see [`Glicko`](crate::glicko) for calculating with Glicko.
+///
+/// Takes in two players as [`GlickoBoostRating`]s, an [`Outcome`](Outcomes) and a [`GlickoBoostConfig`].
+///
+/// Instead of the traditional way of calculating the Glicko-Boost rating for only one player only using a list of results,
+/// we are calculating the Glicko-Boost rating for two players at once, like in the Elo calculation,
+/// to make it easier to see instant results.
+///
+/// For the traditional way of calculating a Glicko-Boost rating please see [`glicko_boost_rating_period`].
+///
+/// The outcome of the match is in the perspective of `player_one`.
+/// This means [`Outcomes::WIN`] is a win for `player_one` and [`Outcomes::LOSS`] is a win for `player_two`.
+///
+/// If you have set up the [`GlickoBoostConfig`] to account for an advantage,
+/// this is also determined to be *in favour* the first player, and *against* the second.
+///
+/// # Examples
+/// ```
+/// use skillratings::{
+///     glicko_boost::glicko_boost,
+///     outcomes::Outcomes,
+///     rating::GlickoBoostRating,
+///     config::GlickoBoostConfig
+/// };
+///
+/// let player_one = GlickoBoostRating {
+///     rating: 1500.0,
+///     deviation: 350.0,
+/// };
+/// let player_two = GlickoBoostRating {
+///     rating: 1500.0,
+///     deviation: 350.0,
+/// };
+///
+/// let outcome = Outcomes::WIN;
+///
+/// let config = GlickoBoostConfig {
+///     // Player two plays as white in this example.
+///     eta: -30.0,
+///     ..Default::default()
+/// };
+///
+/// let (player_one_new, player_two_new) = glicko_boost(&player_one, &player_two, &outcome, &config);
+///
+/// assert!((player_one_new.rating.round() - 1672.0).abs() < f64::EPSILON);
+/// assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+///
+/// assert!((player_two_new.rating.round() - 1328.0).abs() < f64::EPSILON);
+/// assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// ```
+pub fn glicko_boost(
+    player_one: &GlickoBoostRating,
+    player_two: &GlickoBoostRating,
+    outcome: &Outcomes,
+    config: &GlickoBoostConfig,
+) -> (GlickoBoostRating, GlickoBoostRating) {
+    let q = 10_f64.ln() / 400.0;
+
+    let outcome1 = outcome.to_chess_points();
+    let outcome2 = 1.0 - outcome1;
+
+    let colour1 = 1.0;
+    let colour2 = -1.0;
+
+    let g1 = g_value(q, player_two.deviation);
+    let g2 = g_value(q, player_one.deviation);
+
+    let e1 = e_value(
+        g1,
+        player_one.rating,
+        player_two.rating,
+        config.eta,
+        colour1,
+    );
+    let e2 = e_value(
+        g2,
+        player_two.rating,
+        player_one.rating,
+        config.eta,
+        colour2,
+    );
+
+    let d1 = d_value(q, g1, e1);
+    let d2 = d_value(q, g2, e2);
+
+    let z1 = z_value(g1, e1, outcome1);
+    let z2 = z_value(g2, e2, outcome2);
+
+    let new_deviation1 = new_deviation(player_one.deviation, d1, z1, config);
+    let new_deviation2 = new_deviation(player_two.deviation, d2, z2, config);
+
+    let new_rating1 = new_rating(player_one.rating, new_deviation1, outcome1, q, g1, e1);
+    let new_rating2 = new_rating(player_two.rating, new_deviation2, outcome2, q, g2, e2);
+
+    (
+        GlickoBoostRating {
+            rating: new_rating1,
+            deviation: new_deviation1,
+        },
+        GlickoBoostRating {
+            rating: new_rating2,
+            deviation: new_deviation2,
+        },
+    )
+}
+
+#[must_use]
+/// The "traditional" way of calculating a [`GlickoBoostRating`] of a player in a rating period.
+///
+/// Takes in a player as an [`GlickoBoostRating`] and their results as a Vec of tuples containing the opponent as a [`GlickoBoostRating`],
+/// the outcome of the game as an [`Outcome`](Outcomes) and a [`bool`] specifying if the player was playing as player one, and a [`GlickoBoostConfig`].
+///
+/// ---
+///
+/// 📌 _**Important note:**_ We need an added parameter in the results tuple here.    
+/// The boolean specifies if the player was playing as the first player, aka White in Chess.
+/// If set to `true` the player was playing as White, if set to `false` the player was playing as Black.  
+/// In the [`glicko_boost`] function this is determined by the order of players that are input to the function, but we cannot do this here,
+/// and because it likely changes from game-to-game, we need a separate parameter controlling it.
+///
+/// The colour you play in each game matters if the [`GlickoBoostConfig`] is set up with an advantge for the first player.  
+/// It makes sense to do so in Chess, or Sports with an home-team-advantage.
+///
+/// ---
+///
+/// The outcome of the match is in the perspective of the player.
+/// This means [`Outcomes::WIN`] is a win for the player and [`Outcomes::LOSS`] is a win for the opponent.
+///
+/// If the player's results are empty, the player's rating deviation will automatically be decayed using [`decay_deviation`].
+///
+/// # Examples
+/// ```
+/// use skillratings::{
+///     glicko_boost::glicko_boost_rating_period,
+///     outcomes::Outcomes,
+///     rating::GlickoBoostRating,
+///     config::GlickoBoostConfig
+/// };
+///
+/// let player = GlickoBoostRating {
+///     rating: 1500.0,
+///     deviation: 200.0,
+/// };
+///
+/// let opponent1 = GlickoBoostRating {
+///     rating: 1400.0,
+///     deviation: 30.0,
+/// };
+///
+/// let opponent2 = GlickoBoostRating {
+///     rating: 1550.0,
+///     deviation: 100.0,
+/// };
+///
+/// let opponent3 = GlickoBoostRating {
+///     rating: 1700.0,
+///     deviation: 300.0,
+/// };
+///
+/// let results = vec![
+///     // The player was playing as white.
+///     (opponent1, Outcomes::WIN, true),
+///     // The player was playing as black.
+///     (opponent2, Outcomes::LOSS, false),
+///     (opponent3, Outcomes::LOSS, true),
+/// ];
+///
+/// let config = GlickoBoostConfig::new();
+///
+/// let new_player = glicko_boost_rating_period(&player, &results, &config);
+///
+/// assert!((new_player.rating.round() - 1461.0).abs() < f64::EPSILON);
+/// assert!((new_player.deviation.round() - 152.0).abs() < f64::EPSILON);
+/// ```
+pub fn glicko_boost_rating_period(
+    player: &GlickoBoostRating,
+    results: &Vec<(GlickoBoostRating, Outcomes, bool)>,
+    config: &GlickoBoostConfig,
+) -> GlickoBoostRating {
+    let q = 10_f64.ln() / 400.0;
+
+    if results.is_empty() {
+        return decay_deviation(player, config);
+    }
+
+    let d_sum = results
+        .iter()
+        .map(|r| {
+            let g = g_value(q, r.0.deviation);
+
+            let e = e_value(
+                g,
+                player.rating,
+                r.0.rating,
+                config.eta,
+                if r.2 { 1.0 } else { -1.0 },
+            );
+
+            g.powi(2) * e * (1.0 - e)
+        })
+        .sum::<f64>();
+
+    let d_sq: f64 = (q.powi(2) * d_sum).recip();
+
+    let m = results
+        .iter()
+        .map(|r| {
+            let g = g_value(q, r.0.deviation);
+
+            let e = e_value(
+                g,
+                player.rating,
+                r.0.rating,
+                config.eta,
+                if r.2 { 1.0 } else { -1.0 },
+            );
+
+            let s = r.1.to_chess_points();
+
+            g * (s - e)
+        })
+        .sum::<f64>();
+
+    let z = m / d_sum.sqrt();
+
+    let new_deviation = new_deviation(player.deviation, d_sq, z, config);
+
+    let new_rating = (new_deviation.powi(2) * q).mul_add(m, player.rating);
+
+    GlickoBoostRating {
+        rating: new_rating,
+        deviation: new_deviation,
+    }
+}
+
+#[must_use]
+/// Calculates the expected outcome of two players based on Glicko-Boost.
+///
+/// Takes in two players as [`GlickoBoostRating`]s and a [`GlickoBoostConfig`] and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near 0.5 mean a draw is likely to occur.
+///
+/// In the config you can specify an advantage or disadvantage parameter for player one, which will affect the expected score.
+///
+/// # Examples
+/// ```
+/// use skillratings::{
+///     glicko_boost::expected_score, rating::GlickoBoostRating, config::GlickoBoostConfig
+/// };
+///
+/// let player_one = GlickoBoostRating {
+///     rating: 2500.0,
+///     deviation: 41.0,
+/// };
+/// let player_two = GlickoBoostRating {
+///     rating: 1950.0,
+///     deviation: 320.0,
+/// };
+///
+/// let config = GlickoBoostConfig {
+///     // We give an advantage of 30 rating points to player two.
+///     eta: -30.0,
+///     ..Default::default()
+/// };
+///
+/// let (exp_one, exp_two) = expected_score(&player_one, &player_two, &config);
+///
+/// assert!(((exp_one * 100.0).round() - 89.0).abs() < f64::EPSILON);
+/// assert!(((exp_two * 100.0).round() - 11.0).abs() < f64::EPSILON);
+/// ```
+pub fn expected_score(
+    player_one: &GlickoBoostRating,
+    player_two: &GlickoBoostRating,
+    config: &GlickoBoostConfig,
+) -> (f64, f64) {
+    let q = 10_f64.ln() / 400.0;
+    let g = g_value(q, player_one.deviation.hypot(player_two.deviation));
+
+    let exp_one = (1.0
+        + 10_f64.powf(-g * (player_one.rating + config.eta - player_two.rating) / 400.0))
+    .recip();
+    let exp_two = 1.0 - exp_one;
+
+    (exp_one, exp_two)
+}
+
+#[must_use]
+/// Decays a Rating Deviation Value for a player, if they missed playing in a certain rating period.
+///
+/// The length of the rating period and thus the number of missed periods per player is something to decide and track yourself.
+///
+/// Takes in a player as a [`GlickoBoostRating`] and a [`GlickoBoostConfig`], that describes how much the rating should change, and returns the decayed [`GlickoBoostRating`].
+///
+/// # Examples
+/// ```
+/// use skillratings::{
+///     glicko_boost::decay_deviation, rating::GlickoBoostRating, config::GlickoBoostConfig
+/// };
+///
+/// let player_one = GlickoBoostRating {
+///     rating: 2720.0,
+///     deviation: 41.3,
+/// };
+///
+/// let config = GlickoBoostConfig::new();
+///
+/// let player_one_decay = decay_deviation(&player_one, &config);
+///
+/// assert!((player_one_decay.deviation.round() - 45.0).abs() < f64::EPSILON);
+/// ```
+pub fn decay_deviation(
+    player: &GlickoBoostRating,
+    config: &GlickoBoostConfig,
+) -> GlickoBoostRating {
+    let decayed_deviation = player
+        .deviation
+        .mul_add(
+            player.deviation,
+            config
+                .alpha
+                .4
+                .mul_add(
+                    (player.rating / 1000.0).powi(2),
+                    config.alpha.3.mul_add(
+                        player.rating / 1000.0,
+                        (config.alpha.2 * player.deviation).mul_add(
+                            player.rating / 1000.0,
+                            config.alpha.1.mul_add(player.deviation, config.alpha.0),
+                        ),
+                    ),
+                )
+                .exp(),
+        )
+        .sqrt();
+
+    GlickoBoostRating {
+        rating: player.rating,
+        deviation: decayed_deviation,
+    }
+}
+
+#[must_use]
+/// The 95% confidence interval of the lowest to highest rating.
+///
+/// The system is 95% sure that the "true skill" of the player is in-between these values.
+///
+/// Takes in a player as a [`GlickoBoostRating`] and returns two [`f64`]s that describe the lowest and highest rating.
+///
+/// # Examples
+/// ```rust
+/// use skillratings::{rating::GlickoBoostRating, glicko_boost::confidence_interval};
+///
+/// let player = GlickoBoostRating {
+///     rating: 2250.0,
+///     deviation: 79.0,
+/// };
+///
+/// let (interval_low, interval_high) = confidence_interval(&player);
+///
+/// assert!(interval_low.round() - 2095.0 < f64::EPSILON);
+/// assert!(interval_high.round() - 2405.0 < f64::EPSILON);
+/// ```
+pub fn confidence_interval(player: &GlickoBoostRating) -> (f64, f64) {
+    (
+        player.rating - 1.96 * player.deviation,
+        1.96f64.mul_add(player.deviation, player.rating),
+    )
+}
+
+fn new_deviation(old_deviation: f64, d: f64, z: f64, config: &GlickoBoostConfig) -> f64 {
+    if z > config.k && config.k != 0.0 {
+        let after_deviation = (old_deviation.powi(2).recip() + d.recip()).recip().sqrt();
+
+        let pre_deviation = boost_rd(z, after_deviation, config);
+
+        ((pre_deviation.powi(2).recip() + d.recip()).recip().sqrt()).min(350.0)
+    } else {
+        ((old_deviation.powi(2).recip() + d.recip()).recip().sqrt()).min(350.0)
+    }
+}
+
+fn new_rating(old_rating: f64, deviation: f64, score: f64, q: f64, g: f64, e: f64) -> f64 {
+    (deviation.powi(2) * q * g).mul_add(score - e, old_rating)
+}
+
+fn g_value(q: f64, opponent_deviation: f64) -> f64 {
+    (1.0 + ((3.0 * q.powi(2) * opponent_deviation.powi(2)) / (PI.powi(2))))
+        .sqrt()
+        .recip()
+}
+
+fn e_value(g: f64, rating: f64, opponent_rating: f64, advantage: f64, colour: f64) -> f64 {
+    (1.0 + (10_f64.powf(-g * (colour.mul_add(advantage, rating) - opponent_rating) / 400.0)))
+        .recip()
+}
+
+fn d_value(q: f64, g: f64, e: f64) -> f64 {
+    (q.powi(2) * g.powi(2) * e * (1.0 - e)).powi(-1)
+}
+
+fn z_value(g: f64, e: f64, score: f64) -> f64 {
+    (g * (score - e)) / (g.powi(2) * e * (1.0 - e)).sqrt()
+}
+
+fn boost_rd(z: f64, deviation: f64, config: &GlickoBoostConfig) -> f64 {
+    (z - config.k)
+        .mul_add(config.b.0, 1.0)
+        .mul_add(deviation, config.b.1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_glicko_boost() {
+        let player_one = GlickoBoostRating {
+            rating: 1500.0,
+            deviation: 200.0,
+        };
+        let player_two = GlickoBoostRating {
+            rating: 1620.0,
+            deviation: 105.0,
+        };
+
+        let config = GlickoBoostConfig::new();
+
+        let (new_one, new_two) = glicko_boost(&player_one, &player_two, &Outcomes::WIN, &config);
+
+        assert!((new_one.rating.round() - 1606.0).abs() < f64::EPSILON);
+        assert!((new_two.rating.round() - 1589.0).abs() < f64::EPSILON);
+
+        assert!((new_one.deviation - 176.712_026_249_318_3).abs() < f64::EPSILON);
+        assert!((new_two.deviation - 101.884_803_269_463_72).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_one_rp() {
+        let player = GlickoBoostRating {
+            rating: 1444.0,
+            deviation: 85.0,
+        };
+        let opponent = GlickoBoostRating {
+            rating: 1804.0,
+            deviation: 55.0,
+        };
+
+        let config = GlickoBoostConfig::new();
+
+        let (np, _) = glicko_boost(&player, &opponent, &Outcomes::WIN, &config);
+        let rp =
+            glicko_boost_rating_period(&player, &vec![(opponent, Outcomes::WIN, true)], &config);
+
+        assert_eq!(np, rp);
+    }
+
+    #[test]
+    /// This is to compare if the base algorithm is compatible with glicko.
+    fn test_glicko_comparison() {
+        let config = GlickoBoostConfig {
+            eta: 0.0,
+            k: 0.0,
+            b: (0.0, 0.0),
+            alpha: (0.0, 0.0, 0.0, 0.0, 0.0),
+        };
+
+        let player = GlickoBoostRating {
+            rating: 1500.0,
+            deviation: 200.0,
+        };
+
+        let opponent1 = GlickoBoostRating {
+            rating: 1400.0,
+            deviation: 30.0,
+        };
+
+        let opponent2 = GlickoBoostRating {
+            rating: 1550.0,
+            deviation: 100.0,
+        };
+
+        let opponent3 = GlickoBoostRating {
+            rating: 1700.0,
+            deviation: 300.0,
+        };
+
+        let results = vec![
+            (opponent1, Outcomes::WIN, true),
+            (opponent2, Outcomes::LOSS, true),
+            (opponent3, Outcomes::LOSS, true),
+        ];
+
+        let new_player = glicko_boost_rating_period(&player, &results, &config);
+
+        assert!((new_player.rating.round() - 1464.0).abs() < f64::EPSILON);
+        assert!((new_player.deviation - 151.398_902_447_969_33).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_boost_rd() {
+        let rd = 98.6;
+        let z = 3.672_028_777_401_921_6;
+
+        let new_rd = boost_rd(z, rd, &GlickoBoostConfig::new());
+
+        assert!((new_rd - 150.095_847_882_423_93).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_max_rd() {
+        let player_one = GlickoBoostRating::new();
+        let player_two = GlickoBoostRating {
+            rating: 3500.0,
+            deviation: 31.4,
+        };
+
+        let (np1, _) = glicko_boost(
+            &player_one,
+            &player_two,
+            &Outcomes::WIN,
+            &GlickoBoostConfig::new(),
+        );
+
+        assert!((np1.deviation - 350.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_decay() {
+        let player = GlickoBoostRating {
+            rating: 1302.2,
+            deviation: 62.0,
+        };
+
+        let decayed_player = decay_deviation(&player, &GlickoBoostConfig::new());
+        let rp_player = glicko_boost_rating_period(&player, &vec![], &GlickoBoostConfig::new());
+
+        assert_eq!(decayed_player, rp_player);
+        assert!((decayed_player.deviation - 64.669_444_203_475_88).abs() < f64::EPSILON);
+        assert!((decayed_player.rating - player.rating).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_confidence_interval() {
+        let player = GlickoBoostRating {
+            rating: 1500.0,
+            deviation: 30.0,
+        };
+
+        let ci = confidence_interval(&player);
+
+        assert!((ci.0.round() - 1441.0).abs() < f64::EPSILON);
+        assert!((ci.1.round() - 1559.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_expected_score() {
+        let player_one = GlickoBoostRating {
+            rating: 1400.0,
+            deviation: 40.0,
+        };
+
+        let player_two = GlickoBoostRating {
+            rating: 1500.0,
+            deviation: 150.0,
+        };
+
+        let glicko_config = GlickoBoostConfig {
+            eta: 0.0,
+            ..Default::default()
+        };
+
+        let boost_config = GlickoBoostConfig::new();
+
+        let (exp_one, exp_two) = expected_score(&player_one, &player_two, &glicko_config);
+
+        assert!((exp_one - 0.373_700_405_951_935).abs() < f64::EPSILON);
+        assert!((exp_two - 0.626_299_594_048_065).abs() < f64::EPSILON);
+        assert!((exp_one + exp_two - 1.0).abs() < f64::EPSILON);
+
+        let (exp_one, exp_two) = expected_score(&player_one, &player_two, &boost_config);
+
+        assert!((exp_one - 0.410_605_680_590_947_1).abs() < f64::EPSILON);
+        assert!((exp_two - 0.589_394_319_409_052_8).abs() < f64::EPSILON);
+        assert!((exp_one + exp_two - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    #[allow(clippy::similar_names)]
+    fn test_glicko_conv() {
+        use crate::rating::{Glicko2Rating, GlickoRating};
+
+        let glickob = GlickoBoostRating::new();
+
+        let glicko_conv = GlickoRating::from(glickob);
+        let glicko2_conv = Glicko2Rating::from(glickob);
+
+        assert!((glicko_conv.rating - 1500.0).abs() < f64::EPSILON);
+        assert!((glicko2_conv.rating - 1500.0).abs() < f64::EPSILON);
+
+        let glicko2 = Glicko2Rating::new();
+        let glicko = GlickoRating::new();
+
+        assert_eq!(GlickoBoostRating::new(), GlickoBoostRating::from(glicko2));
+        assert_eq!(
+            GlickoBoostRating::default(),
+            GlickoBoostRating::from(glicko)
+        );
+    }
+
+    #[test]
+    #[allow(clippy::similar_names, clippy::too_many_lines)]
+    /// This test is taken from the original paper
+    fn test_glicko_boost_rating_period() {
+        let player_a = GlickoBoostRating {
+            rating: 2300.0,
+            deviation: 140.0,
+        };
+        let player_b = GlickoBoostRating {
+            rating: 2295.0,
+            deviation: 80.0,
+        };
+        let player_c = GlickoBoostRating {
+            rating: 2280.0,
+            deviation: 150.0,
+        };
+        let player_d = GlickoBoostRating {
+            rating: 2265.0,
+            deviation: 70.0,
+        };
+        let player_e = GlickoBoostRating {
+            rating: 2260.0,
+            deviation: 90.0,
+        };
+        let player_f = GlickoBoostRating {
+            rating: 2255.0,
+            deviation: 200.0,
+        };
+        let player_g = GlickoBoostRating {
+            rating: 2250.0,
+            deviation: 50.0,
+        };
+        let player_h = GlickoBoostRating {
+            rating: 2075.0,
+            deviation: 120.0,
+        };
+        let config = GlickoBoostConfig::new();
+
+        let player_a_results = vec![
+            (player_b, Outcomes::LOSS, true),
+            (player_c, Outcomes::LOSS, false),
+            (player_e, Outcomes::LOSS, true),
+            (player_f, Outcomes::WIN, false),
+            (player_g, Outcomes::WIN, true),
+            (player_h, Outcomes::LOSS, false),
+        ];
+
+        let player_b_results = vec![
+            (player_a, Outcomes::WIN, false),
+            (player_c, Outcomes::DRAW, true),
+            (player_d, Outcomes::WIN, true),
+            (player_e, Outcomes::DRAW, false),
+            (player_f, Outcomes::WIN, true),
+            (player_g, Outcomes::WIN, false),
+        ];
+
+        let player_c_results = vec![
+            (player_a, Outcomes::WIN, true),
+            (player_b, Outcomes::DRAW, false),
+            (player_d, Outcomes::WIN, false),
+            (player_f, Outcomes::WIN, false),
+            (player_g, Outcomes::WIN, true),
+            (player_h, Outcomes::DRAW, true),
+        ];
+
+        let player_d_results = vec![
+            (player_b, Outcomes::LOSS, false),
+            (player_c, Outcomes::LOSS, true),
+            (player_e, Outcomes::LOSS, true),
+            (player_f, Outcomes::DRAW, false),
+            (player_g, Outcomes::LOSS, true),
+            (player_h, Outcomes::LOSS, false),
+        ];
+
+        let player_e_results = vec![
+            (player_a, Outcomes::WIN, false),
+            (player_b, Outcomes::DRAW, true),
+            (player_d, Outcomes::WIN, false),
+            (player_f, Outcomes::WIN, true),
+            (player_g, Outcomes::DRAW, false),
+            (player_h, Outcomes::LOSS, true),
+        ];
+
+        let player_f_results = vec![
+            (player_a, Outcomes::LOSS, true),
+            (player_b, Outcomes::LOSS, false),
+            (player_c, Outcomes::LOSS, true),
+            (player_d, Outcomes::DRAW, true),
+            (player_e, Outcomes::LOSS, false),
+            (player_h, Outcomes::LOSS, false),
+        ];
+
+        let player_g_results = vec![
+            (player_a, Outcomes::LOSS, false),
+            (player_b, Outcomes::LOSS, true),
+            (player_c, Outcomes::LOSS, false),
+            (player_d, Outcomes::WIN, false),
+            (player_e, Outcomes::DRAW, true),
+            (player_h, Outcomes::LOSS, true),
+        ];
+
+        let player_h_results = vec![
+            (player_a, Outcomes::WIN, true),
+            (player_c, Outcomes::DRAW, false),
+            (player_d, Outcomes::WIN, true),
+            (player_e, Outcomes::WIN, false),
+            (player_f, Outcomes::WIN, true),
+            (player_g, Outcomes::WIN, false),
+        ];
+
+        let new_a = glicko_boost_rating_period(&player_a, &player_a_results, &config);
+        let new_b = glicko_boost_rating_period(&player_b, &player_b_results, &config);
+        let new_c = glicko_boost_rating_period(&player_c, &player_c_results, &config);
+        let new_d = glicko_boost_rating_period(&player_d, &player_d_results, &config);
+        let new_e = glicko_boost_rating_period(&player_e, &player_e_results, &config);
+        let new_f = glicko_boost_rating_period(&player_f, &player_f_results, &config);
+        let new_g = glicko_boost_rating_period(&player_g, &player_g_results, &config);
+        let new_h = glicko_boost_rating_period(&player_h, &player_h_results, &config);
+
+        // Due to skipping step 2 and 4, these ratings are comparable to the ratings of step 3.
+        // They are not exactly equal (Difference of <1.0%) due to 1: rounding errors and 2: skipping of step 2.
+        assert!((new_a.rating - 2_209.502_401_056_321_6).abs() < f64::EPSILON);
+        assert!((new_a.deviation - 104.262_263_942_491_94).abs() < f64::EPSILON);
+
+        assert!((new_b.rating - 2_343.331_676_741_51).abs() < f64::EPSILON);
+        assert!((new_b.deviation - 70.904_516_394_890_78).abs() < f64::EPSILON);
+
+        assert!((new_c.rating - 2_386.917_144_473_656_7).abs() < f64::EPSILON);
+        assert!((new_c.deviation - 108.069_121_110_009).abs() < f64::EPSILON);
+
+        assert!((new_d.rating - 2_204.280_099_158_658_7).abs() < f64::EPSILON);
+        assert!((new_d.deviation - 63.774_912_996_457_86).abs() < f64::EPSILON);
+
+        assert!((new_e.rating - 2_287.443_303_658_628_3).abs() < f64::EPSILON);
+        assert!((new_e.deviation - 77.866_268_543_702_84).abs() < f64::EPSILON);
+
+        assert!((new_f.rating - 2_051.583_061_993_349_5).abs() < f64::EPSILON);
+        assert!((new_f.deviation - 121.460_019_250_684_13).abs() < f64::EPSILON);
+
+        assert!((new_g.rating - 2_231.929_694_167_278).abs() < f64::EPSILON);
+        assert!((new_g.deviation - 47.575_794_114_122_24).abs() < f64::EPSILON);
+
+        assert!((new_h.rating - 2_348.033_407_382_116).abs() < f64::EPSILON);
+        assert!((new_h.deviation - 113.650_398_230_347_6).abs() < f64::EPSILON);
+    }
+}

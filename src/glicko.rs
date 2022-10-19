@@ -392,6 +392,8 @@ mod tests {
     #[test]
     /// This test is taken directly from the official glicko example.  
     /// <http://www.glicko.net/glicko/glicko.pdf>
+    /// The result will be slightly different from above,
+    /// because the games in a rating period are considered to be played at the same time.
     fn test_glicko_rating_period() {
         let player = GlickoRating {
             rating: 1500.0,
@@ -434,6 +436,26 @@ mod tests {
         let new_player = glicko_rating_period(&player, &results, &GlickoConfig::new());
 
         assert!((new_player.deviation - 80.586_847_562_117_73).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_single_rp() {
+        let player = GlickoRating {
+            rating: 1200.0,
+            deviation: 25.0,
+        };
+        let opponent = GlickoRating {
+            rating: 1500.0,
+            deviation: 34.0,
+        };
+
+        let config = GlickoConfig::new();
+
+        let (np, _) = glicko(&player, &opponent, &Outcomes::WIN);
+
+        let rp = glicko_rating_period(&player, &vec![(opponent, Outcomes::WIN)], &config);
+
+        assert_eq!(rp, np);
     }
 
     #[test]

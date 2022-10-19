@@ -2,6 +2,12 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.16.0 - 20220-10-19
+
+- Added Glicko-Boost algorithm
+- Added boolean parameter to results tuple in Sticko rating period function to indicate advantages
+- Calculate Sticko rating period function like Glicko and Glicko-2
+
 ## v0.15.2 - 2022-10-16
 
 - Calculating Glicko rating period and Glicko-2 rating period properly now

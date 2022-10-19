@@ -1,7 +1,7 @@
 //! This is the Stephenson rating algorithm, nicknamed "Sticko" due to it being an improvement on the Glicko rating algorithm.  
-//! The winner of a chess outcome prediction competition and used in statistical analysis.
+//! Allows for player advantages, and the winner of a chess outcome prediction competition.
 //!
-//! For the original Glicko algorithm, please see [`Glicko`](crate::glicko).
+//! For the original Glicko algorithm, please see [`Glicko`](crate::glicko), or for the improved versions see [`Glicko-Boost`](crate::glicko_boost) or [`Glicko-2`](crate::glicko2).
 //!
 //! In 2012, the data prediction website [Kaggle](https://kaggle.com) hosted the "FIDE/Deloitte Chess Rating Challenge"
 //!  where competitors where asked to create a new, more accurate chess rating system.  
@@ -71,7 +71,7 @@ use crate::{config::StickoConfig, outcomes::Outcomes, rating::StickoRating};
 ///
 /// Please see [`Glicko`](crate::glicko) for calculating with Glicko.
 ///
-/// Takes in two players as [`StickoRating`]s,  an [`Outcome`](Outcomes) and a [`StickoConfig`].
+/// Takes in two players as [`StickoRating`]s, an [`Outcome`](Outcomes) and a [`StickoConfig`].
 ///
 /// Instead of the traditional way of calculating the Sticko rating for only one player only using a list of results,
 /// we are calculating the Sticko rating for two players at once, like in the Elo calculation,
@@ -81,6 +81,9 @@ use crate::{config::StickoConfig, outcomes::Outcomes, rating::StickoRating};
 ///
 /// The outcome of the match is in the perspective of `player_one`.
 /// This means [`Outcomes::WIN`] is a win for `player_one` and [`Outcomes::LOSS`] is a win for `player_two`.
+///
+/// If you have set up the [`StickoConfig`] to account for an advantage,
+/// this is also determined to be *in favour* the first player, and *against* the second.
 ///
 /// # Examples
 /// ```
@@ -191,7 +194,20 @@ pub fn sticko(
 /// The "traditional" way of calculating a [`StickoRating`] of a player in a rating period.
 ///
 /// Takes in a player as an [`StickoRating`] and their results as a Vec of tuples containing the opponent as an [`StickoRating`],
-/// the outcome of the game as an [`Outcome`](Outcomes) and a [`StickoConfig`].
+/// the outcome of the game as an [`Outcome`](Outcomes) and a [`bool`] specifying if the player was playing as player one, and a [`StickoConfig`].
+///
+/// ---
+///
+/// 📌 _**Important note:**_ We need an added parameter in the results tuple here.    
+/// The boolean specifies if the player was playing as the first player, aka White in Chess.
+/// If set to `true` the player was playing as White, if set to `false` the player was playing as Black.  
+/// In the [`sticko`] function this is determined by the order of players that are input to the function, but we cannot do this here,
+/// and because it likely changes from game-to-game, we need a separate parameter controlling it.
+///
+/// The colour you play in each game matters if the [`StickoConfig`] is set up with an advantge for the first player.  
+/// It makes sense to do so in Chess, or Sports with an home-team-advantage.
+///
+/// ---
 ///
 /// The outcome of the match is in the perspective of the player.
 /// This means [`Outcomes::WIN`] is a win for the player and [`Outcomes::LOSS`] is a win for the opponent.
@@ -225,21 +241,23 @@ pub fn sticko(
 /// };
 ///
 /// let results = vec![
-///     (opponent1, Outcomes::WIN),
-///     (opponent2, Outcomes::LOSS),
-///     (opponent3, Outcomes::LOSS),
+///     // The player was playing as white.
+///     (opponent1, Outcomes::WIN, true),
+///     // The player was playing as black.
+///     (opponent2, Outcomes::LOSS, false),
+///     (opponent3, Outcomes::LOSS, true),
 /// ];
 ///
 /// let config = StickoConfig::new();
 ///
 /// let new_player = sticko_rating_period(&player, &results, &config);
 ///
-/// assert!((new_player.rating.round() - 1467.0).abs() < f64::EPSILON);
-/// assert!((new_player.deviation - 151.325_708_084_173_56).abs() < f64::EPSILON);
+/// assert!((new_player.rating.round() - 1465.0).abs() < f64::EPSILON);
+/// assert!((new_player.deviation.round() - 151.0).abs() < f64::EPSILON);
 /// ```
 pub fn sticko_rating_period(
     player: &StickoRating,
-    results: &Vec<(StickoRating, Outcomes)>,
+    results: &Vec<(StickoRating, Outcomes, bool)>,
     config: &StickoConfig,
 ) -> StickoRating {
     let q = 10_f64.ln() / 400.0;
@@ -248,37 +266,65 @@ pub fn sticko_rating_period(
         return decay_deviation(player, config);
     }
 
-    let mut player_rating = player.rating;
-    let mut player_deviation = player.deviation;
+    #[allow(clippy::as_conversions, clippy::cast_precision_loss)]
+    let matches = results.len() as f64;
 
-    for (opponent, outcome) in results {
-        let outcome = outcome.to_chess_points();
+    let d_sq: f64 = (q.powi(2)
+        * results
+            .iter()
+            .map(|r| {
+                let g = g_value(q, r.0.deviation);
 
-        let g = g_value(q, opponent.deviation);
+                let e = e_value(
+                    g,
+                    player.rating,
+                    r.0.rating,
+                    config.gamma,
+                    if r.2 { 1.0 } else { -1.0 },
+                );
 
-        let e = e_value(g, player_rating, opponent.rating, config.gamma, 1.0);
+                g.powi(2) * e * (1.0 - e)
+            })
+            .sum::<f64>())
+    .recip();
 
-        let d = d_value(q, g, e);
+    let lambda: f64 = (config.lambda / 100.0)
+        * ((results.iter().map(|r| r.0.rating).sum::<f64>() / matches) - player.rating);
 
-        let lambda = (config.lambda / 100.0) * (opponent.rating - player_rating);
+    let m = results
+        .iter()
+        .map(|r| {
+            let g = g_value(q, r.0.deviation);
 
-        player_rating = new_rating(
-            player_rating,
-            player_deviation,
-            q,
-            d,
-            g,
-            outcome,
-            e,
-            config.beta,
-            lambda,
-        );
-        player_deviation = new_deviation(player_deviation, d, config.h);
-    }
+            let e = e_value(
+                g,
+                player.rating,
+                r.0.rating,
+                config.gamma,
+                if r.2 { 1.0 } else { -1.0 },
+            );
+
+            let s = r.1.to_chess_points();
+
+            g * (s - e + config.beta)
+        })
+        .sum::<f64>();
+
+    let new_deviation = ((player
+        .deviation
+        .mul_add(player.deviation, config.h * matches)
+        .recip()
+        + d_sq.recip())
+    .recip()
+    .sqrt())
+    .min(350.0);
+
+    let new_rating =
+        (q / (player.deviation.powi(2).recip() + d_sq.recip())).mul_add(m, player.rating) + lambda;
 
     StickoRating {
-        rating: player_rating,
-        deviation: player_deviation,
+        rating: new_rating,
+        deviation: new_deviation,
     }
 }
 
@@ -474,33 +520,9 @@ mod tests {
     }
 
     #[test]
-    fn test_sticko_draw() {
-        let player_one = StickoRating {
-            rating: 2330.0,
-            deviation: 200.0,
-        };
-
-        let player_two = StickoRating {
-            rating: 1800.0,
-            deviation: 20.0,
-        };
-
-        let config = StickoConfig::new();
-
-        let (p1, p2) = sticko(&player_one, &player_two, &Outcomes::DRAW, &config);
-
-        assert!((p1.rating.round() - 2221.0).abs() < f64::EPSILON);
-        assert!((p1.deviation.round() - 195.0).abs() < f64::EPSILON);
-        assert!((p2.rating.round() - 1811.0).abs() < f64::EPSILON);
-        assert!((p2.deviation.round() - 20.0).abs() < f64::EPSILON);
-
-        let rp1 = sticko_rating_period(&player_one, &vec![(player_two, Outcomes::DRAW)], &config);
-
-        assert_eq!(rp1, p1);
-    }
-
-    #[test]
     /// This is the same test as above.
+    /// As explained in the glicko test, the result will be slightly different from above,
+    /// because the games in a rating period are considered to be played at the same time.
     fn test_sticko_rating_period() {
         let config = StickoConfig {
             h: 0.0,
@@ -533,19 +555,67 @@ mod tests {
         let new_player = sticko_rating_period(
             &player,
             &vec![
-                (opponent1, Outcomes::WIN),
-                (opponent2, Outcomes::LOSS),
-                (opponent3, Outcomes::LOSS),
+                (opponent1, Outcomes::WIN, true),
+                (opponent2, Outcomes::LOSS, true),
+                (opponent3, Outcomes::LOSS, true),
             ],
             &config,
         );
 
         assert!((new_player.rating.round() - 1464.0).abs() < f64::EPSILON);
-        assert!((new_player.deviation - 151.253_743_431_783_2).abs() < f64::EPSILON);
+        assert!((new_player.deviation - 151.398_902_447_969_33).abs() < f64::EPSILON);
 
         let after_player = sticko_rating_period(&player, &vec![], &config);
 
         assert_eq!(player, after_player);
+    }
+
+    #[test]
+    fn test_single_rp() {
+        let player = StickoRating {
+            rating: 1200.0,
+            deviation: 25.0,
+        };
+        let opponent = StickoRating {
+            rating: 1500.0,
+            deviation: 34.0,
+        };
+
+        let config = StickoConfig {
+            h: 10.0,
+            beta: 5.0,
+            lambda: 5.0,
+            gamma: 30.0,
+            c: 10.0,
+        };
+
+        let (np, _) = sticko(&player, &opponent, &Outcomes::WIN, &config);
+
+        let rp = sticko_rating_period(&player, &vec![(opponent, Outcomes::WIN, true)], &config);
+
+        assert_eq!(rp, np);
+    }
+
+    #[test]
+    fn test_sticko_draw() {
+        let player_one = StickoRating {
+            rating: 2330.0,
+            deviation: 200.0,
+        };
+
+        let player_two = StickoRating {
+            rating: 1800.0,
+            deviation: 20.0,
+        };
+
+        let config = StickoConfig::new();
+
+        let (p1, p2) = sticko(&player_one, &player_two, &Outcomes::DRAW, &config);
+
+        assert!((p1.rating.round() - 2221.0).abs() < f64::EPSILON);
+        assert!((p1.deviation.round() - 195.0).abs() < f64::EPSILON);
+        assert!((p2.rating.round() - 1811.0).abs() < f64::EPSILON);
+        assert!((p2.deviation.round() - 20.0).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -583,21 +653,25 @@ mod tests {
     #[test]
     #[allow(clippy::similar_names)]
     fn sticko_glicko_conversions() {
-        use crate::rating::{Glicko2Rating, GlickoRating};
+        use crate::rating::{Glicko2Rating, GlickoBoostRating, GlickoRating};
 
         let sticko = StickoRating::new();
 
         let glicko_conv = GlickoRating::from(sticko);
         let glicko2_conv = Glicko2Rating::from(sticko);
+        let glickob_conv = GlickoBoostRating::from(sticko);
 
         assert!((glicko_conv.rating - 1500.0).abs() < f64::EPSILON);
         assert!((glicko2_conv.rating - 1500.0).abs() < f64::EPSILON);
+        assert!((glickob_conv.rating - 1500.0).abs() < f64::EPSILON);
 
         let glicko2 = Glicko2Rating::new();
         let glicko = GlickoRating::new();
+        let glickob = GlickoBoostRating::new();
 
         assert_eq!(StickoRating::new(), StickoRating::from(glicko2));
         assert_eq!(StickoRating::default(), StickoRating::from(glicko));
+        assert_eq!(StickoRating::default(), StickoRating::from(glickob));
     }
 
     #[test]
@@ -611,5 +685,57 @@ mod tests {
 
         assert!((ci.0.round() - 1441.0).abs() < f64::EPSILON);
         assert!((ci.1.round() - 1559.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_white_black() {
+        let player = StickoRating {
+            rating: 1300.0,
+            deviation: 120.0,
+        };
+        let opponent1 = StickoRating {
+            rating: 1500.0,
+            deviation: 105.0,
+        };
+        let opponent2 = StickoRating {
+            rating: 1200.0,
+            deviation: 125.0,
+        };
+        let opponent3 = StickoRating {
+            rating: 1560.0,
+            deviation: 140.0,
+        };
+
+        let config = StickoConfig {
+            gamma: 30.0,
+            ..Default::default()
+        };
+
+        let tournament1 = vec![
+            (opponent1, Outcomes::WIN, true),
+            (opponent2, Outcomes::LOSS, true),
+            (opponent3, Outcomes::DRAW, true),
+        ];
+
+        let tournament2 = vec![
+            (opponent1, Outcomes::WIN, false),
+            (opponent2, Outcomes::LOSS, false),
+            (opponent3, Outcomes::DRAW, false),
+        ];
+
+        let comp_player = sticko_rating_period(&player, &tournament1, &StickoConfig::new());
+
+        assert!((comp_player.rating.round() - 1329.0).abs() < f64::EPSILON);
+        assert!((comp_player.deviation.round() - 108.0).abs() < f64::EPSILON);
+
+        let white_player = sticko_rating_period(&player, &tournament1, &config);
+
+        assert!((white_player.rating.round() - 1323.0).abs() < f64::EPSILON);
+        assert!((white_player.deviation.round() - 107.0).abs() < f64::EPSILON);
+
+        let black_player = sticko_rating_period(&player, &tournament2, &config);
+
+        assert!((black_player.rating.round() - 1335.0).abs() < f64::EPSILON);
+        assert!((black_player.deviation.round() - 108.0).abs() < f64::EPSILON);
     }
 }

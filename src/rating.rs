@@ -77,6 +77,15 @@ impl From<Glicko2Rating> for GlickoRating {
     }
 }
 
+impl From<GlickoBoostRating> for GlickoRating {
+    fn from(g: GlickoBoostRating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
+    }
+}
+
 impl From<StickoRating> for GlickoRating {
     fn from(s: StickoRating) -> Self {
         Self {
@@ -123,6 +132,16 @@ impl Default for Glicko2Rating {
 
 impl From<GlickoRating> for Glicko2Rating {
     fn from(g: GlickoRating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<GlickoBoostRating> for Glicko2Rating {
+    fn from(g: GlickoBoostRating) -> Self {
         Self {
             rating: g.rating,
             deviation: g.deviation,
@@ -323,7 +342,7 @@ pub struct StickoRating {
 
 impl StickoRating {
     #[must_use]
-    /// Initialize a new `GlickoRating` with a rating of 1500.0 and a deviation of 350.0.
+    /// Initialize a new `StickoRating` with a rating of 1500.0 and a deviation of 350.0.
     pub const fn new() -> Self {
         Self {
             rating: 1500.0,
@@ -356,6 +375,15 @@ impl From<Glicko2Rating> for StickoRating {
     }
 }
 
+impl From<GlickoBoostRating> for StickoRating {
+    fn from(g: GlickoBoostRating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 /// The EGF (European Go Federation) Rating for a player.
 ///
@@ -381,5 +409,63 @@ impl EGFRating {
 impl Default for EGFRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The Glicko-Boost rating of a player.
+///
+/// Similar to [`GlickoRating`].
+///
+/// The default rating is 1500.0.
+/// The default deviation is 350.0.
+pub struct GlickoBoostRating {
+    /// The player's Glicko-Boost rating number, by default 1500.0.
+    pub rating: f64,
+    /// The player's Glicko-Boost deviation number, by default 350.0.
+    pub deviation: f64,
+}
+
+impl GlickoBoostRating {
+    #[must_use]
+    /// Initialize a new `GlickoBoostRating` with a rating of 1500.0 and a deviation of 350.0.
+    pub const fn new() -> Self {
+        Self {
+            rating: 1500.0,
+            deviation: 350.0,
+        }
+    }
+}
+
+impl Default for GlickoBoostRating {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<GlickoRating> for GlickoBoostRating {
+    fn from(g: GlickoRating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
+    }
+}
+
+impl From<Glicko2Rating> for GlickoBoostRating {
+    fn from(g: Glicko2Rating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
+    }
+}
+
+impl From<StickoRating> for GlickoBoostRating {
+    fn from(s: StickoRating) -> Self {
+        Self {
+            rating: s.rating,
+            deviation: s.deviation,
+        }
     }
 }

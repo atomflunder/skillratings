@@ -16,6 +16,7 @@ Currently supported algorithms:
 - [TrueSkill](https://docs.rs/skillratings/latest/skillratings/trueskill/index.html)
 - [Weng-Lin (Bayesian Approxmation System)](https://docs.rs/skillratings/latest/skillratings/weng_lin/index.html)
 - [Sticko (Stephenson Rating System)](https://docs.rs/skillratings/latest/skillratings/sticko/index.html)
+- [Glicko-Boost](https://docs.rs/skillratings/latest/skillratings/glicko_boost/index.html)
 - [EGF (European Go Federation)](https://docs.rs/skillratings/latest/skillratings/egf/index.html)
 - [DWZ (Deutsche Wertungszahl)](https://docs.rs/skillratings/latest/skillratings/dwz/index.html)
 - [Ingo](https://docs.rs/skillratings/latest/skillratings/ingo/index.html)
@@ -34,7 +35,7 @@ Alternatively, you can add the following to your `Cargo.toml` file manually:
 
 ```toml
 [dependencies]
-skillratings = "0.15"
+skillratings = "0.16"
 ```
 
 ## Usage and Examples
