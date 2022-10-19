@@ -5,8 +5,9 @@
 [![](https://codecov.io/gh/atomflunder/skillratings/branch/master/graph/badge.svg?token=JFSA86GAX1)](https://codecov.io/gh/atomflunder/skillratings)
 [![](https://img.shields.io/crates/d/skillratings)](https://crates.io/crates/skillratings)
 
-Skillratings allows you to calculate a player's skill instantly, or after tournaments/rating periods, using a variety of well known (and lesser known) skill rating algorithms.  
-This library is incredibly lightweight, user-friendly, and of course, *blazingly fast*.
+Skillratings provides a collection of well-known (and lesser known) skill rating algorithms, that allow you to assess a player's skill level instantly.  
+You can easily calculate skill ratings instantly in 1vs1 matches, Team vs Team matches, or in tournaments / rating periods.  
+This library is incredibly lightweight (no dependencies), user-friendly, and of course, *blazingly fast*.
 
 Currently supported algorithms:
 
@@ -21,7 +22,7 @@ Currently supported algorithms:
 - [DWZ (Deutsche Wertungszahl)](https://docs.rs/skillratings/latest/skillratings/dwz/index.html)
 - [Ingo](https://docs.rs/skillratings/latest/skillratings/ingo/index.html)
 
-These are mainly known from their usage in chess and other games.
+Most of these are mainly known from their usage in chess and various other games.
 
 ## Installation
 
