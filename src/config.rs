@@ -306,3 +306,30 @@ impl Default for GlickoBoostConfig {
         Self::new()
     }
 }
+
+#[derive(Clone, Copy, Debug)]
+/// Constants used in the USCF Rating calculations.
+pub struct USCFConfig {
+    /// The t value controls the difficulty of earning bonus rating points.  
+    /// The higher the t value, the more difficult it is.
+    ///
+    /// The USCF changes this value periodically.
+    /// As of 2022, the last change was in May 2017 where this was set from 12 to 14.
+    /// The lowest value was 6, from 2008 to 2012.  
+    /// By default set to 14.0.
+    pub t: f64,
+}
+
+impl USCFConfig {
+    #[must_use]
+    /// Initialize a new `USCFConfig` with a t value of 14.0.
+    pub const fn new() -> Self {
+        Self { t: 14.0 }
+    }
+}
+
+impl Default for USCFConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}

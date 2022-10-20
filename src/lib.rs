@@ -3,10 +3,14 @@
     clippy::pedantic,
     clippy::nursery,
     clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::as_conversions
+    clippy::expect_used
 )]
-#![allow(clippy::module_name_repetitions, clippy::doc_markdown, clippy::ptr_arg)]
+#![allow(
+    clippy::module_name_repetitions, // This is turned off because of the rating values
+    clippy::doc_markdown,   // This is turned off because "TrueSkill" shows up as a false positive
+    clippy::cast_precision_loss, // We need to cast usizes to f64s in places where precision is not that important
+    clippy::cast_lossless
+)]
 
 //! Skillratings provides functions on calculating a player's skill rating.
 //!
@@ -18,6 +22,7 @@
 //! - **[`Weng-Lin`](crate::weng_lin)**
 //! - **[`Sticko`](crate::sticko)**
 //! - **[`Glicko-Boost`](crate::glicko_boost)**
+//! - **[`USCF (US Chess Federation)`](crate::uscf)**
 //! - **[`EGF (European Go Federation)`](crate::egf)**
 //! - **[`DWZ (Deutsche Wertungszahl)`](crate::dwz)**
 //! - **[`Ingo`](crate::ingo)**
@@ -39,7 +44,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.16"
+//! skillratings = "0.17"
 //! ```
 //!
 //! # Examples
@@ -207,4 +212,5 @@ pub mod outcomes;
 pub mod rating;
 pub mod sticko;
 pub mod trueskill;
+pub mod uscf;
 pub mod weng_lin;

@@ -286,7 +286,6 @@ pub fn trueskill_rating_period(
 }
 
 #[must_use]
-#[allow(clippy::as_conversions, clippy::cast_precision_loss)]
 /// Calculates the [`TrueSkillRating`] of two teams based on their ratings, uncertainties, and the outcome of the game.
 ///
 /// Takes in two teams as a Vec of [`TrueSkillRating`]s, the outcome of the game as an [`Outcome`](Outcomes) and a [`TrueSkillConfig`].
@@ -473,11 +472,6 @@ pub fn match_quality(
 }
 
 #[must_use]
-#[allow(
-    clippy::as_conversions,
-    clippy::cast_precision_loss,
-    clippy::needless_pass_by_value
-)]
 /// Gets the quality of the match, which is equal to the probability that the match will end in a draw.
 /// The higher the Value, the better the quality of the match.
 ///
@@ -599,11 +593,6 @@ pub fn expected_score(
 }
 
 #[must_use]
-#[allow(
-    clippy::needless_pass_by_value,
-    clippy::as_conversions,
-    clippy::cast_precision_loss
-)]
 /// Calculates the expected outcome of two teams based on TrueSkill.
 ///
 /// Takes in two teams as Vec of [`TrueSkillRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  

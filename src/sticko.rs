@@ -266,7 +266,6 @@ pub fn sticko_rating_period(
         return decay_deviation(player, config);
     }
 
-    #[allow(clippy::as_conversions, clippy::cast_precision_loss)]
     let matches = results.len() as f64;
 
     let d_sq: f64 = (q.powi(2)

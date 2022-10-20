@@ -189,7 +189,6 @@ pub fn dwz_rating_period(player: &DWZRating, results: &Vec<(DWZRating, Outcomes)
         .map(|r| expected_score(player, &r.0).0)
         .sum::<f64>();
 
-    #[allow(clippy::as_conversions, clippy::cast_precision_loss)]
     let new_rating = (800.0
         / (e_value(
             player.rating,
@@ -244,7 +243,6 @@ pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f
     (exp_one, exp_two)
 }
 
-#[allow(clippy::as_conversions, clippy::cast_precision_loss)]
 #[must_use]
 /// Gets a proper first [`DWZRating`].
 ///
@@ -438,7 +436,6 @@ fn e_value(rating: f64, age: usize, score: f64, expected_score: f64, index: usiz
     if e <= 5.0 {
         e = 5.0;
     } else if b == 0.0 {
-        #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
         if e >= 30.0_f64.min(5.0 * index as f64) {
             e = 30.0_f64.min(5.0 * index as f64);
         }

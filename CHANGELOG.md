@@ -2,7 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
-## v0.16.0 - 20220-10-19
+## v0.17.0 - 2022-10-21
+
+- Added USCF rating algorithms
+
+## v0.16.0 - 2022-10-19
 
 - Added Glicko-Boost algorithm
 - Added boolean parameter to results tuple in Sticko rating period function to indicate advantages

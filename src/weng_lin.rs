@@ -400,7 +400,7 @@ pub fn expected_score(
 }
 
 #[must_use]
-#[allow(clippy::needless_pass_by_value)]
+#[allow(clippy::ptr_arg)]
 /// Calculates the expected outcome of two teams based on the Bradley-Terry model.
 ///
 /// Takes in two teams as Vec of [`WengLinRating`]s and a [`WengLinConfig`],

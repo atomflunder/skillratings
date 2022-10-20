@@ -11,18 +11,19 @@ This library is incredibly lightweight (no dependencies), user-friendly, and of 
 
 Currently supported algorithms:
 
-- [Elo](https://docs.rs/skillratings/latest/skillratings/elo/index.html)
-- [Glicko](https://docs.rs/skillratings/latest/skillratings/glicko/index.html)
-- [Glicko-2](https://docs.rs/skillratings/latest/skillratings/glicko2/index.html)
-- [TrueSkill](https://docs.rs/skillratings/latest/skillratings/trueskill/index.html)
-- [Weng-Lin (Bayesian Approxmation System)](https://docs.rs/skillratings/latest/skillratings/weng_lin/index.html)
-- [Sticko (Stephenson Rating System)](https://docs.rs/skillratings/latest/skillratings/sticko/index.html)
-- [Glicko-Boost](https://docs.rs/skillratings/latest/skillratings/glicko_boost/index.html)
-- [EGF (European Go Federation)](https://docs.rs/skillratings/latest/skillratings/egf/index.html)
-- [DWZ (Deutsche Wertungszahl)](https://docs.rs/skillratings/latest/skillratings/dwz/index.html)
-- [Ingo](https://docs.rs/skillratings/latest/skillratings/ingo/index.html)
+- [Elo](https://docs.rs/skillratings/latest/skillratings/elo/)
+- [Glicko](https://docs.rs/skillratings/latest/skillratings/glicko/)
+- [Glicko-2](https://docs.rs/skillratings/latest/skillratings/glicko2/)
+- [TrueSkill](https://docs.rs/skillratings/latest/skillratings/trueskill/)
+- [Weng-Lin (Bayesian Approxmation System)](https://docs.rs/skillratings/latest/skillratings/weng_lin/)
+- [Sticko (Stephenson Rating System)](https://docs.rs/skillratings/latest/skillratings/sticko/)
+- [Glicko-Boost](https://docs.rs/skillratings/latest/skillratings/glicko_boost/)
+- [USCF (US Chess Federation Ratings)](https://docs.rs/skillratings/latest/skillratings/uscf/)
+- [EGF (European Go Federation)](https://docs.rs/skillratings/latest/skillratings/egf/)
+- [DWZ (Deutsche Wertungszahl)](https://docs.rs/skillratings/latest/skillratings/dwz/)
+- [Ingo](https://docs.rs/skillratings/latest/skillratings/ingo/)
 
-Most of these are mainly known from their usage in chess and various other games.
+Most of these are known from their usage in chess and various other games.
 
 ## Installation
 
@@ -36,7 +37,7 @@ Alternatively, you can add the following to your `Cargo.toml` file manually:
 
 ```toml
 [dependencies]
-skillratings = "0.16"
+skillratings = "0.17"
 ```
 
 ## Usage and Examples

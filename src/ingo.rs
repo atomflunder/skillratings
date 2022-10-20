@@ -105,7 +105,6 @@ pub fn ingo(
     )
 }
 
-#[allow(clippy::as_conversions, clippy::cast_precision_loss)]
 #[must_use]
 /// The "traditional" way of calculating a [`IngoRating`] of a player in a rating period.
 ///

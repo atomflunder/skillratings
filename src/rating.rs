@@ -37,6 +37,20 @@ impl From<DWZRating> for EloRating {
     }
 }
 
+impl From<USCFRating> for EloRating {
+    fn from(u: USCFRating) -> Self {
+        if u.rating > 2060.0 {
+            Self {
+                rating: (u.rating - 180.0) / 0.94,
+            }
+        } else {
+            Self {
+                rating: (u.rating - 20.0) / 1.02,
+            }
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 /// The Glicko rating for a player.
 ///
@@ -466,6 +480,64 @@ impl From<StickoRating> for GlickoBoostRating {
         Self {
             rating: s.rating,
             deviation: s.deviation,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The USCF (US Chess Federation) rating for a player.
+///
+/// The age is the actual age of the player,
+/// if unsure or unavailable the official guidelines say to set this to `26`,
+/// if the player is inferred to be an adult, or to `15` if not.  
+///
+/// The default rating is dependent on the age of the player.  
+/// If the player is 26 or older this will be 1300.0, if the player is 15 the rating will be 750.0.  
+/// The minimum rating value is set to be 100.0.
+pub struct USCFRating {
+    /// The player's USCF rating number.
+    pub rating: f64,
+    /// The player's completed games.
+    pub games: usize,
+}
+
+impl USCFRating {
+    #[must_use]
+    /// Initialize a new `USCFRating` with a new rating dependent on the age of the player.  
+    /// The age is the actual age of the player, if unsure or unavailable set this to `26`.  
+    /// The rating of a 26 year old will be 1300.0.
+    pub fn new(age: usize) -> Self {
+        Self {
+            rating: if age < 2 {
+                100.0
+            } else if age > 26 {
+                1300.0
+            } else {
+                age as f64 * 50.0
+            },
+            games: 0,
+        }
+    }
+}
+
+impl Default for USCFRating {
+    fn default() -> Self {
+        Self::new(26)
+    }
+}
+
+impl From<EloRating> for USCFRating {
+    fn from(e: EloRating) -> Self {
+        if e.rating > 2000.0 {
+            Self {
+                rating: 0.94f64.mul_add(e.rating, 180.0),
+                games: 10,
+            }
+        } else {
+            Self {
+                rating: 1.02f64.mul_add(e.rating, 20.0),
+                games: 5,
+            }
         }
     }
 }
