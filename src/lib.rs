@@ -12,7 +12,9 @@
     clippy::cast_lossless
 )]
 
-//! Skillratings provides functions on calculating a player's skill rating.
+//! Skillratings provides a collection of well-known (and lesser known) skill rating algorithms, that allow you to assess a player's skill level instantly.  
+//! You can easily calculate skill ratings instantly in 1vs1 matches, Team vs Team matches, or in tournaments / rating periods.  
+//! This library is incredibly lightweight (no dependencies), user-friendly, and of course, blazingly fast.  
 //!
 //! Currently we support these skill rating systems:  
 //! - **[`Elo`](crate::elo)**
@@ -27,10 +29,8 @@
 //! - **[`DWZ (Deutsche Wertungszahl)`](crate::dwz)**
 //! - **[`Ingo`](crate::ingo)**
 //!
-//! You can use this crate to calculate results for two players instantly,
-//! or for one player in a rating period with the algorithms mentioned above.
-//!
-//! Head over to the modules above or below for more information about the specific rating algorithms, their advantages and disadvantages.
+//! Most of these are known from their usage in chess and various other games.  
+//! Click on the documentation for the modules linked above for more information about the specific rating algorithms, and their advantages and disadvantages.
 //!
 //! # Installation
 //!
@@ -47,7 +47,7 @@
 //! skillratings = "0.17"
 //! ```
 //!
-//! # Examples
+//! # Usage and Examples
 //!
 //! Below you can find some basic examples of the use cases of this crate.  
 //! There are many more rating algorithms available with lots of useful functions that are not covered here.  
