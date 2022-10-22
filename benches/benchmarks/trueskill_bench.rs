@@ -1,10 +1,9 @@
 use skillratings::{
-    config::TrueSkillConfig,
-    outcomes::Outcomes,
-    rating::TrueSkillRating,
     trueskill::{
         expected_score, expected_score_teams, trueskill, trueskill_rating_period, trueskill_teams,
+        TrueSkillConfig, TrueSkillRating,
     },
+    Outcomes,
 };
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};

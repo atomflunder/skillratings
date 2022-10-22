@@ -16,7 +16,8 @@
 //!
 //! ```
 //! use skillratings::{
-//!     egf::egf, outcomes::Outcomes, rating::EGFRating, config::EGFConfig
+//!     egf::{egf, EGFConfig, EGFRating},
+//!     Outcomes,
 //! };
 //!
 //! // Initialise a new player rating with a rating of 0.
@@ -25,7 +26,7 @@
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let some_rating = 325.0;
-//! let player_two = EGFRating{
+//! let player_two = EGFRating {
 //!     rating: some_rating,
 //! };
 //!
@@ -51,7 +52,66 @@
 //! - [Sensei's library](https://senseis.xmp.net/?GoR)
 //! - [Handicapping in Go](https://en.wikipedia.org/wiki/Handicapping_in_Go)
 
-use crate::{config::EGFConfig, outcomes::Outcomes, rating::EGFRating};
+use crate::Outcomes;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The EGF (European Go Federation) Rating for a player.
+///
+/// If the player has a Go rank or similar,
+/// you can set the rating value manually approximately according to
+/// [this inofficial comparison table](https://forums.online-go.com/t/go-ranks-vs-chess-ratings/41594/42).  
+/// Keep in mind that here, the lowest possible rating is -900.0.
+///
+/// The default rating is 0.0.
+pub struct EGFRating {
+    /// The player's EGF rating number, by default 0.0.
+    pub rating: f64,
+}
+
+impl EGFRating {
+    #[must_use]
+    /// Initialize a new `EGFRating` with a rating of 0.0.
+    pub const fn new() -> Self {
+        Self { rating: 0.0 }
+    }
+}
+
+impl Default for EGFRating {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Constants used in the EGF Calculations.
+pub struct EGFConfig {
+    /// The [handicap](https://en.wikipedia.org/wiki/Handicapping_in_Go), of the perspective of player one.  
+    /// As a general rule, one handicap point is about equal to a 100 rating point difference.  
+    ///
+    /// If player one has a handicap in the game,
+    /// you can set this number to the amount of handicap stones given to the opponent.  
+    /// If player two is the one with the handicap, set this number to the negative amount of stones given.  
+    /// If an equal game is played, this value should be 0.0.  
+    /// For example, if player two has a handicap of 4 points (player one starts with 4 stones), set this number to -4.0.  
+    ///
+    /// The maximum number should not exceed 9.0 or -9.0.  
+    /// By default set to 0.0.
+    pub handicap: f64,
+}
+
+impl EGFConfig {
+    #[must_use]
+    /// Initializes a new `EGFConfig` with a handicap value of `0.0`.
+    pub const fn new() -> Self {
+        Self { handicap: 0.0 }
+    }
+}
+
+impl Default for EGFConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[must_use]
 /// Calculates the [`EGFRating`]s of two players based on their old ratings and the outcome of the game.
@@ -65,7 +125,8 @@ use crate::{config::EGFConfig, outcomes::Outcomes, rating::EGFRating};
 ///
 /// ```
 /// use skillratings::{
-///     egf::egf, outcomes::Outcomes, rating::EGFRating, config::EGFConfig
+///     egf::{egf, EGFConfig, EGFRating},
+///     Outcomes,
 /// };
 ///
 /// let player_one = EGFRating { rating: 950.0 };
@@ -75,10 +136,10 @@ use crate::{config::EGFConfig, outcomes::Outcomes, rating::EGFRating};
 ///
 /// let config = EGFConfig::new();
 ///
-/// let (player_one_new, player_two_new) = egf(&player_one, &player_two, &outcome, &config);
+/// let (new_one, new_two) = egf(&player_one, &player_two, &outcome, &config);
 ///
-/// assert!((player_one_new.rating.round() - 989.0).abs() < f64::EPSILON);
-/// assert!((player_two_new.rating.round() - 1173.0).abs() < f64::EPSILON);
+/// assert!((new_one.rating.round() - 989.0).abs() < f64::EPSILON);
+/// assert!((new_two.rating.round() - 1173.0).abs() < f64::EPSILON);
 /// ```
 pub fn egf(
     player_one: &EGFRating,
@@ -137,7 +198,8 @@ pub fn egf(
 /// # Examples
 /// ```
 /// use skillratings::{
-///     egf::egf_rating_period, outcomes::Outcomes, rating::EGFRating, config::EGFConfig
+///     egf::{egf_rating_period, EGFConfig, EGFRating},
+///     Outcomes,
 /// };
 ///
 /// let player = EGFRating { rating: 220.0 };
@@ -195,7 +257,8 @@ pub fn egf_rating_period(
 /// # Examples
 /// ```
 /// use skillratings::{
-///     egf::expected_score, rating::EGFRating, config::EGFConfig
+///     egf::{expected_score, EGFConfig, EGFRating},
+///     Outcomes,
 /// };
 ///
 /// let player_one = EGFRating { rating: 1320.0 };
@@ -203,10 +266,10 @@ pub fn egf_rating_period(
 ///
 /// let config = EGFConfig::new();
 ///
-/// let (winner_exp, loser_exp) = expected_score(&player_one, &player_two, &config);
+/// let (exp1, exp2) = expected_score(&player_one, &player_two, &config);
 ///
-/// assert!(((winner_exp * 100.0).round() - 59.0).abs() < f64::EPSILON);
-/// assert!(((loser_exp * 100.0).round() - 41.0).abs() < f64::EPSILON);
+/// assert!(((exp1 * 100.0).round() - 59.0).abs() < f64::EPSILON);
+/// assert!(((exp2 * 100.0).round() - 41.0).abs() < f64::EPSILON);
 /// ```
 pub fn expected_score(
     player_one: &EGFRating,

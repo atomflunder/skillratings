@@ -13,7 +13,8 @@
 //!
 //! ```
 //! use skillratings::{
-//!     dwz::dwz, outcomes::Outcomes, rating::DWZRating
+//!     dwz::{dwz, DWZRating},
+//!     Outcomes,
 //! };
 //!
 //! // Initialise a new player rating.
@@ -24,7 +25,7 @@
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let (some_rating, some_index, some_age) = (1325.0, 51, 27);
-//! let player_two = DWZRating{
+//! let player_two = DWZRating {
 //!     rating: some_rating,
 //!     index: some_index,
 //!     age: some_age,
@@ -47,7 +48,53 @@
 
 use std::collections::HashMap;
 
-use crate::{outcomes::Outcomes, rating::DWZRating};
+use crate::{elo::EloRating, Outcomes};
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The DWZ (Deutsche Wertungszahl) rating for a player.
+///
+/// The age is the actual age of the player, if unsure or unavailable set this to `>25`.  
+/// Converting from an `EloRating` or using `DWZRating::default()` will set the age to 26.
+///
+/// The default rating is 1000.0.
+pub struct DWZRating {
+    /// The player's DWZ rating number, by default 1000.0.
+    pub rating: f64,
+    /// The player's DWZ index, how many "events" they have completed.
+    pub index: usize,
+    /// The age of the player, if uncertain or unavailable set this to `>25`.
+    pub age: usize,
+}
+
+impl DWZRating {
+    #[must_use]
+    /// Initialize a new `DWZRating` with a rating of 1000.0, an index of 1 and the specified age.  
+    /// The age is the actual age of the player, if unsure or unavailable set this to `>25`.
+    pub const fn new(age: usize) -> Self {
+        Self {
+            rating: 1000.0,
+            index: 1,
+            age,
+        }
+    }
+}
+
+impl Default for DWZRating {
+    fn default() -> Self {
+        Self::new(26)
+    }
+}
+
+impl From<EloRating> for DWZRating {
+    fn from(e: EloRating) -> Self {
+        Self {
+            rating: e.rating,
+            // Recommended according to Wikipedia.
+            index: 6,
+            ..Default::default()
+        }
+    }
+}
 
 #[must_use]
 /// Calculates new [`DWZRating`] of two players based on their old rating, index, age and outcome of the game.
@@ -66,7 +113,10 @@ use crate::{outcomes::Outcomes, rating::DWZRating};
 ///
 /// # Examples
 /// ```
-/// use skillratings::{dwz::dwz, outcomes::Outcomes, rating::DWZRating};
+/// use skillratings::{
+///     dwz::{dwz, DWZRating},
+///     Outcomes,
+/// };
 ///
 /// let player_one = DWZRating {
 ///     rating: 1500.0,
@@ -81,13 +131,13 @@ use crate::{outcomes::Outcomes, rating::DWZRating};
 ///
 /// let outcome = Outcomes::WIN;
 ///
-/// let (player_one_new, player_two_new) = dwz(&player_one, &player_two, &outcome);
+/// let (new_one, new_two) = dwz(&player_one, &player_two, &outcome);
 ///
-/// assert!((player_one_new.rating.round() - 1519.0).abs() < f64::EPSILON);
-/// assert_eq!(player_one_new.index, 43);
+/// assert!((new_one.rating.round() - 1519.0).abs() < f64::EPSILON);
+/// assert_eq!(new_one.index, 43);
 ///
-/// assert!((player_two_new.rating.round() - 1464.0).abs() < f64::EPSILON);
-/// assert_eq!(player_two_new.index, 13);
+/// assert!((new_two.rating.round() - 1464.0).abs() < f64::EPSILON);
+/// assert_eq!(new_two.index, 13);
 /// ```
 pub fn dwz(
     player_one: &DWZRating,
@@ -153,7 +203,10 @@ pub fn dwz(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{dwz::dwz_rating_period, outcomes::Outcomes, rating::DWZRating};
+/// use skillratings::{
+///     dwz::{dwz_rating_period, DWZRating},
+///     Outcomes,
+/// };
 ///
 /// let player = DWZRating {
 ///     rating: 1530.0,
@@ -215,7 +268,7 @@ pub fn dwz_rating_period(player: &DWZRating, results: &Vec<(DWZRating, Outcomes)
 ///
 /// # Examples
 /// ```
-/// use skillratings::{dwz::expected_score, rating::DWZRating};
+/// use skillratings::dwz::{expected_score, DWZRating};
 ///
 /// let player_one = DWZRating {
 ///     rating: 1900.0,
@@ -229,7 +282,6 @@ pub fn dwz_rating_period(player: &DWZRating, results: &Vec<(DWZRating, Outcomes)
 /// };
 ///
 /// let (exp_one, exp_two) = expected_score(&player_one, &player_two);
-///
 ///
 /// assert!(((exp_one * 100.0).round() - 91.0).abs() < f64::EPSILON);
 /// assert!(((exp_two * 100.0).round() - 9.0).abs() < f64::EPSILON);
@@ -247,7 +299,7 @@ pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f
 /// Gets a proper first [`DWZRating`].
 ///
 /// In the case that you do not have enough opponents to rate a player against,
-/// consider using [`DWZRating::from()`](DWZRating) if you have an [`EloRating`](crate::rating::EloRating)
+/// consider using [`DWZRating::from()`](DWZRating) if you have an [`EloRating`](crate::elo::EloRating)
 /// or [`DWZRating::new()`](DWZRating) if not.
 ///
 /// Takes in the player's age and their results as a Vec of tuples containing the opponent and the outcome.
@@ -258,29 +310,32 @@ pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f
 ///
 /// # Examples
 /// ```
-/// use skillratings::{dwz::get_first_dwz, outcomes::Outcomes, rating::DWZRating};
+/// use skillratings::{
+///     dwz::{get_first_dwz, DWZRating},
+///     Outcomes,
+/// };
 ///
-/// let o1 = DWZRating {
+/// let opponent1 = DWZRating {
 ///     rating: 1300.0,
 ///     index: 23,
 ///     age: 17,
 /// };
-/// let o2 = DWZRating {
+/// let opponent2 = DWZRating {
 ///     rating: 1540.0,
 ///     index: 2,
 ///     age: 29,
 /// };
-/// let o3 = DWZRating {
+/// let opponent3 = DWZRating {
 ///     rating: 1200.0,
 ///     index: 10,
 ///     age: 7,
 /// };
-/// let o4 = DWZRating {
+/// let opponent4 = DWZRating {
 ///     rating: 1290.0,
 ///     index: 76,
 ///     age: 55,
 /// };
-/// let o5 = DWZRating {
+/// let opponent5 = DWZRating {
 ///     rating: 1400.0,
 ///     index: 103,
 ///     age: 11,
@@ -289,11 +344,11 @@ pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f
 /// let player = get_first_dwz(
 ///     26,
 ///     &vec![
-///         (o1, Outcomes::WIN),
-///         (o2, Outcomes::DRAW),
-///         (o3, Outcomes::LOSS),
-///         (o4, Outcomes::WIN),
-///         (o5, Outcomes::WIN),
+///         (opponent1, Outcomes::WIN),
+///         (opponent2, Outcomes::DRAW),
+///         (opponent3, Outcomes::LOSS),
+///         (opponent4, Outcomes::WIN),
+///         (opponent5, Outcomes::WIN),
 ///     ],
 /// )
 /// .unwrap();
@@ -400,10 +455,6 @@ pub fn get_first_dwz(player_age: usize, results: &Vec<(DWZRating, Outcomes)>) ->
     })
 }
 
-fn e0_value(rating: f64, j: f64) -> f64 {
-    (rating / 1000.0).powi(4) + j
-}
-
 fn e_value(rating: f64, age: usize, score: f64, expected_score: f64, index: usize) -> f64 {
     // The variable j is dependent on the age of the player. From wikipedia:
     // "Teenagers up to 20 years: `j = 5.0`, junior adults (21 – 25 years): `j = 10.0`, over-25-year-olds: `j = 15.0`"
@@ -413,7 +464,8 @@ fn e_value(rating: f64, age: usize, score: f64, expected_score: f64, index: usiz
         _ => 15.0,
     };
 
-    let e0 = e0_value(rating, j);
+    // The base value of the development coefficient.
+    let e0 = (rating / 1000.0).powi(4) + j;
 
     // The acceleration factor allows young, over-achieving players to gain rating more quickly.
     let a = if age < 20 && score >= expected_score {
@@ -780,8 +832,6 @@ mod tests {
 
     #[test]
     fn elo_conversion() {
-        use crate::rating::EloRating;
-
         let player_one = EloRating { rating: 1200.0 };
 
         let player_one_dwz = DWZRating::from(player_one);

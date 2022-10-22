@@ -1,8 +1,6 @@
 use skillratings::{
-    config::EloConfig,
-    elo::{elo, elo_rating_period, expected_score},
-    outcomes::Outcomes,
-    rating::EloRating,
+    elo::{elo, elo_rating_period, expected_score, EloConfig, EloRating},
+    Outcomes,
 };
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};

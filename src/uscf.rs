@@ -23,7 +23,8 @@
 //!
 //! ```
 //! use skillratings::{
-//!     uscf::uscf, outcomes::Outcomes, rating::USCFRating, config::USCFConfig
+//!     uscf::{uscf, USCFConfig, USCFRating},
+//!     Outcomes,
 //! };
 //!
 //! // Initialise a new player rating.
@@ -34,7 +35,7 @@
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let (some_rating, some_games) = (1325.0, 44);
-//! let player_two = USCFRating{
+//! let player_two = USCFRating {
 //!     rating: some_rating,
 //!     games: some_games,
 //! };
@@ -46,9 +47,7 @@
 //! // It determines how easy or hard it is to gain bonus rating points.
 //! // The recommended value changes periodically, as of right now it is 14.0.
 //! // Here we set it to 12.0, the recommended value from 2015 to 2017.
-//! let config = USCFConfig {
-//!     t: 12.0,
-//! };
+//! let config = USCFConfig { t: 12.0 };
 //!
 //! // The uscf function will calculate the new ratings for both players and return them.
 //! let (new_player_one, new_player_two) = uscf(&player_one, &player_two, &outcome, &config);
@@ -62,7 +61,92 @@
 //! - [USCF Calculator](https://www.uschess.org/index.php/Players-Ratings/Do-NOT-edit-CLOSE-immediately.html)
 //! - [Wikipedia: USCF](https://en.wikipedia.org/wiki/United_States_Chess_Federation)
 
-use crate::{config::USCFConfig, outcomes::Outcomes, rating::USCFRating};
+use crate::{elo::EloRating, Outcomes};
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The USCF (US Chess Federation) rating for a player.
+///
+/// The age is the actual age of the player,
+/// if unsure or unavailable the official guidelines say to set this to `26`,
+/// if the player is inferred to be an adult, or to `15` if not.  
+///
+/// The default rating is dependent on the age of the player.  
+/// If the player is 26 or older this will be 1300.0, if the player is 15 the rating will be 750.0.  
+/// The minimum rating value is set to be 100.0.
+pub struct USCFRating {
+    /// The player's USCF rating number.
+    pub rating: f64,
+    /// The player's completed games.
+    pub games: usize,
+}
+
+impl USCFRating {
+    #[must_use]
+    /// Initialize a new `USCFRating` with a new rating dependent on the age of the player.  
+    /// The age is the actual age of the player, if unsure or unavailable set this to `26`.  
+    /// The rating of a 26 year old will be 1300.0.
+    pub fn new(age: usize) -> Self {
+        Self {
+            rating: if age < 2 {
+                100.0
+            } else if age > 26 {
+                1300.0
+            } else {
+                age as f64 * 50.0
+            },
+            games: 0,
+        }
+    }
+}
+
+impl Default for USCFRating {
+    fn default() -> Self {
+        Self::new(26)
+    }
+}
+
+impl From<EloRating> for USCFRating {
+    fn from(e: EloRating) -> Self {
+        if e.rating > 2000.0 {
+            Self {
+                rating: 0.94f64.mul_add(e.rating, 180.0),
+                games: 10,
+            }
+        } else {
+            Self {
+                rating: 1.02f64.mul_add(e.rating, 20.0),
+                games: 5,
+            }
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Constants used in the USCF Rating calculations.
+pub struct USCFConfig {
+    /// The t value controls the difficulty of earning bonus rating points.  
+    /// The higher the t value, the more difficult it is.
+    ///
+    /// The USCF changes this value periodically.
+    /// As of 2022, the last change was in May 2017 where this was set from 12 to 14.
+    /// The lowest value was 6, from 2008 to 2012.  
+    /// By default set to 14.0.
+    pub t: f64,
+}
+
+impl USCFConfig {
+    #[must_use]
+    /// Initialize a new `USCFConfig` with a t value of 14.0.
+    pub const fn new() -> Self {
+        Self { t: 14.0 }
+    }
+}
+
+impl Default for USCFConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[must_use]
 /// Calculates the [`USCFRating`]s of two players based on their old ratings, deviations, and the outcome of the game.
@@ -81,7 +165,8 @@ use crate::{config::USCFConfig, outcomes::Outcomes, rating::USCFRating};
 /// # Examples
 /// ```
 /// use skillratings::{
-///     uscf::uscf, outcomes::Outcomes, rating::USCFRating, config::USCFConfig,
+///     uscf::{uscf, USCFConfig, USCFRating},
+///     Outcomes,
 /// };
 ///
 /// let player_one = USCFRating {
@@ -97,13 +182,13 @@ use crate::{config::USCFConfig, outcomes::Outcomes, rating::USCFRating};
 ///
 /// let config = USCFConfig::new();
 ///
-/// let (player_one_new, player_two_new) = uscf(&player_one, &player_two, &outcome, &config);
+/// let (new_one, new_two) = uscf(&player_one, &player_two, &outcome, &config);
 ///
-/// assert!((player_one_new.rating.round() - 1289.0).abs() < f64::EPSILON);
-/// assert_eq!(player_one_new.games, 31);
+/// assert!((new_one.rating.round() - 1289.0).abs() < f64::EPSILON);
+/// assert_eq!(new_one.games, 31);
 ///
-/// assert!((player_two_new.rating.round() - 1344.0).abs() < f64::EPSILON);
-/// assert_eq!(player_two_new.games, 10);
+/// assert!((new_two.rating.round() - 1344.0).abs() < f64::EPSILON);
+/// assert_eq!(new_two.games, 10);
 /// ```
 pub fn uscf(
     player_one: &USCFRating,
@@ -186,7 +271,8 @@ pub fn uscf(
 /// # Examples
 /// ```
 /// use skillratings::{
-///     uscf::uscf_rating_period, outcomes::Outcomes, rating::USCFRating, config::USCFConfig
+///     uscf::{uscf_rating_period, USCFConfig, USCFRating},
+///     Outcomes,
 /// };
 ///
 /// let player = USCFRating {
@@ -196,7 +282,7 @@ pub fn uscf(
 ///
 /// let opponent1 = USCFRating {
 ///     rating: 1400.0,
-///    games: 25,
+///     games: 25,
 /// };
 ///
 /// let opponent2 = USCFRating {
@@ -291,7 +377,7 @@ pub fn uscf_rating_period(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{uscf::expected_score, rating::USCFRating};
+/// use skillratings::uscf::{expected_score, USCFRating};
 ///
 /// let player_one = USCFRating {
 ///     rating: 1800.0,
@@ -349,7 +435,6 @@ fn e_value(rating: f64, opponent_rating: f64) -> f64 {
     (10_f64.powf(-(rating - opponent_rating) / 400.0) + 1.0).recip()
 }
 
-/// Calculates the effective game number of a player.
 fn effective_game_number(rating: f64, past_games: usize) -> f64 {
     if rating < 2355.0 {
         50.0 / 0.000_007_39f64
@@ -378,8 +463,6 @@ fn get_boost_value(played_games: usize, k: f64, e: f64, score: f64, t: f64) -> f
 
 #[cfg(test)]
 mod tests {
-    use crate::rating::EloRating;
-
     use super::*;
 
     #[test]

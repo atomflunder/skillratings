@@ -15,7 +15,8 @@
 //!
 //! ```
 //! use skillratings::{
-//!     glicko::glicko, outcomes::Outcomes, rating::GlickoRating
+//!     glicko::{glicko, GlickoRating},
+//!     Outcomes,
 //! };
 //!
 //! // Initialise a new player rating.
@@ -24,7 +25,7 @@
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let (some_rating, some_deviation) = (1325.0, 230.0);
-//! let player_two = GlickoRating{
+//! let player_two = GlickoRating {
 //!     rating: some_rating,
 //!     deviation: some_deviation,
 //! };
@@ -42,8 +43,92 @@
 //! - [Original Paper by Mark Glickman](http://www.glicko.net/glicko/glicko.pdf)
 //! - [Glicko Calculator](http://www.bjcox.com/?page_id=2)
 
-use crate::{config::GlickoConfig, outcomes::Outcomes, rating::GlickoRating};
+use crate::{
+    glicko2::Glicko2Rating, glicko_boost::GlickoBoostRating, sticko::StickoRating, Outcomes,
+};
 use std::f64::consts::PI;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The Glicko rating for a player.
+///
+/// For the Glicko-2 rating, please see [`Glicko2Rating`].
+///
+/// The default rating is 1500.0.  
+/// The default deviation is 350.0.
+pub struct GlickoRating {
+    /// The player's Glicko rating number, by default 1500.0.
+    pub rating: f64,
+    /// The player's Glicko deviation number, by default 350.0.
+    pub deviation: f64,
+}
+
+impl GlickoRating {
+    #[must_use]
+    /// Initialize a new `GlickoRating` with a rating of 1500.0 and a deviation of 350.0.
+    pub const fn new() -> Self {
+        Self {
+            rating: 1500.0,
+            deviation: 350.0,
+        }
+    }
+}
+
+impl Default for GlickoRating {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<Glicko2Rating> for GlickoRating {
+    fn from(g: Glicko2Rating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
+    }
+}
+
+impl From<GlickoBoostRating> for GlickoRating {
+    fn from(g: GlickoBoostRating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
+    }
+}
+
+impl From<StickoRating> for GlickoRating {
+    fn from(s: StickoRating) -> Self {
+        Self {
+            rating: s.rating,
+            deviation: s.deviation,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Constants used in the Glicko calculations.
+pub struct GlickoConfig {
+    /// The c value describes how much the rating deviation should decay in each step.
+    /// The higher the value, the more the rating deviation will decay.  
+    /// In [the paper](http://www.glicko.net/glicko/glicko.pdf) a value of
+    /// `63.2` seems to be a suggested value, so that is the default here.
+    pub c: f64,
+}
+
+impl GlickoConfig {
+    #[must_use]
+    /// Initialize a new `GlickoConfig` with a c value of `63.2`
+    pub const fn new() -> Self {
+        Self { c: 63.2 }
+    }
+}
+
+impl Default for GlickoConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[must_use]
 /// Calculates the [`GlickoRating`]s of two players based on their old ratings, deviations, and the outcome of the game.
@@ -63,7 +148,10 @@ use std::f64::consts::PI;
 ///
 /// # Examples
 /// ```
-/// use skillratings::{glicko::glicko, outcomes::Outcomes, rating::GlickoRating};
+/// use skillratings::{
+///     glicko::{glicko, GlickoRating},
+///     Outcomes,
+/// };
 ///
 /// let player_one = GlickoRating {
 ///     rating: 1500.0,
@@ -76,13 +164,13 @@ use std::f64::consts::PI;
 ///
 /// let outcome = Outcomes::WIN;
 ///
-/// let (player_one_new, player_two_new) = glicko(&player_one, &player_two, &outcome);
+/// let (new_one, new_two) = glicko(&player_one, &player_two, &outcome);
 ///
-/// assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
-/// assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// assert!((new_one.rating.round() - 1662.0).abs() < f64::EPSILON);
+/// assert!((new_one.deviation.round() - 290.0).abs() < f64::EPSILON);
 ///
-/// assert!((player_two_new.rating.round() - 1338.0).abs() < f64::EPSILON);
-/// assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// assert!((new_two.rating.round() - 1338.0).abs() < f64::EPSILON);
+/// assert!((new_two.deviation.round() - 290.0).abs() < f64::EPSILON);
 /// ```
 pub fn glicko(
     player_one: &GlickoRating,
@@ -153,7 +241,10 @@ pub fn glicko(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{glicko::glicko_rating_period, outcomes::Outcomes, rating::GlickoRating, config::GlickoConfig};
+/// use skillratings::{
+///     glicko::{glicko_rating_period, GlickoConfig, GlickoRating},
+///     Outcomes,
+/// };
 ///
 /// let player = GlickoRating {
 ///     rating: 1500.0,
@@ -247,7 +338,7 @@ pub fn glicko_rating_period(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{glicko::expected_score, rating::GlickoRating};
+/// use skillratings::glicko::{expected_score, GlickoRating};
 ///
 /// let player_one = GlickoRating {
 ///     rating: 2500.0,
@@ -280,7 +371,7 @@ pub fn expected_score(player_one: &GlickoRating, player_two: &GlickoRating) -> (
 ///
 /// # Examples
 /// ```
-/// use skillratings::{glicko::decay_deviation, rating::GlickoRating, config::GlickoConfig};
+/// use skillratings::glicko::{decay_deviation, GlickoConfig, GlickoRating};
 ///
 /// let player_one = GlickoRating {
 ///     rating: 2720.0,
@@ -310,8 +401,8 @@ pub fn decay_deviation(player: &GlickoRating, config: &GlickoConfig) -> GlickoRa
 /// Takes in a player as a [`GlickoRating`] and returns two [`f64`]s that describe the lowest and highest rating.
 ///
 /// # Examples
-/// ```rust
-/// use skillratings::{rating::GlickoRating, glicko::confidence_interval};
+/// ```
+/// use skillratings::glicko::{confidence_interval, GlickoRating};
 ///
 /// let player = GlickoRating {
 ///     rating: 2250.0,

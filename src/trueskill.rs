@@ -28,7 +28,8 @@
 //!
 //! ```
 //! use skillratings::{
-//!     trueskill::trueskill, outcomes::Outcomes, rating::TrueSkillRating, config::TrueSkillConfig
+//!     trueskill::{trueskill, TrueSkillConfig, TrueSkillRating},
+//!     Outcomes,
 //! };
 //!
 //! // Initialise a new player rating.
@@ -37,7 +38,7 @@
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let (some_rating, some_uncertainty) = (34.2, 2.3);
-//! let player_two = TrueSkillRating{
+//! let player_two = TrueSkillRating {
 //!     rating: some_rating,
 //!     uncertainty: some_uncertainty,
 //! };
@@ -68,7 +69,86 @@
 
 use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 
-use crate::{config::TrueSkillConfig, outcomes::Outcomes, rating::TrueSkillRating};
+use crate::{weng_lin::WengLinRating, Outcomes};
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The TrueSkill rating of a player.
+///
+/// The default rating is 25.0.  
+/// The default uncertainty is 25/3 ≈ 8.33.
+pub struct TrueSkillRating {
+    /// The rating value (mu) of the TrueSkilLRating, by default 25.0.
+    pub rating: f64,
+    /// The uncertainty value (sigma) of the TrueSkillRating, by default 25/3 ≈ 8.33.
+    pub uncertainty: f64,
+}
+
+impl TrueSkillRating {
+    #[must_use]
+    /// Initialize a new TrueSkillRating with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
+    pub fn new() -> Self {
+        Self {
+            rating: 25.0,
+            uncertainty: 25.0 / 3.0,
+        }
+    }
+}
+
+impl Default for TrueSkillRating {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<WengLinRating> for TrueSkillRating {
+    fn from(w: WengLinRating) -> Self {
+        Self {
+            rating: w.rating,
+            uncertainty: w.uncertainty,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Constants used in the TrueSkill calculations.
+pub struct TrueSkillConfig {
+    /// The probability of draws occurring in match.
+    /// The higher the probability, the bigger the updates to the ratings in a non-drawn outcome.  
+    /// By default set to `0.1`, meaning 10% chance of a draw.  
+    /// Increase or decrease the value to match the values occurring in your game.
+    pub draw_probability: f64,
+    /// The skill-class width, aka the number of difference in rating points
+    /// needed to have an 80% win probability against another player.  
+    /// By default set to (25 / 3) * 0.5 ≈ `4.167`.  
+    /// If your game is more reliant on pure skill, decrease this value,
+    /// if there are more random factors, increase it.
+    pub beta: f64,
+    /// The additive dynamics factor.
+    /// It determines how easy it will be for a player to move up and down a leaderboard.
+    /// A larger value will tend to cause more volatility of player positions.
+    /// By default set to 25 / 300 ≈ `0.0833`.
+    pub default_dynamics: f64,
+}
+
+impl TrueSkillConfig {
+    #[must_use]
+    /// Initialize a new `TrueSkillConfig` with a draw probability of `0.1`,
+    /// a beta value of `(25 / 3) * 0.5 ≈ 4.167` and a default dynamics value of 25 / 300 ≈ `0.0833`.
+    pub fn new() -> Self {
+        Self {
+            draw_probability: 0.1,
+            beta: (25.0 / 3.0) * 0.5,
+            default_dynamics: 25.0 / 300.0,
+        }
+    }
+}
+
+impl Default for TrueSkillConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[must_use]
 /// Calculates the [`TrueSkillRating`]s of two players based on their old ratings, uncertainties, and the outcome of the game.
 ///
@@ -85,7 +165,10 @@ use crate::{config::TrueSkillConfig, outcomes::Outcomes, rating::TrueSkillRating
 ///
 /// # Examples
 /// ```
-/// use skillratings::{rating::TrueSkillRating, trueskill::trueskill, outcomes::Outcomes, config::TrueSkillConfig};
+/// use skillratings::{
+///     trueskill::{trueskill, TrueSkillConfig, TrueSkillRating},
+///     Outcomes,
+/// };
 ///
 /// let player_one = TrueSkillRating::new();
 /// let player_two = TrueSkillRating {
@@ -97,13 +180,13 @@ use crate::{config::TrueSkillConfig, outcomes::Outcomes, rating::TrueSkillRating
 ///
 /// let config = TrueSkillConfig::new();
 ///
-/// let (player_one, player_two) = trueskill(&player_one, &player_two, &outcome, &config);
+/// let (new_one, new_two) = trueskill(&player_one, &player_two, &outcome, &config);
 ///
-/// assert!(((player_one.rating * 100.0).round() - 4410.0).abs() < f64::EPSILON);
-/// assert!(((player_one.uncertainty * 100.0).round() - 528.0).abs() < f64::EPSILON);
+/// assert!(((new_one.rating * 100.0).round() - 4410.0).abs() < f64::EPSILON);
+/// assert!(((new_one.uncertainty * 100.0).round() - 528.0).abs() < f64::EPSILON);
 ///
-/// assert!(((player_two.rating * 100.0).round() - 4960.0).abs() < f64::EPSILON);
-/// assert!(((player_two.uncertainty * 100.0).round() - 121.0).abs() < f64::EPSILON);
+/// assert!(((new_two.rating * 100.0).round() - 4960.0).abs() < f64::EPSILON);
+/// assert!(((new_two.uncertainty * 100.0).round() - 121.0).abs() < f64::EPSILON);
 /// ```
 pub fn trueskill(
     player_one: &TrueSkillRating,
@@ -198,7 +281,8 @@ pub fn trueskill(
 /// # Examples
 /// ```
 /// use skillratings::{
-///     rating::TrueSkillRating, trueskill::trueskill_rating_period, outcomes::Outcomes, config::TrueSkillConfig
+///     trueskill::{trueskill_rating_period, TrueSkillConfig, TrueSkillRating},
+///     Outcomes,
 /// };
 ///
 /// let player_one = TrueSkillRating::new();
@@ -215,7 +299,7 @@ pub fn trueskill(
 ///     uncertainty: 1.2,
 /// };
 ///
-/// let player = trueskill_rating_period(
+/// let new_player = trueskill_rating_period(
 ///     &player_one,
 ///     &vec![
 ///         (player_two, Outcomes::WIN),
@@ -225,8 +309,8 @@ pub fn trueskill(
 ///     &TrueSkillConfig::new(),
 /// );
 ///
-/// assert!(((player.rating * 100.0).round() - 3277.0).abs() < f64::EPSILON);
-/// assert!(((player.uncertainty * 100.0).round() - 566.0).abs() < f64::EPSILON);
+/// assert!(((new_player.rating * 100.0).round() - 3277.0).abs() < f64::EPSILON);
+/// assert!(((new_player.uncertainty * 100.0).round() - 566.0).abs() < f64::EPSILON);
 /// ```
 pub fn trueskill_rating_period(
     player: &TrueSkillRating,
@@ -302,7 +386,8 @@ pub fn trueskill_rating_period(
 /// # Examples
 /// ```
 /// use skillratings::{
-///     trueskill::trueskill_teams, rating::TrueSkillRating, outcomes::Outcomes, config::TrueSkillConfig
+///     trueskill::{trueskill_teams, TrueSkillConfig, TrueSkillRating},
+///     Outcomes,
 /// };
 ///
 /// let player_one = TrueSkillRating {
@@ -434,7 +519,7 @@ pub fn trueskill_teams(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{rating::TrueSkillRating, trueskill::match_quality, config::TrueSkillConfig};
+/// use skillratings::trueskill::{match_quality, TrueSkillConfig, TrueSkillRating};
 ///
 /// let player_one = TrueSkillRating::new();
 /// let player_two = TrueSkillRating::new();
@@ -481,7 +566,7 @@ pub fn match_quality(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{rating::TrueSkillRating, trueskill::match_quality_teams, config::TrueSkillConfig};
+/// use skillratings::trueskill::{match_quality_teams, TrueSkillConfig, TrueSkillRating};
 ///
 /// let player_one = TrueSkillRating {
 ///     rating: 20.0,
@@ -549,7 +634,7 @@ pub fn match_quality_teams(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{rating::TrueSkillRating, trueskill::expected_score, config::TrueSkillConfig};
+/// use skillratings::trueskill::{expected_score, TrueSkillConfig, TrueSkillRating};
 ///
 /// let better_player = TrueSkillRating {
 ///     rating: 44.0,
@@ -563,7 +648,6 @@ pub fn match_quality_teams(
 /// let config = TrueSkillConfig::new();
 ///
 /// let (exp1, exp2) = expected_score(&better_player, &worse_player, &config);
-///
 ///
 /// // Player one has an 80% chance to win and player two a 20% chance.
 /// assert!((exp1 * 100.0 - 80.0).round().abs() < f64::EPSILON);
@@ -605,7 +689,7 @@ pub fn expected_score(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{rating::TrueSkillRating, trueskill::expected_score_teams, config::TrueSkillConfig};
+/// use skillratings::trueskill::{expected_score_teams, TrueSkillConfig, TrueSkillRating};
 ///
 /// let player_one = TrueSkillRating {
 ///     rating: 38.0,
@@ -674,7 +758,7 @@ pub fn expected_score_teams(
 ///
 /// # Example
 /// ```
-/// use skillratings::{rating::TrueSkillRating, trueskill::get_rank};
+/// use skillratings::trueskill::{get_rank, TrueSkillRating};
 ///
 /// let new_player = TrueSkillRating::new();
 /// let older_player = TrueSkillRating {
@@ -891,10 +975,9 @@ mod tests {
     use std::f64::{INFINITY, NEG_INFINITY};
 
     #[test]
+    /// This example is taken from this presentation (Page 20):
+    /// https://ubm-twvideo01.s3.amazonaws.com/o1/vault/gdc2017/Presentations/Izquierdo_Mario_Ranking_Systems_Elo.pdf
     fn test_trueskill() {
-        // This example is taken from:
-        // <https://ubm-twvideo01.s3.amazonaws.com/o1/vault/gdc2017/Presentations/Izquierdo_Mario_Ranking_Systems_Elo.pdf>
-        // (Page 20)
         let player_one = TrueSkillRating::new();
         let player_two = TrueSkillRating {
             rating: 30.0,

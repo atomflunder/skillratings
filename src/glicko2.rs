@@ -13,7 +13,8 @@
 //!
 //! ```
 //! use skillratings::{
-//!     glicko2::glicko2, outcomes::Outcomes, rating::Glicko2Rating, config::Glicko2Config
+//!     glicko2::{glicko2, Glicko2Config, Glicko2Rating},
+//!     Outcomes,
 //! };
 //!
 //! // Initialise a new player rating.
@@ -22,7 +23,7 @@
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let (some_rating, some_deviation, some_volatility) = (1325.0, 230.0, 0.05932);
-//! let player_two = Glicko2Rating{
+//! let player_two = Glicko2Rating {
 //!     rating: some_rating,
 //!     deviation: some_deviation,
 //!     volatility: some_volatility,
@@ -50,8 +51,106 @@
 //! - [Original Paper by Mark Glickman](http://www.glicko.net/glicko/glicko2.pdf)
 //! - [Glicko-2 Calculator](https://fsmosca-glicko2calculator-glicko2calculator-vik8k0.streamlitapp.com/)
 
-use crate::{config::Glicko2Config, outcomes::Outcomes, rating::Glicko2Rating};
+use crate::{
+    glicko::GlickoRating, glicko_boost::GlickoBoostRating, sticko::StickoRating, Outcomes,
+};
 use std::f64::consts::PI;
+
+/// The Glicko-2 rating of a player.
+///
+/// For the Glicko rating, please see [`GlickoRating`].
+///
+/// The default rating is 1500.0.  
+/// The default deviation is 350.0.  
+/// The default volatility is 0.06.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Glicko2Rating {
+    /// The player's Glicko-2 rating number, by default 1500.0.
+    pub rating: f64,
+    /// The player's Glicko-2 deviation number, by default 350.0.
+    pub deviation: f64,
+    /// The player's Glicko-2 volatility number, by default 0.06.
+    pub volatility: f64,
+}
+
+impl Glicko2Rating {
+    /// Initialize a new `Glicko2Rating` with a rating of 1500.0, a deviation of 350.0 and a volatility of 0.06.
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            rating: 1500.0,
+            deviation: 350.0,
+            volatility: 0.06,
+        }
+    }
+}
+
+impl Default for Glicko2Rating {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<GlickoRating> for Glicko2Rating {
+    fn from(g: GlickoRating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<GlickoBoostRating> for Glicko2Rating {
+    fn from(g: GlickoBoostRating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<StickoRating> for Glicko2Rating {
+    fn from(s: StickoRating) -> Self {
+        Self {
+            rating: s.rating,
+            deviation: s.deviation,
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Constants used in the Glicko-2 calculations.
+pub struct Glicko2Config {
+    /// The tau constant constrains the change in volatility over time.
+    /// To cite Mark Glickman himself: "Reasonable choices are between 0.3 and 1.2".
+    /// Smaller values mean less change in volatility and vice versa.  
+    /// The default value here is `0.5`.
+    pub tau: f64,
+    /// The convergence tolerance value, the smaller the value the more accurate the volatility calculations.  
+    /// The default value is `0.000_001`, as suggested in [the paper (page 3)](http://www.glicko.net/glicko/glicko2.pdf).  
+    /// Do not set this to a negative value.
+    pub convergence_tolerance: f64,
+}
+
+impl Glicko2Config {
+    #[must_use]
+    /// Initialize a new `Glicko2Config` with a tau value of `0.5` and a convergence tolerance of `0.000_001`.
+    pub const fn new() -> Self {
+        Self {
+            tau: 0.5,
+            convergence_tolerance: 0.000_001,
+        }
+    }
+}
+
+impl Default for Glicko2Config {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// Calculates the [`Glicko2Rating`]s of two players based on their old ratings, deviations, volatilities, and the outcome of the game.
 ///
@@ -70,7 +169,10 @@ use std::f64::consts::PI;
 ///
 /// # Examples
 /// ```
-/// use skillratings::{glicko2::glicko2, outcomes::Outcomes, rating::Glicko2Rating, config::Glicko2Config};
+/// use skillratings::{
+///     glicko2::{glicko2, Glicko2Config, Glicko2Rating},
+///     Outcomes,
+/// };
 ///
 /// let player_one = Glicko2Rating {
 ///     rating: 1500.0,
@@ -87,15 +189,15 @@ use std::f64::consts::PI;
 ///
 /// let config = Glicko2Config::new();
 ///
-/// let (player_one_new, player_two_new) = glicko2(&player_one, &player_two, &outcome, &config);
+/// let (new_one, new_two) = glicko2(&player_one, &player_two, &outcome, &config);
 ///
-/// assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
-/// assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
-/// assert!((player_one_new.volatility - 0.05999967537233814).abs() < f64::EPSILON);
+/// assert!((new_one.rating.round() - 1662.0).abs() < f64::EPSILON);
+/// assert!((new_one.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// assert!((new_one.volatility - 0.05999967537233814).abs() < f64::EPSILON);
 ///
-/// assert!((player_two_new.rating.round() - 1338.0).abs() < f64::EPSILON);
-/// assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
-/// assert!((player_two_new.volatility - 0.05999967537233814).abs() < f64::EPSILON);
+/// assert!((new_two.rating.round() - 1338.0).abs() < f64::EPSILON);
+/// assert!((new_two.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// assert!((new_two.volatility - 0.05999967537233814).abs() < f64::EPSILON);
 /// ```
 #[must_use]
 pub fn glicko2(
@@ -127,29 +229,23 @@ pub fn glicko2(
 
     let player_one_new_volatility = new_volatility(
         player_one.volatility,
-        delta_value(outcome1, v1, g1, e1),
-        player_one_deviation,
+        delta_value(outcome1, v1, g1, e1).powi(2),
+        player_one_deviation.powi(2),
         v1,
         config.tau,
         config.convergence_tolerance,
     );
     let player_two_new_volatility = new_volatility(
         player_two.volatility,
-        delta_value(outcome2, v2, g2, e2),
-        player_two_deviation,
+        delta_value(outcome2, v2, g2, e2).powi(2),
+        player_two_deviation.powi(2),
         v2,
         config.tau,
         config.convergence_tolerance,
     );
 
-    let new_deviation1 = new_deviation(
-        new_pre_deviation(player_one_deviation, player_one_new_volatility),
-        v1,
-    );
-    let new_deviation2 = new_deviation(
-        new_pre_deviation(player_two_deviation, player_two_new_volatility),
-        v2,
-    );
+    let new_deviation1 = new_deviation(player_one_deviation, player_one_new_volatility, v1);
+    let new_deviation2 = new_deviation(player_two_deviation, player_two_new_volatility, v2);
 
     let new_rating1 = new_rating(player_one_rating, new_deviation1, outcome1, g1, e1);
     let new_rating2 = new_rating(player_two_rating, new_deviation2, outcome2, g2, e2);
@@ -185,7 +281,10 @@ pub fn glicko2(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{glicko2::glicko2_rating_period, outcomes::Outcomes, rating::Glicko2Rating, config::Glicko2Config};
+/// use skillratings::{
+///     glicko2::{glicko2_rating_period, Glicko2Config, Glicko2Rating},
+///     Outcomes,
+/// };
 ///
 /// let player = Glicko2Rating {
 ///     rating: 1500.0,
@@ -193,28 +292,28 @@ pub fn glicko2(
 ///     volatility: 0.06,
 /// };
 ///
-/// let opponent_one = Glicko2Rating {
+/// let opponent1 = Glicko2Rating {
 ///     rating: 1400.0,
 ///     deviation: 30.0,
 ///     volatility: 0.06,
 /// };
 ///
-/// let opponent_two = Glicko2Rating {
+/// let opponent2 = Glicko2Rating {
 ///     rating: 1550.0,
 ///     deviation: 100.0,
 ///     volatility: 0.06,
 /// };
 ///
-/// let opponent_three = Glicko2Rating {
+/// let opponent3 = Glicko2Rating {
 ///     rating: 1700.0,
 ///     deviation: 300.0,
 ///     volatility: 0.06,
 /// };
 ///
 /// let results = vec![
-///     (opponent_one, Outcomes::WIN),
-///     (opponent_two, Outcomes::LOSS),
-///     (opponent_three, Outcomes::LOSS),
+///     (opponent1, Outcomes::WIN),
+///     (opponent2, Outcomes::LOSS),
+///     (opponent3, Outcomes::LOSS),
 /// ];
 ///
 /// let new_player = glicko2_rating_period(&player, &results, &Glicko2Config::new());
@@ -263,16 +362,14 @@ pub fn glicko2_rating_period(
 
     let new_volatility = new_volatility(
         player.volatility,
-        delta,
-        player_deviation,
+        delta.powi(2),
+        player_deviation.powi(2),
         v,
         config.tau,
         config.convergence_tolerance,
     );
 
-    let new_pre_deviation = new_pre_deviation(player_deviation, new_volatility);
-
-    let new_deviation = new_deviation(new_pre_deviation, v);
+    let new_deviation = new_deviation(player_deviation, new_volatility, v);
 
     let new_rating = new_deviation.powi(2).mul_add(scores, player_rating);
 
@@ -291,7 +388,7 @@ pub fn glicko2_rating_period(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{glicko2::expected_score, rating::Glicko2Rating};
+/// use skillratings::glicko2::{expected_score, Glicko2Rating};
 ///
 /// let player_one = Glicko2Rating {
 ///     rating: 2500.0,
@@ -334,7 +431,7 @@ pub fn expected_score(player_one: &Glicko2Rating, player_two: &Glicko2Rating) ->
 ///
 /// # Examples
 /// ```
-/// use skillratings::{glicko2::decay_deviation, rating::Glicko2Rating};
+/// use skillratings::glicko2::{decay_deviation, Glicko2Rating};
 ///
 /// let player_one = Glicko2Rating {
 ///     rating: 2720.0,
@@ -366,8 +463,8 @@ pub fn decay_deviation(player: &Glicko2Rating) -> Glicko2Rating {
 /// Takes in a player as a [`Glicko2Rating`] and returns two [`f64`]s that describe the lowest and highest rating.
 ///
 /// # Examples
-/// ```rust
-/// use skillratings::{rating::Glicko2Rating, glicko2::confidence_interval};
+/// ```
+/// use skillratings::glicko2::{confidence_interval, Glicko2Rating};
 ///
 /// let player = Glicko2Rating {
 ///     rating: 2250.0,
@@ -424,15 +521,12 @@ fn f_value(
 
 fn new_volatility(
     old_volatility: f64,
-    delta: f64,
-    deviation: f64,
+    delta_squared: f64,
+    deviation_squared: f64,
     v: f64,
     tau: f64,
     convergence_tolerance: f64,
 ) -> f64 {
-    let delta_squared = delta.powi(2);
-    let deviation_squared = deviation.powi(2);
-
     let mut a = old_volatility.powi(2).ln();
     let mut b = if delta_squared > deviation_squared + v {
         (delta_squared - deviation_squared - v).ln()
@@ -474,11 +568,9 @@ fn new_volatility(
     (a / 2.0).exp()
 }
 
-fn new_pre_deviation(deviation: f64, new_volatility: f64) -> f64 {
-    deviation.hypot(new_volatility)
-}
+fn new_deviation(deviation: f64, new_volatility: f64, v: f64) -> f64 {
+    let pre_deviation = deviation.hypot(new_volatility);
 
-fn new_deviation(pre_deviation: f64, v: f64) -> f64 {
     ((pre_deviation.powi(2).recip()) + (v.recip()))
         .sqrt()
         .recip()
@@ -835,8 +927,6 @@ mod tests {
 
     #[test]
     fn glicko_conversion() {
-        use crate::rating::GlickoRating;
-
         let glicko2_player = Glicko2Rating::new();
 
         let glicko1_player = GlickoRating::from(glicko2_player);

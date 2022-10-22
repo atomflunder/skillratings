@@ -38,7 +38,7 @@ Alternatively, you can add the following to your `Cargo.toml` file manually:
 
 ```toml
 [dependencies]
-skillratings = "0.17"
+skillratings = "0.18"
 ```
 
 ## Usage and Examples
@@ -54,7 +54,8 @@ We use *Glicko-2* in this example here.
 
 ```rust
 use skillratings::{
-    glicko2::glicko2, outcomes::Outcomes, rating::Glicko2Rating, config::Glicko2Config
+    glicko2::{glicko2, Glicko2Config, Glicko2Rating},
+    Outcomes,
 };
 
 // Initialise a new player rating.
@@ -64,7 +65,7 @@ let player_one = Glicko2Rating::new();
 // Or you can initialise it with your own values of course.
 // Imagine these numbers being pulled from a database.
 let (some_rating, some_deviation, some_volatility) = (1325.0, 230.0, 0.05932);
-let player_two = Glicko2Rating{
+let player_two = Glicko2Rating {
     rating: some_rating,
     deviation: some_deviation,
     volatility: some_volatility,
@@ -90,10 +91,8 @@ This example shows a 3v3 game using *TrueSkill*.
 
 ```rust
 use skillratings::{
-    trueskill::trueskill_teams, 
-    outcomes::Outcomes, 
-    rating::TrueSkillRating, 
-    config::TrueSkillConfig,
+    trueskill::{trueskill_teams, TrueSkillConfig, TrueSkillRating},
+    Outcomes,
 };
 
 // We initialise Team One as a Vec of multiple TrueSkillRatings.
@@ -139,14 +138,14 @@ Every rating algorithm has an `expected_score` function that you can use to pred
 This example is using *Glicko* (*not Glicko-2!*) to demonstrate.
 
 ```rust
-use skillratings::{glicko::expected_score, rating::GlickoRating};
+use skillratings::glicko::{expected_score, GlickoRating};
 
 // Initialise a new player rating.
 // The default values are: 1500.0, and 350.0.
 let player_one = GlickoRating::new();
 
 // Initialising a new rating with custom numbers.
-let player_two = GlickoRating{
+let player_two = GlickoRating {
     rating: 1812.0,
     deviation: 195.0,
 };
@@ -170,21 +169,20 @@ We are using the *Elo* rating algorithm in this example.
 
 ```rust
 use skillratings::{
-    elo::elo_rating_period, outcomes::Outcomes, rating::EloRating, config::EloConfig
+    elo::{elo_rating_period, EloConfig, EloRating},
+    Outcomes,
 };
 
 // We initialise a new Elo Rating here.
-let player = EloRating {
-    rating: 1402.1,
-};
+let player = EloRating { rating: 1402.1 };
 
 // We need a list of results to pass to the elo_rating_period function.
 let mut results = Vec::new();
 
-// And then we populate the list with tuples containing the opponent, 
+// And then we populate the list with tuples containing the opponent,
 // and the outcome of the match from our perspective.
 results.push((EloRating::new(), Outcomes::WIN));
-results.push((EloRating {rating: 954.0}, Outcomes::DRAW));
+results.push((EloRating { rating: 954.0 }, Outcomes::DRAW));
 results.push((EloRating::new(), Outcomes::LOSS));
 
 // The elo_rating_period function calculates the new rating for the player and returns it.

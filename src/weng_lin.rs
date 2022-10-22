@@ -18,7 +18,8 @@
 //!
 //! ```
 //! use skillratings::{
-//!     weng_lin::weng_lin, outcomes::Outcomes, rating::WengLinRating, config::WengLinConfig
+//!     weng_lin::{weng_lin, WengLinConfig, WengLinRating},
+//!     Outcomes,
 //! };
 //!
 //! // Initialise a new player rating.
@@ -27,7 +28,7 @@
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let (some_rating, some_uncertainty) = (41.2, 2.12);
-//! let player_two = WengLinRating{
+//! let player_two = WengLinRating {
 //!     rating: some_rating,
 //!     uncertainty: some_uncertainty,
 //! };
@@ -56,7 +57,81 @@
 //! - [Approximate Bayesian computaion Wikipedia](https://en.wikipedia.org/wiki/Approximate_Bayesian_computation)
 //! - [Logistic distribution Wikipedia](https://en.wikipedia.org/wiki/Logistic_distribution)
 
-use crate::{config::WengLinConfig, outcomes::Outcomes, rating::WengLinRating};
+use crate::{trueskill::TrueSkillRating, Outcomes};
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The Weng-Lin rating of a player.
+///
+/// Similar to [`TrueSkillRating`].
+///
+/// The default rating is 25.0.  
+/// The default uncertainty is 25/3 ≈ 8.33.
+pub struct WengLinRating {
+    /// The rating value (mu) of the WengLinRating, by default 25.0.
+    pub rating: f64,
+    /// The uncertainty value (sigma) of the WengLinRating, by default 25/3 ≈ 8.33.
+    pub uncertainty: f64,
+}
+
+impl WengLinRating {
+    #[must_use]
+    /// Initialize a new WengLinRating with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
+    pub fn new() -> Self {
+        Self {
+            rating: 25.0,
+            uncertainty: 25.0 / 3.0,
+        }
+    }
+}
+
+impl Default for WengLinRating {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<TrueSkillRating> for WengLinRating {
+    fn from(t: TrueSkillRating) -> Self {
+        Self {
+            rating: t.rating,
+            uncertainty: t.uncertainty,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Constants used in the Weng-Lin calculations.
+pub struct WengLinConfig {
+    /// The skill-class width, aka the number of difference in rating points
+    /// needed to have an 80% win probability against another player.  
+    /// By default set to 25 / 6 ≈ `4.167`.  
+    /// If your game is more reliant on pure skill, decrease this value,
+    /// if there are more random factors, increase it.
+    pub beta: f64,
+    /// The lower ceiling of the sigma value, in the uncertainty calculations.
+    /// The lower this value, the lower the possible uncertainty values.  
+    /// By default set to 0.000_001.  
+    /// Do not set this to a negative value.
+    pub uncertainty_tolerance: f64,
+}
+
+impl WengLinConfig {
+    #[must_use]
+    /// Initialize a new `WengLinConfig` with a beta value of 25 / 6 ≈ `4.167`
+    /// and an uncertainty tolerance of `0.000_001`.
+    pub fn new() -> Self {
+        Self {
+            beta: 25.0 / 6.0,
+            uncertainty_tolerance: 0.000_001,
+        }
+    }
+}
+
+impl Default for WengLinConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[must_use]
 #[allow(clippy::needless_pass_by_value)]
@@ -72,7 +147,8 @@ use crate::{config::WengLinConfig, outcomes::Outcomes, rating::WengLinRating};
 /// # Examples
 /// ```
 /// use skillratings::{
-///     rating::WengLinRating, weng_lin::weng_lin, outcomes::Outcomes, config::WengLinConfig
+///     weng_lin::{weng_lin, WengLinConfig, WengLinRating},
+///     Outcomes,
 /// };
 ///
 /// let player_one = WengLinRating {
@@ -81,12 +157,17 @@ use crate::{config::WengLinConfig, outcomes::Outcomes, rating::WengLinRating};
 /// };
 /// let player_two = WengLinRating::new();
 ///
-/// let (player_one, player_two) = weng_lin(&player_one, &player_two, &Outcomes::WIN, &WengLinConfig::new());
+/// let (new_one, new_two) = weng_lin(
+///     &player_one,
+///     &player_two,
+///     &Outcomes::WIN,
+///     &WengLinConfig::new(),
+/// );
 ///
-/// assert!(((player_one.rating * 100.0).round() - 4203.0).abs() < f64::EPSILON);
-/// assert!(((player_one.uncertainty * 100.0).round() - 130.0).abs() < f64::EPSILON);
-/// assert!(((player_two.rating * 100.0).round() - 2391.0).abs() < f64::EPSILON);
-/// assert!(((player_two.uncertainty * 100.0).round() - 803.0).abs() < f64::EPSILON);
+/// assert!(((new_one.rating * 100.0).round() - 4203.0).abs() < f64::EPSILON);
+/// assert!(((new_one.uncertainty * 100.0).round() - 130.0).abs() < f64::EPSILON);
+/// assert!(((new_two.rating * 100.0).round() - 2391.0).abs() < f64::EPSILON);
+/// assert!(((new_two.uncertainty * 100.0).round() - 803.0).abs() < f64::EPSILON);
 /// ```
 pub fn weng_lin(
     player_one: &WengLinRating,
@@ -153,7 +234,8 @@ pub fn weng_lin(
 /// # Examples
 /// ```
 /// use skillratings::{
-///     rating::WengLinRating, weng_lin::weng_lin_rating_period, outcomes::Outcomes, config::WengLinConfig
+///     weng_lin::{weng_lin_rating_period, WengLinConfig, WengLinRating},
+///     Outcomes,
 /// };
 ///
 /// let player = WengLinRating::new();
@@ -164,7 +246,7 @@ pub fn weng_lin(
 ///     uncertainty: 4.2,
 /// };
 ///
-/// let player = weng_lin_rating_period(
+/// let new_player = weng_lin_rating_period(
 ///     &player,
 ///     &vec![
 ///         (opponent_one, Outcomes::WIN),
@@ -173,8 +255,8 @@ pub fn weng_lin(
 ///     &WengLinConfig::new(),
 /// );
 ///
-/// assert!(((player.rating * 100.0).round() - 2578.0).abs() < f64::EPSILON);
-/// assert!(((player.uncertainty * 100.0).round() - 780.0).abs() < f64::EPSILON);
+/// assert!(((new_player.rating * 100.0).round() - 2578.0).abs() < f64::EPSILON);
+/// assert!(((new_player.uncertainty * 100.0).round() - 780.0).abs() < f64::EPSILON);
 /// ```
 pub fn weng_lin_rating_period(
     player: &WengLinRating,
@@ -227,7 +309,8 @@ pub fn weng_lin_rating_period(
 /// # Examples
 /// ```
 /// use skillratings::{
-///     rating::WengLinRating, weng_lin::weng_lin_teams, outcomes::Outcomes, config::WengLinConfig
+///     weng_lin::{weng_lin_teams, WengLinConfig, WengLinRating},
+///     Outcomes,
 /// };
 ///
 /// let team_one = vec![
@@ -254,16 +337,16 @@ pub fn weng_lin_rating_period(
 ///     },
 /// ];
 ///
-/// let (team_one, team_two) =
+/// let (new_one, new_two) =
 ///     weng_lin_teams(&team_one, &team_two, &Outcomes::WIN, &WengLinConfig::new());
 ///
-/// assert!(((team_one[0].rating * 100.0).round() - 2790.0).abs() < f64::EPSILON);
-/// assert!(((team_one[1].rating * 100.0).round() - 3006.0).abs() < f64::EPSILON);
-/// assert!(((team_one[2].rating * 100.0).round() - 2277.0).abs() < f64::EPSILON);
+/// assert!(((new_one[0].rating * 100.0).round() - 2790.0).abs() < f64::EPSILON);
+/// assert!(((new_one[1].rating * 100.0).round() - 3006.0).abs() < f64::EPSILON);
+/// assert!(((new_one[2].rating * 100.0).round() - 2277.0).abs() < f64::EPSILON);
 ///
-/// assert!(((team_two[0].rating * 100.0).round() - 2210.0).abs() < f64::EPSILON);
-/// assert!(((team_two[1].rating * 100.0).round() - 4092.0).abs() < f64::EPSILON);
-/// assert!(((team_two[2].rating * 100.0).round() - 1843.0).abs() < f64::EPSILON);
+/// assert!(((new_two[0].rating * 100.0).round() - 2210.0).abs() < f64::EPSILON);
+/// assert!(((new_two[1].rating * 100.0).round() - 4092.0).abs() < f64::EPSILON);
+/// assert!(((new_two[2].rating * 100.0).round() - 1843.0).abs() < f64::EPSILON);
 /// ```
 pub fn weng_lin_teams(
     team_one: &Vec<WengLinRating>,
@@ -357,9 +440,7 @@ pub fn weng_lin_teams(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{
-///     rating::WengLinRating, weng_lin::expected_score, config::WengLinConfig
-/// };
+/// use skillratings::weng_lin::{expected_score, WengLinConfig, WengLinRating};
 ///
 /// let p1 = WengLinRating {
 ///     rating: 42.0,
@@ -413,9 +494,7 @@ pub fn expected_score(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{
-///     rating::WengLinRating, weng_lin::expected_score_teams, config::WengLinConfig
-/// };
+/// use skillratings::weng_lin::{expected_score_teams, WengLinConfig, WengLinRating};
 ///
 /// let team_one = vec![
 ///     WengLinRating {
@@ -427,7 +506,6 @@ pub fn expected_score(
 ///         rating: 12.0,
 ///         uncertainty: 3.2,
 ///     },
-///
 /// ];
 /// let team_two = vec![
 ///     WengLinRating {
@@ -789,8 +867,6 @@ mod tests {
 
     #[test]
     fn trueskill_conversion() {
-        use crate::rating::TrueSkillRating;
-
         let weng_lin_player = WengLinRating::new();
 
         let trueskill_player = TrueSkillRating::from(weng_lin_player);

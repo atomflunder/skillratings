@@ -44,7 +44,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.17"
+//! skillratings = "0.18"
 //! ```
 //!
 //! # Usage and Examples
@@ -60,7 +60,8 @@
 //!
 //! ```rust
 //! use skillratings::{
-//!     glicko2::glicko2, outcomes::Outcomes, rating::Glicko2Rating, config::Glicko2Config
+//!     glicko2::{glicko2, Glicko2Config, Glicko2Rating},
+//!     Outcomes,
 //! };
 //!
 //! // Initialise a new player rating.
@@ -70,7 +71,7 @@
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let (some_rating, some_deviation, some_volatility) = (1325.0, 230.0, 0.05932);
-//! let player_two = Glicko2Rating{
+//! let player_two = Glicko2Rating {
 //!     rating: some_rating,
 //!     deviation: some_deviation,
 //!     volatility: some_volatility,
@@ -96,10 +97,8 @@
 //!
 //! ```rust
 //! use skillratings::{
-//!     trueskill::trueskill_teams,
-//!     outcomes::Outcomes,
-//!     rating::TrueSkillRating,
-//!     config::TrueSkillConfig,
+//!     trueskill::{trueskill_teams, TrueSkillConfig, TrueSkillRating},
+//!     Outcomes,
 //! };
 //!
 //! // We initialise Team One as a Vec of multiple TrueSkillRatings.
@@ -145,14 +144,14 @@
 //! This example is using *Glicko* (*not Glicko-2!*) to demonstrate.
 //!
 //! ```rust
-//! use skillratings::{glicko::expected_score, rating::GlickoRating};
+//! use skillratings::glicko::{expected_score, GlickoRating};
 //!
 //! // Initialise a new player rating.
 //! // The default values are: 1500.0, and 350.0.
 //! let player_one = GlickoRating::new();
 //!
 //! // Initialising a new rating with custom numbers.
-//! let player_two = GlickoRating{
+//! let player_two = GlickoRating {
 //!     rating: 1812.0,
 //!     deviation: 195.0,
 //! };
@@ -176,13 +175,12 @@
 //!
 //! ```rust
 //! use skillratings::{
-//!     elo::elo_rating_period, outcomes::Outcomes, rating::EloRating, config::EloConfig
+//!     elo::{elo_rating_period, EloConfig, EloRating},
+//!     Outcomes,
 //! };
 //!
 //! // We initialise a new Elo Rating here.
-//! let player = EloRating {
-//!     rating: 1402.1,
-//! };
+//! let player = EloRating { rating: 1402.1 };
 //!
 //! // We need a list of results to pass to the elo_rating_period function.
 //! let mut results = Vec::new();
@@ -190,7 +188,7 @@
 //! // And then we populate the list with tuples containing the opponent,
 //! // and the outcome of the match from our perspective.
 //! results.push((EloRating::new(), Outcomes::WIN));
-//! results.push((EloRating {rating: 954.0}, Outcomes::DRAW));
+//! results.push((EloRating { rating: 954.0 }, Outcomes::DRAW));
 //! results.push((EloRating::new(), Outcomes::LOSS));
 //!
 //! // The elo_rating_period function calculates the new rating for the player and returns it.
@@ -200,7 +198,6 @@
 //! assert_eq!(new_player.rating.round(), 1362.0);
 //! ```
 
-pub mod config;
 pub mod dwz;
 pub mod egf;
 pub mod elo;
@@ -208,9 +205,36 @@ pub mod glicko;
 pub mod glicko2;
 pub mod glicko_boost;
 pub mod ingo;
-pub mod outcomes;
-pub mod rating;
 pub mod sticko;
 pub mod trueskill;
 pub mod uscf;
 pub mod weng_lin;
+
+/// The possible outcomes for a match: Win, Draw, Loss.
+///
+/// Note that this is always from the perspective of player one.  
+/// That means a win is a win for player one and a loss is a win for player two.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Outcomes {
+    /// A win, from player_one's perspective.
+    WIN,
+    /// A loss, from player_one's perspective.
+    LOSS,
+    /// A draw.
+    DRAW,
+}
+
+impl Outcomes {
+    #[must_use]
+    /// Converts the outcome of the match into the points used in chess (1 = Win, 0.5 = Draw, 0 = Loss).
+    ///
+    /// Used internally in several rating algorithms, but some, like TrueSkill, have their own conversion.
+    pub const fn to_chess_points(self) -> f64 {
+        // Could set the visibility to crate level, but maybe someone has a use for it, who knows.
+        match self {
+            Self::WIN => 1.0,
+            Self::DRAW => 0.5,
+            Self::LOSS => 0.0,
+        }
+    }
+}

@@ -11,7 +11,8 @@
 //!
 //! ```
 //! use skillratings::{
-//!     elo::elo, outcomes::Outcomes, rating::EloRating, config::EloConfig
+//!     elo::{elo, EloConfig, EloRating},
+//!     Outcomes,
 //! };
 //!
 //! // Initialise a new player rating.
@@ -20,7 +21,7 @@
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let some_rating = 1325.0;
-//! let player_two = EloRating{
+//! let player_two = EloRating {
 //!     rating: some_rating,
 //! };
 //!
@@ -30,7 +31,7 @@
 //! // The config allows you to specify certain values in the Elo calculation.
 //! // Here we modify the k-value to be 20.0, instead of the usual 32.0.
 //! // To simplify massively: This means the ratings will not change as much.
-//! let config = EloConfig { k: 20.0 } ;
+//! let config = EloConfig { k: 20.0 };
 //!
 //! // The elo function will calculate the new ratings for both players and return them.
 //! let (new_player_one, new_player_two) = elo(&player_one, &player_two, &outcome, &config);
@@ -43,7 +44,82 @@
 //! - [FIDE Ratings](https://ratings.fide.com/)
 //! - [FIFA Ratings](https://www.fifa.com/fifa-world-ranking)
 
-use crate::{config::EloConfig, outcomes::Outcomes, rating::EloRating};
+use crate::{dwz::DWZRating, ingo::IngoRating, uscf::USCFRating, Outcomes};
+
+/// The Elo rating of a player.
+///
+/// The default rating is 1000.0.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct EloRating {
+    /// The player's Elo rating number, by default 1000.0.
+    pub rating: f64,
+}
+
+impl EloRating {
+    /// Initialize a new `EloRating` with a rating of 1000.0.
+    #[must_use]
+    pub const fn new() -> Self {
+        Self { rating: 1000.0 }
+    }
+}
+
+impl Default for EloRating {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<IngoRating> for EloRating {
+    fn from(i: IngoRating) -> Self {
+        Self {
+            rating: 2840.0 - 8.0 * i.rating,
+        }
+    }
+}
+
+impl From<DWZRating> for EloRating {
+    fn from(d: DWZRating) -> Self {
+        Self { rating: d.rating }
+    }
+}
+
+impl From<USCFRating> for EloRating {
+    fn from(u: USCFRating) -> Self {
+        if u.rating > 2060.0 {
+            Self {
+                rating: (u.rating - 180.0) / 0.94,
+            }
+        } else {
+            Self {
+                rating: (u.rating - 20.0) / 1.02,
+            }
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Constants used in the Elo calculations.
+pub struct EloConfig {
+    /// The k-value is the maximum amount of rating change from a single match.
+    /// In chess, k-values from 40 to 10 are used, with the most common being 32, 24, 16 or 10.
+    /// The higher the number, the more volatile the ranking.  
+    /// Here the default is 32.
+    pub k: f64,
+}
+
+impl EloConfig {
+    #[must_use]
+    /// Initialize a new `EloConfig` with a k value of `32.0`.
+    pub const fn new() -> Self {
+        Self { k: 32.0 }
+    }
+}
+
+impl Default for EloConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// Calculates the [`EloRating`]s of two players based on their old ratings and the outcome of the game.
 ///
@@ -54,7 +130,10 @@ use crate::{config::EloConfig, outcomes::Outcomes, rating::EloRating};
 ///
 /// # Examples
 /// ```
-/// use skillratings::{elo::elo, outcomes::Outcomes, rating::EloRating, config::EloConfig};
+/// use skillratings::{
+///     elo::{elo, EloConfig, EloRating},
+///     Outcomes,
+/// };
 ///
 /// let player_one = EloRating { rating: 600.0 };
 /// let player_two = EloRating { rating: 711.0 };
@@ -63,10 +142,10 @@ use crate::{config::EloConfig, outcomes::Outcomes, rating::EloRating};
 ///
 /// let config = EloConfig::new();
 ///
-/// let (player_one_new, player_two_new) = elo(&player_one, &player_two, &outcome, &config);
+/// let (new_one, new_two) = elo(&player_one, &player_two, &outcome, &config);
 ///
-/// assert!((player_one_new.rating.round() - 621.0).abs() < f64::EPSILON);
-/// assert!((player_two_new.rating.round() - 690.0).abs() < f64::EPSILON);
+/// assert!((new_one.rating.round() - 621.0).abs() < f64::EPSILON);
+/// assert!((new_two.rating.round() - 690.0).abs() < f64::EPSILON);
 /// ```
 #[must_use]
 pub fn elo(
@@ -104,7 +183,10 @@ pub fn elo(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{elo::elo_rating_period, outcomes::Outcomes, rating::EloRating, config::EloConfig};
+/// use skillratings::{
+///     elo::{elo_rating_period, EloConfig, EloRating},
+///     Outcomes,
+/// };
 ///
 /// let player = EloRating { rating: 1204.0 };
 ///
@@ -158,15 +240,15 @@ pub fn elo_rating_period(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{elo::expected_score, rating::EloRating};
+/// use skillratings::elo::{expected_score, EloRating};
 ///
 /// let player_one = EloRating { rating: 1320.0 };
 /// let player_two = EloRating { rating: 1217.0 };
 ///
-/// let (winner_exp, loser_exp) = expected_score(&player_one, &player_two);
+/// let (exp1, exp2) = expected_score(&player_one, &player_two);
 ///
-/// assert!(((winner_exp * 100.0).round() - 64.0).abs() < f64::EPSILON);
-/// assert!(((loser_exp * 100.0).round() - 36.0).abs() < f64::EPSILON);
+/// assert!(((exp1 * 100.0).round() - 64.0).abs() < f64::EPSILON);
+/// assert!(((exp2 * 100.0).round() - 36.0).abs() < f64::EPSILON);
 /// ```
 #[must_use]
 pub fn expected_score(player_one: &EloRating, player_two: &EloRating) -> (f64, f64) {

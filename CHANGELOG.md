@@ -2,6 +2,12 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.18.0 - 2022-10-23
+
+- Major restructuring of ratings, configs and outcomes
+    - Ratings and Configs now reside in the rating algorithms files
+    - Outcomes now reside in the lib.rs file
+
 ## v0.17.0 - 2022-10-21
 
 - Added USCF rating algorithms

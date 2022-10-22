@@ -12,7 +12,8 @@
 //!
 //! ```
 //! use skillratings::{
-//!     ingo::ingo, outcomes::Outcomes, rating::IngoRating
+//!     ingo::{ingo, IngoRating},
+//!     Outcomes,
 //! };
 //!
 //! // Initialise a new player rating.
@@ -23,7 +24,7 @@
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let (some_rating, some_age) = (150.4, 23);
-//! let player_two = IngoRating{
+//! let player_two = IngoRating {
 //!     rating: some_rating,
 //!     age: some_age,
 //! };
@@ -41,7 +42,49 @@
 //! - [Archive of Ingo Ratings (German)](https://www.schachbund.de/ingo-spiegel.html)
 //! - [Ingo Rules (German, PDF Download)](https://www.schachbund.de/ingo-spiegel.html?file=files/dsb/historie/ingo-spiegel/Ingo-Regeln.pdf&cid=28120)
 
-use crate::{outcomes::Outcomes, rating::IngoRating};
+use crate::{elo::EloRating, Outcomes};
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The Ingo rating of a player.
+///
+/// Note that unlike in the other systems, a lower score is better than a higher score.  
+/// Negative values are possible.
+///
+/// The age is the actual age of the player, if unsure or unavailable set this to `>25`.  
+/// Converting from an `EloRating` or using `IngoRating::default()` will set the age to 26.
+///
+/// The default rating is 230.0.
+pub struct IngoRating {
+    /// The rating value for a player, by default 230.0.
+    /// Note that a lower rating is more desirable.
+    pub rating: f64,
+    /// The age of the player, if uncertain or unavailable set this to `>25`.
+    pub age: usize,
+}
+
+impl IngoRating {
+    #[must_use]
+    /// Initialize a new `IngoRating` with a rating of 230.0 and the given age.  
+    /// The age is the actual age of the player, if unsure or unavailable set this to `>25`.
+    pub const fn new(age: usize) -> Self {
+        Self { rating: 230.0, age }
+    }
+}
+
+impl Default for IngoRating {
+    fn default() -> Self {
+        Self::new(26)
+    }
+}
+
+impl From<EloRating> for IngoRating {
+    fn from(e: EloRating) -> Self {
+        Self {
+            rating: 355.0 - (e.rating / 8.0),
+            ..Default::default()
+        }
+    }
+}
 
 #[must_use]
 /// Calculates the [`IngoRating`]s of two players based on their ratings, and the outcome of the game.
@@ -60,7 +103,10 @@ use crate::{outcomes::Outcomes, rating::IngoRating};
 ///
 /// # Examples
 /// ```
-/// use skillratings::{ingo::ingo, outcomes::Outcomes, rating::IngoRating};
+/// use skillratings::{
+///     ingo::{ingo, IngoRating},
+///     Outcomes,
+/// };
 ///
 /// let player_one = IngoRating {
 ///     rating: 130.0,
@@ -71,10 +117,10 @@ use crate::{outcomes::Outcomes, rating::IngoRating};
 ///     age: 40,
 /// };
 ///
-/// let (p1, p2) = ingo(&player_one, &player_two, &Outcomes::WIN);
+/// let (new_one, new_two) = ingo(&player_one, &player_two, &Outcomes::WIN);
 ///
-/// assert!((p1.rating.round() - 129.0).abs() < f64::EPSILON);
-/// assert!((p2.rating.round() - 161.0).abs() < f64::EPSILON);
+/// assert!((new_one.rating.round() - 129.0).abs() < f64::EPSILON);
+/// assert!((new_two.rating.round() - 161.0).abs() < f64::EPSILON);
 /// ```
 pub fn ingo(
     player_one: &IngoRating,
@@ -116,43 +162,46 @@ pub fn ingo(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{ingo::ingo_rating_period, rating::IngoRating, outcomes::Outcomes};
+/// use skillratings::{
+///     ingo::{ingo_rating_period, IngoRating},
+///     Outcomes,
+/// };
 ///
-/// let player_one = IngoRating {
+/// let player = IngoRating {
 ///     rating: 130.0,
 ///     age: 40,
 /// };
 ///
-/// let player_two = IngoRating {
+/// let opponent1 = IngoRating {
 ///     rating: 160.0,
 ///     age: 40,
 /// };
 ///
-/// let player_three = IngoRating {
+/// let opponent2 = IngoRating {
 ///     rating: 160.0,
 ///     age: 40,
 /// };
 ///
-/// let player_four = IngoRating {
+/// let opponent3 = IngoRating {
 ///     rating: 55.0,
 ///     age: 40,
 /// };
 ///
-/// let player_five = IngoRating {
+/// let opponent4 = IngoRating {
 ///     rating: 90.0,
 ///     age: 40,
 /// };
 ///
 /// let results = vec![
-///     (player_two, Outcomes::WIN),
-///     (player_three, Outcomes::DRAW),
-///     (player_four, Outcomes::WIN),
-///     (player_five, Outcomes::LOSS),
+///     (opponent1, Outcomes::WIN),
+///     (opponent2, Outcomes::DRAW),
+///     (opponent3, Outcomes::WIN),
+///     (opponent4, Outcomes::LOSS),
 /// ];
 ///
-/// let p1 = ingo_rating_period(&player_one, &results);
+/// let new_player = ingo_rating_period(&player, &results);
 ///
-/// assert!((p1.rating.round() - 126.0).abs() < f64::EPSILON);
+/// assert!((new_player.rating.round() - 126.0).abs() < f64::EPSILON);
 /// ```
 pub fn ingo_rating_period(
     player: &IngoRating,
@@ -187,7 +236,10 @@ pub fn ingo_rating_period(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{ingo::expected_score, outcomes::Outcomes, rating::IngoRating};
+/// use skillratings::{
+///     ingo::{expected_score, IngoRating},
+///     Outcomes,
+/// };
 ///
 /// let player_one = IngoRating {
 ///     rating: 130.0,
@@ -227,8 +279,6 @@ const fn age_to_devcoefficent(age: usize) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::rating::EloRating;
-
     use super::*;
 
     #[test]

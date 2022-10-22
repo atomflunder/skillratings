@@ -23,7 +23,8 @@
 //!
 //! ```
 //! use skillratings::{
-//!     sticko::sticko, outcomes::Outcomes, rating::StickoRating, config::StickoConfig,
+//!     sticko::{sticko, StickoConfig, StickoRating},
+//!     Outcomes,
 //! };
 //!
 //! // Initialize a new player rating.
@@ -32,7 +33,7 @@
 //! // Or you can initialize it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let (some_rating, some_deviation) = (1325.0, 230.0);
-//! let player_two = StickoRating{
+//! let player_two = StickoRating {
 //!     rating: some_rating,
 //!     deviation: some_deviation,
 //! };
@@ -64,7 +65,130 @@
 
 use std::f64::consts::PI;
 
-use crate::{config::StickoConfig, outcomes::Outcomes, rating::StickoRating};
+use crate::{
+    glicko::GlickoRating, glicko2::Glicko2Rating, glicko_boost::GlickoBoostRating, Outcomes,
+};
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The Sticko rating of a player.
+///
+/// Similar to [`GlickoRating`].
+///
+/// The default rating is 1500.0.
+/// The default deviation is 350.0.
+pub struct StickoRating {
+    /// The player's Sticko rating number, by default 1500.0.
+    pub rating: f64,
+    /// The player's Sticko deviation number, by default 350.0.
+    pub deviation: f64,
+}
+
+impl StickoRating {
+    #[must_use]
+    /// Initialize a new `StickoRating` with a rating of 1500.0 and a deviation of 350.0.
+    pub const fn new() -> Self {
+        Self {
+            rating: 1500.0,
+            deviation: 350.0,
+        }
+    }
+}
+
+impl Default for StickoRating {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<GlickoRating> for StickoRating {
+    fn from(g: GlickoRating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
+    }
+}
+
+impl From<Glicko2Rating> for StickoRating {
+    fn from(g: Glicko2Rating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
+    }
+}
+
+impl From<GlickoBoostRating> for StickoRating {
+    fn from(g: GlickoBoostRating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Constants used in the Sticko calculations.
+///
+/// If the `h`, `beta`, `lambda` and `gamma` parameters are set to `0.0`,
+/// this will behave exactly like the [`Glicko`](crate::glicko::glicko) calculations.
+pub struct StickoConfig {
+    /// Controls player deviations across time.  
+    /// The higher this number, the higher the deviation is going to be.  
+    /// By default set to `10.0`.  
+    /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
+    /// Do not set this to a negative value.
+    pub h: f64,
+    /// A bonus parameter, which gives a rating boost for just participating.  
+    /// Note that setting this to a positive number will create rating inflation over time.  
+    /// By default set to `0.0`.  
+    /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
+    /// Do not set this to a negative value.
+    pub beta: f64,
+    /// The neighborhood parameter, which shrinks player ratings towards their opponent.  
+    /// By default set to `2.0`.  
+    /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
+    /// Do not set this to a negative value.
+    pub lambda: f64,
+    /// The advantage parameter of the first player.  
+    /// If your game is biased towards player one set this to a positive number,
+    /// or set this to a negative number if the second player has an advantage.  
+    /// With this you could represent the advantage of playing white in chess,
+    /// or home-team advantage in sports like football and so on.  
+    /// In chess, a value of `30.0` seems to be about correct.  
+    /// By default set to `0.0`.  
+    /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
+    pub gamma: f64,
+    /// The c value describes how much the rating deviation should decay in each step.
+    /// The higher the value, the more the rating deviation will decay.  
+    /// This is similar to the c value in [`GlickoConfig`](crate::glicko::GlickoConfig).
+    /// Keep in mind this needs to be set lower than the c in the [`GlickoConfig`](crate::glicko::GlickoConfig)
+    /// if the h value here is not equal to zero.  
+    /// By default set to `10.0`.
+    /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig) set this to `63.2`.
+    pub c: f64,
+}
+
+impl StickoConfig {
+    #[must_use]
+    /// Initialize a new `StickoConfig` with a h value of `10.0`, a beta value of `0.0`,
+    /// a lambda value of `2.0` and a gamma value of `0.0`.
+    pub const fn new() -> Self {
+        Self {
+            h: 10.0,
+            beta: 0.0,
+            lambda: 2.0,
+            gamma: 0.0,
+            c: 10.0,
+        }
+    }
+}
+
+impl Default for StickoConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[must_use]
 /// Calculates the [`StickoRating`]s of two players based on their old ratings, deviations, and the outcome of the game.
@@ -88,7 +212,8 @@ use crate::{config::StickoConfig, outcomes::Outcomes, rating::StickoRating};
 /// # Examples
 /// ```
 /// use skillratings::{
-///     sticko::sticko, outcomes::Outcomes, rating::StickoRating, config::StickoConfig
+///     sticko::{sticko, StickoConfig, StickoRating},
+///     Outcomes,
 /// };
 ///
 /// let player_one = StickoRating {
@@ -104,13 +229,13 @@ use crate::{config::StickoConfig, outcomes::Outcomes, rating::StickoRating};
 ///
 /// let config = StickoConfig::new();
 ///
-/// let (player_one_new, player_two_new) = sticko(&player_one, &player_two, &outcome, &config);
+/// let (new_one, new_two) = sticko(&player_one, &player_two, &outcome, &config);
 ///
-/// assert!((player_one_new.rating.round() - 1662.0).abs() < f64::EPSILON);
-/// assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// assert!((new_one.rating.round() - 1662.0).abs() < f64::EPSILON);
+/// assert!((new_one.deviation.round() - 290.0).abs() < f64::EPSILON);
 ///
-/// assert!((player_two_new.rating.round() - 1338.0).abs() < f64::EPSILON);
-/// assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// assert!((new_two.rating.round() - 1338.0).abs() < f64::EPSILON);
+/// assert!((new_two.deviation.round() - 290.0).abs() < f64::EPSILON);
 /// ```
 pub fn sticko(
     player_one: &StickoRating,
@@ -217,7 +342,8 @@ pub fn sticko(
 /// # Examples
 /// ```
 /// use skillratings::{
-///     sticko::sticko_rating_period, outcomes::Outcomes, rating::StickoRating, config::StickoConfig
+///     sticko::{sticko_rating_period, StickoConfig, StickoRating},
+///     Outcomes,
 /// };
 ///
 /// let player = StickoRating {
@@ -337,7 +463,7 @@ pub fn sticko_rating_period(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{sticko::expected_score, rating::StickoRating, config::StickoConfig};
+/// use skillratings::sticko::{expected_score, StickoConfig, StickoRating};
 ///
 /// let player_one = StickoRating {
 ///     rating: 1830.0,
@@ -384,7 +510,7 @@ pub fn expected_score(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{sticko::decay_deviation, rating::StickoRating, config::StickoConfig};
+/// use skillratings::sticko::{decay_deviation, StickoConfig, StickoRating};
 ///
 /// let player_one = StickoRating {
 ///     rating: 2720.0,
@@ -414,8 +540,8 @@ pub fn decay_deviation(player: &StickoRating, config: &StickoConfig) -> StickoRa
 /// Takes in a player as a [`StickoRating`] and returns two [`f64`]s that describe the lowest and highest rating.
 ///
 /// # Examples
-/// ```rust
-/// use skillratings::{rating::StickoRating, sticko::confidence_interval};
+/// ```
+/// use skillratings::sticko::{confidence_interval, StickoRating};
 ///
 /// let player = StickoRating {
 ///     rating: 2250.0,
@@ -456,6 +582,9 @@ fn new_rating(
     ((q / (deviation.powi(2).recip() + d.recip())) * g).mul_add(score - e + beta, old_rating)
         + lambda
 }
+
+// The functions below are very similar to the normal glicko functions,
+// but with the advantage parameters.
 
 fn g_value(q: f64, opponent_deviation: f64) -> f64 {
     (1.0 + ((3.0 * q.powi(2) * opponent_deviation.powi(2)) / (PI.powi(2))))
@@ -652,8 +781,6 @@ mod tests {
     #[test]
     #[allow(clippy::similar_names)]
     fn sticko_glicko_conversions() {
-        use crate::rating::{Glicko2Rating, GlickoBoostRating, GlickoRating};
-
         let sticko = StickoRating::new();
 
         let glicko_conv = GlickoRating::from(sticko);

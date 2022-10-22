@@ -26,10 +26,8 @@
 //!
 //! ```
 //! use skillratings::{
-//!     glicko_boost::glicko_boost,
-//!     outcomes::Outcomes,
-//!     rating::GlickoBoostRating,
-//!     config::GlickoBoostConfig,
+//!     glicko_boost::{glicko_boost, GlickoBoostConfig, GlickoBoostRating},
+//!     Outcomes,
 //! };
 //!
 //! // Initialize a new player rating.
@@ -38,7 +36,7 @@
 //! // Or you can initialize it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let (some_rating, some_deviation) = (1325.0, 230.0);
-//! let player_two = GlickoBoostRating{
+//! let player_two = GlickoBoostRating {
 //!     rating: some_rating,
 //!     deviation: some_deviation,
 //! };
@@ -59,7 +57,8 @@
 //! };
 //!
 //! // The glicko_boost function will calculate the new ratings for both players and return them.
-//! let (new_one, new_two) = glicko_boost(&player_one, &player_two, &outcome, &config);
+//! let (new_player_one, new_player_two) =
+//!     glicko_boost(&player_one, &player_two, &outcome, &config);
 //! ```
 //!
 //! # More Information
@@ -70,7 +69,124 @@
 
 use std::f64::consts::PI;
 
-use crate::{config::GlickoBoostConfig, outcomes::Outcomes, rating::GlickoBoostRating};
+use crate::{glicko::GlickoRating, glicko2::Glicko2Rating, sticko::StickoRating, Outcomes};
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// The Glicko-Boost rating of a player.
+///
+/// Similar to [`GlickoRating`].
+///
+/// The default rating is 1500.0.
+/// The default deviation is 350.0.
+pub struct GlickoBoostRating {
+    /// The player's Glicko-Boost rating number, by default 1500.0.
+    pub rating: f64,
+    /// The player's Glicko-Boost deviation number, by default 350.0.
+    pub deviation: f64,
+}
+
+impl GlickoBoostRating {
+    #[must_use]
+    /// Initialize a new `GlickoBoostRating` with a rating of 1500.0 and a deviation of 350.0.
+    pub const fn new() -> Self {
+        Self {
+            rating: 1500.0,
+            deviation: 350.0,
+        }
+    }
+}
+
+impl Default for GlickoBoostRating {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<GlickoRating> for GlickoBoostRating {
+    fn from(g: GlickoRating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
+    }
+}
+
+impl From<Glicko2Rating> for GlickoBoostRating {
+    fn from(g: Glicko2Rating) -> Self {
+        Self {
+            rating: g.rating,
+            deviation: g.deviation,
+        }
+    }
+}
+
+impl From<StickoRating> for GlickoBoostRating {
+    fn from(s: StickoRating) -> Self {
+        Self {
+            rating: s.rating,
+            deviation: s.deviation,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Constants used in the Glicko-Boost calculations.
+///
+/// If the `eta` parameter is set to `0.0`,
+/// this will behave exactly like the [`Glicko`](crate::glicko::glicko) calculations.
+pub struct GlickoBoostConfig {
+    /// The advantage parameter of the first player.  
+    /// If your game is biased towards player one set this to a positive number,
+    /// or set this to a negative number if the second player has an advantage.  
+    /// With this you could represent the advantage of playing white in chess,
+    /// or home-team advantage in sports like football and so on.  
+    /// In chess, a value of `30.0` seems to be about correct.  
+    /// By default set to `0.0`.  
+    /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
+    pub eta: f64,
+    /// The "exceptional performance" threshold.  
+    /// For outstanding performances, the rating deviation of the player will get boosted by the b values.
+    /// By default set to `1.96`, which is approximately equal to 2.5% of performances.  
+    /// The higher this value, the harder it is to reach the threshold.  
+    /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
+    pub k: f64,
+    /// The rating deviation boost factors. A tuple of 2 [`f64`]s.
+    /// The first value is multiplicative, the second additive.  
+    /// By default set to 0.20139 and 17.5.  
+    /// If k is set to 0, these will do nothing.  
+    /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set both of these to `0.0`.
+    pub b: (f64, f64),
+    /// The rating deviation increase factors. A tuple of 5 [`f64`]s.
+    /// These values regulate the rating deviation increase of player's who have not played in a rating period.  
+    /// By default set to 5.83733, -1.75374e-04, -7.080124e-05, 0.001733792, and 0.00026706.
+    pub alpha: (f64, f64, f64, f64, f64),
+}
+
+impl GlickoBoostConfig {
+    #[must_use]
+    /// Initialize a new `GlickoBoostConfig` with a eta value of 30.0, a k value of 1.96,
+    /// b values of 0.20139 and 17.5, and alpha values of 5.83733, -1.75374e-04, -7.080124e-05, 0.001733792, 0.00026706.
+    pub const fn new() -> Self {
+        Self {
+            eta: 30.0,
+            k: 1.96,
+            b: (0.20139, 17.5),
+            alpha: (
+                5.837_33,
+                -1.753_74e-04,
+                -7.080_124e-05,
+                0.001_733_792,
+                0.000_267_06,
+            ),
+        }
+    }
+}
+
+impl Default for GlickoBoostConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[must_use]
 /// Calculates the [`GlickoBoostRating`]s of two players based on their old ratings, deviations, and the outcome of the game.
@@ -94,10 +210,8 @@ use crate::{config::GlickoBoostConfig, outcomes::Outcomes, rating::GlickoBoostRa
 /// # Examples
 /// ```
 /// use skillratings::{
-///     glicko_boost::glicko_boost,
-///     outcomes::Outcomes,
-///     rating::GlickoBoostRating,
-///     config::GlickoBoostConfig
+///     glicko_boost::{glicko_boost, GlickoBoostConfig, GlickoBoostRating},
+///     Outcomes,
 /// };
 ///
 /// let player_one = GlickoBoostRating {
@@ -117,13 +231,13 @@ use crate::{config::GlickoBoostConfig, outcomes::Outcomes, rating::GlickoBoostRa
 ///     ..Default::default()
 /// };
 ///
-/// let (player_one_new, player_two_new) = glicko_boost(&player_one, &player_two, &outcome, &config);
+/// let (new_one, new_two) = glicko_boost(&player_one, &player_two, &outcome, &config);
 ///
-/// assert!((player_one_new.rating.round() - 1672.0).abs() < f64::EPSILON);
-/// assert!((player_one_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// assert!((new_one.rating.round() - 1672.0).abs() < f64::EPSILON);
+/// assert!((new_one.deviation.round() - 290.0).abs() < f64::EPSILON);
 ///
-/// assert!((player_two_new.rating.round() - 1328.0).abs() < f64::EPSILON);
-/// assert!((player_two_new.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// assert!((new_two.rating.round() - 1328.0).abs() < f64::EPSILON);
+/// assert!((new_two.deviation.round() - 290.0).abs() < f64::EPSILON);
 /// ```
 pub fn glicko_boost(
     player_one: &GlickoBoostRating,
@@ -208,10 +322,8 @@ pub fn glicko_boost(
 /// # Examples
 /// ```
 /// use skillratings::{
-///     glicko_boost::glicko_boost_rating_period,
-///     outcomes::Outcomes,
-///     rating::GlickoBoostRating,
-///     config::GlickoBoostConfig
+///     glicko_boost::{glicko_boost_rating_period, GlickoBoostConfig, GlickoBoostRating},
+///     Outcomes,
 /// };
 ///
 /// let player = GlickoBoostRating {
@@ -321,9 +433,7 @@ pub fn glicko_boost_rating_period(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{
-///     glicko_boost::expected_score, rating::GlickoBoostRating, config::GlickoBoostConfig
-/// };
+/// use skillratings::glicko_boost::{expected_score, GlickoBoostConfig, GlickoBoostRating};
 ///
 /// let player_one = GlickoBoostRating {
 ///     rating: 2500.0,
@@ -370,9 +480,7 @@ pub fn expected_score(
 ///
 /// # Examples
 /// ```
-/// use skillratings::{
-///     glicko_boost::decay_deviation, rating::GlickoBoostRating, config::GlickoBoostConfig
-/// };
+/// use skillratings::glicko_boost::{decay_deviation, GlickoBoostConfig, GlickoBoostRating};
 ///
 /// let player_one = GlickoBoostRating {
 ///     rating: 2720.0,
@@ -424,8 +532,8 @@ pub fn decay_deviation(
 /// Takes in a player as a [`GlickoBoostRating`] and returns two [`f64`]s that describe the lowest and highest rating.
 ///
 /// # Examples
-/// ```rust
-/// use skillratings::{rating::GlickoBoostRating, glicko_boost::confidence_interval};
+/// ```
+/// use skillratings::glicko_boost::{confidence_interval, GlickoBoostRating};
 ///
 /// let player = GlickoBoostRating {
 ///     rating: 2250.0,
@@ -460,6 +568,19 @@ fn new_rating(old_rating: f64, deviation: f64, score: f64, q: f64, g: f64, e: f6
     (deviation.powi(2) * q * g).mul_add(score - e, old_rating)
 }
 
+fn z_value(g: f64, e: f64, score: f64) -> f64 {
+    (g * (score - e)) / (g.powi(2) * e * (1.0 - e)).sqrt()
+}
+
+fn boost_rd(z: f64, deviation: f64, config: &GlickoBoostConfig) -> f64 {
+    (z - config.k)
+        .mul_add(config.b.0, 1.0)
+        .mul_add(deviation, config.b.1)
+}
+
+// The functions below are very similar to the normal glicko functions,
+// but with the advantage parameters.
+
 fn g_value(q: f64, opponent_deviation: f64) -> f64 {
     (1.0 + ((3.0 * q.powi(2) * opponent_deviation.powi(2)) / (PI.powi(2))))
         .sqrt()
@@ -473,16 +594,6 @@ fn e_value(g: f64, rating: f64, opponent_rating: f64, advantage: f64, colour: f6
 
 fn d_value(q: f64, g: f64, e: f64) -> f64 {
     (q.powi(2) * g.powi(2) * e * (1.0 - e)).powi(-1)
-}
-
-fn z_value(g: f64, e: f64, score: f64) -> f64 {
-    (g * (score - e)) / (g.powi(2) * e * (1.0 - e)).sqrt()
-}
-
-fn boost_rd(z: f64, deviation: f64, config: &GlickoBoostConfig) -> f64 {
-    (z - config.k)
-        .mul_add(config.b.0, 1.0)
-        .mul_add(deviation, config.b.1)
 }
 
 #[cfg(test)]
@@ -664,8 +775,6 @@ mod tests {
     #[test]
     #[allow(clippy::similar_names)]
     fn test_glicko_conv() {
-        use crate::rating::{Glicko2Rating, GlickoRating};
-
         let glickob = GlickoBoostRating::new();
 
         let glicko_conv = GlickoRating::from(glickob);

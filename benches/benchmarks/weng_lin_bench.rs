@@ -1,10 +1,9 @@
 use skillratings::{
-    config::WengLinConfig,
-    outcomes::Outcomes,
-    rating::WengLinRating,
     weng_lin::{
         expected_score, expected_score_teams, weng_lin, weng_lin_rating_period, weng_lin_teams,
+        WengLinConfig, WengLinRating,
     },
+    Outcomes,
 };
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};

@@ -1,8 +1,6 @@
 use skillratings::{
-    config::Glicko2Config,
-    glicko2::{expected_score, glicko2, glicko2_rating_period},
-    outcomes::Outcomes,
-    rating::Glicko2Rating,
+    glicko2::{expected_score, glicko2, glicko2_rating_period, Glicko2Config, Glicko2Rating},
+    Outcomes,
 };
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
