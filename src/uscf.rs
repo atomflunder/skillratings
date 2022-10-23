@@ -61,9 +61,13 @@
 //! - [USCF Calculator](https://www.uschess.org/index.php/Players-Ratings/Do-NOT-edit-CLOSE-immediately.html)
 //! - [Wikipedia: USCF](https://en.wikipedia.org/wiki/United_States_Chess_Federation)
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{elo::EloRating, Outcomes};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The USCF (US Chess Federation) rating for a player.
 ///
 /// The age is the actual age of the player,
@@ -122,6 +126,7 @@ impl From<EloRating> for USCFRating {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// Constants used in the USCF Rating calculations.
 pub struct USCFConfig {
     /// The t value controls the difficulty of earning bonus rating points.  

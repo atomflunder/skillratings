@@ -41,6 +41,23 @@ Alternatively, you can add the following to your `Cargo.toml` file manually:
 skillratings = "0.18"
 ```
 
+### Serde support
+
+Serde support is gated behind the `serde` feature. You can enable it like so:
+
+Using `cargo add`:
+
+```
+cargo add skillratings --features serde
+```
+
+By editing `Cargo.toml` manually:
+
+```toml
+[dependencies]
+skillratings = {version = "0.19", features = ["serde"]}
+```
+
 ## Usage and Examples
 
 Below you can find some basic examples of the use cases of this crate.  

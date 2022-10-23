@@ -52,9 +52,13 @@
 //! - [Sensei's library](https://senseis.xmp.net/?GoR)
 //! - [Handicapping in Go](https://en.wikipedia.org/wiki/Handicapping_in_Go)
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::Outcomes;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The EGF (European Go Federation) Rating for a player.
 ///
 /// If the player has a Go rank or similar,
@@ -83,6 +87,7 @@ impl Default for EGFRating {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// Constants used in the EGF Calculations.
 pub struct EGFConfig {
     /// The [handicap](https://en.wikipedia.org/wiki/Handicapping_in_Go), of the perspective of player one.  

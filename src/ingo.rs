@@ -42,9 +42,13 @@
 //! - [Archive of Ingo Ratings (German)](https://www.schachbund.de/ingo-spiegel.html)
 //! - [Ingo Rules (German, PDF Download)](https://www.schachbund.de/ingo-spiegel.html?file=files/dsb/historie/ingo-spiegel/Ingo-Regeln.pdf&cid=28120)
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{elo::EloRating, Outcomes};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The Ingo rating of a player.
 ///
 /// Note that unlike in the other systems, a lower score is better than a higher score.  

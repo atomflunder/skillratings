@@ -65,11 +65,15 @@
 
 use std::f64::consts::PI;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{
     glicko::GlickoRating, glicko2::Glicko2Rating, glicko_boost::GlickoBoostRating, Outcomes,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The Sticko rating of a player.
 ///
 /// Similar to [`GlickoRating`].
@@ -128,6 +132,7 @@ impl From<GlickoBoostRating> for StickoRating {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// Constants used in the Sticko calculations.
 ///
 /// If the `h`, `beta`, `lambda` and `gamma` parameters are set to `0.0`,
