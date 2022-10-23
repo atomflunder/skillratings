@@ -38,7 +38,7 @@ Alternatively, you can add the following to your `Cargo.toml` file manually:
 
 ```toml
 [dependencies]
-skillratings = "0.18"
+skillratings = "0.19"
 ```
 
 ### Serde support

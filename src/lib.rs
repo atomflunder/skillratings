@@ -44,7 +44,24 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.18"
+//! skillratings = "0.19"
+//! ```
+//!
+//! ## Serde support
+//!
+//! Serde support is gated behind the `serde` feature. You can enable it like so:
+//!
+//! Using `cargo add`:
+//!
+//! ```bash
+//! cargo add skillratings --features serde
+//! ```
+//!
+//! By editing `Cargo.toml` manually:
+//!
+//! ```toml
+//! [dependencies]
+//! skillratings = {version = "0.19", features = ["serde"]}
 //! ```
 //!
 //! # Usage and Examples
