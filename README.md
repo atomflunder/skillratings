@@ -7,7 +7,7 @@
 
 Skillratings provides a collection of well-known (and lesser known) skill rating algorithms, that allow you to assess a player's skill level instantly.  
 You can easily calculate skill ratings instantly in 1vs1 matches, Team vs Team matches, or in tournaments / rating periods.  
-This library is incredibly lightweight (no dependencies), user-friendly, and of course, *blazingly fast*.
+This library is incredibly lightweight (no dependencies by default), user-friendly, and of course, *blazingly fast*.
 
 Currently supported algorithms:
 
