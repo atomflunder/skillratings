@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.18.1 - 2022-10-23
+
+- Add optional serde support
+
 ## v0.18.0 - 2022-10-23
 
 - Major restructuring of ratings, configs and outcomes

@@ -1,6 +1,6 @@
 [package]
 name = "skillratings"
-version = "0.18.0"
+version = "0.18.1"
 edition = "2021"
 description = "Calculate a player's skill rating using algorithms like Elo, Glicko, Glicko-2, TrueSkill and many more."
 readme = "README.md"
@@ -14,7 +14,7 @@ categories = ["game-development", "algorithms", "mathematics"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serde = {version = "1.0.147", optional = true, features = ["derive"]}
+serde = { version = "1.0.147", optional = true, features = ["derive"] }
 
 [dev-dependencies]
 criterion = { version = "0.4", features = ["html_reports"] }
