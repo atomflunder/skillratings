@@ -48,9 +48,13 @@
 
 use std::collections::HashMap;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{elo::EloRating, Outcomes};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The DWZ (Deutsche Wertungszahl) rating for a player.
 ///
 /// The age is the actual age of the player, if unsure or unavailable set this to `>25`.  

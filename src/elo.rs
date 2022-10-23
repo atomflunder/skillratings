@@ -44,12 +44,16 @@
 //! - [FIDE Ratings](https://ratings.fide.com/)
 //! - [FIFA Ratings](https://www.fifa.com/fifa-world-ranking)
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{dwz::DWZRating, ingo::IngoRating, uscf::USCFRating, Outcomes};
 
 /// The Elo rating of a player.
 ///
 /// The default rating is 1000.0.
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EloRating {
     /// The player's Elo rating number, by default 1000.0.
     pub rating: f64,
@@ -98,6 +102,7 @@ impl From<USCFRating> for EloRating {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// Constants used in the Elo calculations.
 pub struct EloConfig {
     /// The k-value is the maximum amount of rating change from a single match.

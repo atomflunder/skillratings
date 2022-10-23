@@ -198,6 +198,9 @@
 //! assert_eq!(new_player.rating.round(), 1362.0);
 //! ```
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 pub mod dwz;
 pub mod egf;
 pub mod elo;
@@ -215,6 +218,7 @@ pub mod weng_lin;
 /// Note that this is always from the perspective of player one.  
 /// That means a win is a win for player one and a loss is a win for player two.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Outcomes {
     /// A win, from player_one's perspective.
     WIN,

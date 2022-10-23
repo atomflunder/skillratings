@@ -51,6 +51,9 @@
 //! - [Original Paper by Mark Glickman](http://www.glicko.net/glicko/glicko2.pdf)
 //! - [Glicko-2 Calculator](https://fsmosca-glicko2calculator-glicko2calculator-vik8k0.streamlitapp.com/)
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{
     glicko::GlickoRating, glicko_boost::GlickoBoostRating, sticko::StickoRating, Outcomes,
 };
@@ -64,6 +67,7 @@ use std::f64::consts::PI;
 /// The default deviation is 350.0.  
 /// The default volatility is 0.06.
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Glicko2Rating {
     /// The player's Glicko-2 rating number, by default 1500.0.
     pub rating: f64,
@@ -122,6 +126,7 @@ impl From<StickoRating> for Glicko2Rating {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// Constants used in the Glicko-2 calculations.
 pub struct Glicko2Config {
     /// The tau constant constrains the change in volatility over time.

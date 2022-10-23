@@ -43,12 +43,16 @@
 //! - [Original Paper by Mark Glickman](http://www.glicko.net/glicko/glicko.pdf)
 //! - [Glicko Calculator](http://www.bjcox.com/?page_id=2)
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{
     glicko2::Glicko2Rating, glicko_boost::GlickoBoostRating, sticko::StickoRating, Outcomes,
 };
 use std::f64::consts::PI;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The Glicko rating for a player.
 ///
 /// For the Glicko-2 rating, please see [`Glicko2Rating`].
@@ -107,6 +111,7 @@ impl From<StickoRating> for GlickoRating {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// Constants used in the Glicko calculations.
 pub struct GlickoConfig {
     /// The c value describes how much the rating deviation should decay in each step.

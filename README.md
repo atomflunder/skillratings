@@ -7,7 +7,7 @@
 
 Skillratings provides a collection of well-known (and lesser known) skill rating algorithms, that allow you to assess a player's skill level instantly.  
 You can easily calculate skill ratings instantly in 1vs1 matches, Team vs Team matches, or in tournaments / rating periods.  
-This library is incredibly lightweight (no dependencies), user-friendly, and of course, *blazingly fast*.
+This library is incredibly lightweight (no dependencies by default), user-friendly, and of course, *blazingly fast*.
 
 Currently supported algorithms:
 
@@ -39,6 +39,23 @@ Alternatively, you can add the following to your `Cargo.toml` file manually:
 ```toml
 [dependencies]
 skillratings = "0.18"
+```
+
+### Serde support
+
+Serde support is gated behind the `serde` feature. You can enable it like so:
+
+Using `cargo add`:
+
+```
+cargo add skillratings --features serde
+```
+
+By editing `Cargo.toml` manually:
+
+```toml
+[dependencies]
+skillratings = {version = "0.19", features = ["serde"]}
 ```
 
 ## Usage and Examples

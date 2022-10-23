@@ -57,9 +57,13 @@
 //! - [Approximate Bayesian computaion Wikipedia](https://en.wikipedia.org/wiki/Approximate_Bayesian_computation)
 //! - [Logistic distribution Wikipedia](https://en.wikipedia.org/wiki/Logistic_distribution)
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{trueskill::TrueSkillRating, Outcomes};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The Weng-Lin rating of a player.
 ///
 /// Similar to [`TrueSkillRating`].
@@ -100,6 +104,7 @@ impl From<TrueSkillRating> for WengLinRating {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// Constants used in the Weng-Lin calculations.
 pub struct WengLinConfig {
     /// The skill-class width, aka the number of difference in rating points

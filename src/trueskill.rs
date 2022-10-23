@@ -69,9 +69,13 @@
 
 use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{weng_lin::WengLinRating, Outcomes};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The TrueSkill rating of a player.
 ///
 /// The default rating is 25.0.  
@@ -110,6 +114,7 @@ impl From<WengLinRating> for TrueSkillRating {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// Constants used in the TrueSkill calculations.
 pub struct TrueSkillConfig {
     /// The probability of draws occurring in match.
