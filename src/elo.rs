@@ -60,7 +60,7 @@ pub struct EloRating {
 }
 
 impl EloRating {
-    /// Initialize a new `EloRating` with a rating of 1000.0.
+    /// Initialise a new `EloRating` with a rating of 1000.0.
     #[must_use]
     pub const fn new() -> Self {
         Self { rating: 1000.0 }
@@ -114,7 +114,7 @@ pub struct EloConfig {
 
 impl EloConfig {
     #[must_use]
-    /// Initialize a new `EloConfig` with a k value of `32.0`.
+    /// Initialise a new `EloConfig` with a k value of `32.0`.
     pub const fn new() -> Self {
         Self { k: 32.0 }
     }
@@ -222,7 +222,7 @@ pub fn elo_rating_period(
 
     for (opponent, result) in results {
         // Normally we would just call expected_points(),
-        // but we would have to construct a rating first which seems inefficent.
+        // but we would have to construct a rating first which seems inefficient.
         // So we are just calculating it ourselves.
         let exp = (1.0 + 10_f64.powf((opponent.rating - player_rating) / 400.0)).recip();
 

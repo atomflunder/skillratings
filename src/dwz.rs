@@ -72,7 +72,7 @@ pub struct DWZRating {
 
 impl DWZRating {
     #[must_use]
-    /// Initialize a new `DWZRating` with a rating of 1000.0, an index of 1 and the specified age.  
+    /// initialise a new `DWZRating` with a rating of 1000.0, an index of 1 and the specified age.  
     /// The age is the actual age of the player, if unsure or unavailable set this to `>25`.
     pub const fn new(age: usize) -> Self {
         Self {
@@ -461,7 +461,7 @@ pub fn get_first_dwz(player_age: usize, results: &Vec<(DWZRating, Outcomes)>) ->
 
 fn e_value(rating: f64, age: usize, score: f64, expected_score: f64, index: usize) -> f64 {
     // The variable j is dependent on the age of the player. From wikipedia:
-    // "Teenagers up to 20 years: `j = 5.0`, junior adults (21 – 25 years): `j = 10.0`, over-25-year-olds: `j = 15.0`"
+    // "Teenagers up to 20 years: `j = 5.0`, junior adults (21 – 25 years): `j = 10.0`, over-25-year-old's: `j = 15.0`"
     let j = match age {
         0..=20 => 5.0,
         21..=25 => 10.0,

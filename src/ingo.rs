@@ -1,4 +1,4 @@
-//! The Ingo algorithm, the predecessor of DWZ and one of the first rating algorihms invented in 1947.  
+//! The Ingo algorithm, the predecessor of DWZ and one of the first rating algorithms invented in 1947.  
 //! Sometimes still used in Xiangqi ("Chinese Chess").
 //!
 //! Unlike with the other rating systems, with Ingo a lower rating is more desirable,
@@ -68,7 +68,7 @@ pub struct IngoRating {
 
 impl IngoRating {
     #[must_use]
-    /// Initialize a new `IngoRating` with a rating of 230.0 and the given age.  
+    /// Initialise a new `IngoRating` with a rating of 230.0 and the given age.  
     /// The age is the actual age of the player, if unsure or unavailable set this to `>25`.
     pub const fn new(age: usize) -> Self {
         Self { rating: 230.0, age }

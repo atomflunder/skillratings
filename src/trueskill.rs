@@ -89,7 +89,7 @@ pub struct TrueSkillRating {
 
 impl TrueSkillRating {
     #[must_use]
-    /// Initialize a new TrueSkillRating with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
+    /// Initialise a new TrueSkillRating with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
     pub fn new() -> Self {
         Self {
             rating: 25.0,
@@ -137,7 +137,7 @@ pub struct TrueSkillConfig {
 
 impl TrueSkillConfig {
     #[must_use]
-    /// Initialize a new `TrueSkillConfig` with a draw probability of `0.1`,
+    /// Initialise a new `TrueSkillConfig` with a draw probability of `0.1`,
     /// a beta value of `(25 / 3) * 0.5 ≈ 4.167` and a default dynamics value of 25 / 300 ≈ `0.0833`.
     pub fn new() -> Self {
         Self {
@@ -591,14 +591,14 @@ pub fn match_quality(
 ///     uncertainty: 5.0,
 /// };
 ///
-/// let qual = match_quality_teams(
+/// let quality = match_quality_teams(
 ///     &vec![player_one, player_two],
 ///     &vec![player_three, player_four],
 ///     &TrueSkillConfig::new(),
 /// );
 ///
 /// // There is a 8.4% chance of a draw occurring.
-/// assert!((qual - 0.084_108_145_418_343_24).abs() < f64::EPSILON);
+/// assert!((quality - 0.084_108_145_418_343_24).abs() < f64::EPSILON);
 /// ```
 pub fn match_quality_teams(
     team_one: &Vec<TrueSkillRating>,
@@ -1286,21 +1286,21 @@ mod tests {
             uncertainty: 5.0,
         };
 
-        let qual = match_quality_teams(
+        let quality = match_quality_teams(
             &vec![player_one, player_two],
             &vec![player_three, player_four],
             &TrueSkillConfig::new(),
         );
 
-        let qual2 = match_quality_teams(
+        let quality2 = match_quality_teams(
             &vec![player_three, player_four],
             &vec![player_one, player_two],
             &TrueSkillConfig::new(),
         );
 
-        assert!((qual - 0.084_108_145_418_343_24).abs() < f64::EPSILON);
+        assert!((quality - 0.084_108_145_418_343_24).abs() < f64::EPSILON);
 
-        assert!((qual - qual2).abs() < f64::EPSILON);
+        assert!((quality - quality2).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -1452,9 +1452,9 @@ mod tests {
 
     #[test]
     fn test_pdf() {
-        let prob = pdf(2.5, 0.0, 1.0);
+        let p = pdf(2.5, 0.0, 1.0);
 
-        assert!((prob - 0.017_528).abs() < 0.000_001);
+        assert!((p - 0.017_528).abs() < 0.000_001);
     }
 
     #[test]

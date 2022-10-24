@@ -78,7 +78,7 @@ pub struct Glicko2Rating {
 }
 
 impl Glicko2Rating {
-    /// Initialize a new `Glicko2Rating` with a rating of 1500.0, a deviation of 350.0 and a volatility of 0.06.
+    /// Initialise a new `Glicko2Rating` with a rating of 1500.0, a deviation of 350.0 and a volatility of 0.06.
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -142,7 +142,7 @@ pub struct Glicko2Config {
 
 impl Glicko2Config {
     #[must_use]
-    /// Initialize a new `Glicko2Config` with a tau value of `0.5` and a convergence tolerance of `0.000_001`.
+    /// initialise a new `Glicko2Config` with a tau value of `0.5` and a convergence tolerance of `0.000_001`.
     pub const fn new() -> Self {
         Self {
             tau: 0.5,

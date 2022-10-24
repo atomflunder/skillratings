@@ -1,7 +1,7 @@
 //! The EGF (European Go Federation) rating system is a variation of the Elo rating system, adapted for playing Go.  
 //! Used for calculating Go player ratings in Europe since 1998.
 //!
-//! The ratings are loosely centered around the Go ranks, ranging from 30 *kyu* (lowest) to 9 *dan* (highest).  
+//! The ratings are loosely centred around the Go ranks, ranging from 30 *kyu* (lowest) to 9 *dan* (highest).  
 //! A rating of 2100 equals a rank of 1 *dan*, and 1 rank up and down equals a gain or loss of around 100 points.  
 //! So a 2 *dan* rank would equal around 2200 points, and so on. The lowest rank, 30 *kyu*, is equal to -900 points.  
 //! You start at a rating of 0, around 21 *kyu*.
@@ -63,7 +63,7 @@ use crate::Outcomes;
 ///
 /// If the player has a Go rank or similar,
 /// you can set the rating value manually approximately according to
-/// [this inofficial comparison table](https://forums.online-go.com/t/go-ranks-vs-chess-ratings/41594/42).  
+/// [this unofficial comparison table](https://forums.online-go.com/t/go-ranks-vs-chess-ratings/41594/42).  
 /// Keep in mind that here, the lowest possible rating is -900.0.
 ///
 /// The default rating is 0.0.
@@ -74,7 +74,7 @@ pub struct EGFRating {
 
 impl EGFRating {
     #[must_use]
-    /// Initialize a new `EGFRating` with a rating of 0.0.
+    /// Initialise a new `EGFRating` with a rating of 0.0.
     pub const fn new() -> Self {
         Self { rating: 0.0 }
     }
@@ -106,7 +106,7 @@ pub struct EGFConfig {
 
 impl EGFConfig {
     #[must_use]
-    /// Initializes a new `EGFConfig` with a handicap value of `0.0`.
+    /// Initialises a new `EGFConfig` with a handicap value of `0.0`.
     pub const fn new() -> Self {
         Self { handicap: 0.0 }
     }
@@ -311,7 +311,7 @@ fn bonus(rating: f64) -> f64 {
 fn beta(rating: f64, handicap: f64) -> f64 {
     // The explanation of the handicap formula can be found here:
     // https://www.europeangodatabase.eu/EGD/EGF_rating_system_old.php#System
-    // The new system doesnt really mention this, but it stayed the same between transitions.
+    // The new system doesn't really mention this, but it stayed the same between transitions.
     // You can verify this with the calculator: https://www.europeangodatabase.eu/EGD/gor_calculator.php
     let h = if handicap == 0.0 {
         0.0

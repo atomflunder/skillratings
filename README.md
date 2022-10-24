@@ -15,11 +15,11 @@ Currently supported algorithms:
 - [Glicko](https://docs.rs/skillratings/latest/skillratings/glicko/)
 - [Glicko-2](https://docs.rs/skillratings/latest/skillratings/glicko2/)
 - [TrueSkill](https://docs.rs/skillratings/latest/skillratings/trueskill/)
-- [Weng-Lin (Bayesian Approxmation System)](https://docs.rs/skillratings/latest/skillratings/weng_lin/)
+- [Weng-Lin (Bayesian Approximation System)](https://docs.rs/skillratings/latest/skillratings/weng_lin/)
 - [Sticko (Stephenson Rating System)](https://docs.rs/skillratings/latest/skillratings/sticko/)
 - [Glicko-Boost](https://docs.rs/skillratings/latest/skillratings/glicko_boost/)
 - [USCF (US Chess Federation Ratings)](https://docs.rs/skillratings/latest/skillratings/uscf/)
-- [EGF (European Go Federation)](https://docs.rs/skillratings/latest/skillratings/egf/)
+- [EGF (European Go Federation Ratings)](https://docs.rs/skillratings/latest/skillratings/egf/)
 - [DWZ (Deutsche Wertungszahl)](https://docs.rs/skillratings/latest/skillratings/dwz/)
 - [Ingo](https://docs.rs/skillratings/latest/skillratings/ingo/)
 

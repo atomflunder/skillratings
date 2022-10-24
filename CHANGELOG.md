@@ -104,7 +104,7 @@ This is a broad overview of the changes that have been made over the lifespan of
 ## v0.8.0 - 2022-08-19
 
 - Add config structs: `EloConfig`, `GlickoConfig`, `Glicko2Config`, `TrueSkillConfig`
-    - These allow you to change some values used in the algorithm to further customise the behavior
+    - These allow you to change some values used in the algorithm to further customise the behaviour
     - The following functions require a config now: `elo::elo`, `glicko::decay_deviation`, `glicko2::glicko2`, `trueskill::trueskill`, `trueskill::match_quality`, `trueskill::expected_score`
 - Fix some spelling issues
 

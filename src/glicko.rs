@@ -1,5 +1,5 @@
 //! The Glicko algorithm, developed by Mark Glickman as an improvement on Elo.  
-//! It is still being used in some games in favor Glicko-2, such as Pokémon Showdown and Quake Live.
+//! It is still being used in some games in favour Glicko-2, such as Pokémon Showdown and Quake Live.
 //!
 //! If you are looking for the updated Glicko-2 rating system, please see [`Glicko-2`](crate::glicko2).
 //!
@@ -68,7 +68,7 @@ pub struct GlickoRating {
 
 impl GlickoRating {
     #[must_use]
-    /// Initialize a new `GlickoRating` with a rating of 1500.0 and a deviation of 350.0.
+    /// Initialise a new `GlickoRating` with a rating of 1500.0 and a deviation of 350.0.
     pub const fn new() -> Self {
         Self {
             rating: 1500.0,
@@ -123,7 +123,7 @@ pub struct GlickoConfig {
 
 impl GlickoConfig {
     #[must_use]
-    /// Initialize a new `GlickoConfig` with a c value of `63.2`
+    /// Initialise a new `GlickoConfig` with a c value of `63.2`
     pub const fn new() -> Self {
         Self { c: 63.2 }
     }

@@ -30,10 +30,10 @@
 //!     Outcomes,
 //! };
 //!
-//! // Initialize a new player rating.
+//! // Initialise a new player rating.
 //! let player_one = GlickoBoostRating::new();
 //!
-//! // Or you can initialize it with your own values of course.
+//! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let (some_rating, some_deviation) = (1325.0, 230.0);
 //! let player_two = GlickoBoostRating {
@@ -91,7 +91,7 @@ pub struct GlickoBoostRating {
 
 impl GlickoBoostRating {
     #[must_use]
-    /// Initialize a new `GlickoBoostRating` with a rating of 1500.0 and a deviation of 350.0.
+    /// Initialise a new `GlickoBoostRating` with a rating of 1500.0 and a deviation of 350.0.
     pub const fn new() -> Self {
         Self {
             rating: 1500.0,
@@ -169,7 +169,7 @@ pub struct GlickoBoostConfig {
 
 impl GlickoBoostConfig {
     #[must_use]
-    /// Initialize a new `GlickoBoostConfig` with a eta value of 30.0, a k value of 1.96,
+    /// Initialise a new `GlickoBoostConfig` with a eta value of 30.0, a k value of 1.96,
     /// b values of 0.20139 and 17.5, and alpha values of 5.83733, -1.75374e-04, -7.080124e-05, 0.001733792, 0.00026706.
     pub const fn new() -> Self {
         Self {
@@ -314,7 +314,7 @@ pub fn glicko_boost(
 /// In the [`glicko_boost`] function this is determined by the order of players that are input to the function, but we cannot do this here,
 /// and because it likely changes from game-to-game, we need a separate parameter controlling it.
 ///
-/// The colour you play in each game matters if the [`GlickoBoostConfig`] is set up with an advantge for the first player.  
+/// The colour you play in each game matters if the [`GlickoBoostConfig`] is set up with an advantage for the first player.  
 /// It makes sense to do so in Chess, or Sports with an home-team-advantage.
 ///
 /// ---

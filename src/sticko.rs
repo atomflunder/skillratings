@@ -27,10 +27,10 @@
 //!     Outcomes,
 //! };
 //!
-//! // Initialize a new player rating.
+//! // Initialise a new player rating.
 //! let player_one = StickoRating::new();
 //!
-//! // Or you can initialize it with your own values of course.
+//! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
 //! let (some_rating, some_deviation) = (1325.0, 230.0);
 //! let player_two = StickoRating {
@@ -89,7 +89,7 @@ pub struct StickoRating {
 
 impl StickoRating {
     #[must_use]
-    /// Initialize a new `StickoRating` with a rating of 1500.0 and a deviation of 350.0.
+    /// Initialise a new `StickoRating` with a rating of 1500.0 and a deviation of 350.0.
     pub const fn new() -> Self {
         Self {
             rating: 1500.0,
@@ -150,7 +150,7 @@ pub struct StickoConfig {
     /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
     /// Do not set this to a negative value.
     pub beta: f64,
-    /// The neighborhood parameter, which shrinks player ratings towards their opponent.  
+    /// The neighbourhood parameter, which shrinks player ratings towards their opponent.  
     /// By default set to `2.0`.  
     /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
     /// Do not set this to a negative value.
@@ -176,7 +176,7 @@ pub struct StickoConfig {
 
 impl StickoConfig {
     #[must_use]
-    /// Initialize a new `StickoConfig` with a h value of `10.0`, a beta value of `0.0`,
+    /// Initialise a new `StickoConfig` with a h value of `10.0`, a beta value of `0.0`,
     /// a lambda value of `2.0` and a gamma value of `0.0`.
     pub const fn new() -> Self {
         Self {
@@ -334,7 +334,7 @@ pub fn sticko(
 /// In the [`sticko`] function this is determined by the order of players that are input to the function, but we cannot do this here,
 /// and because it likely changes from game-to-game, we need a separate parameter controlling it.
 ///
-/// The colour you play in each game matters if the [`StickoConfig`] is set up with an advantge for the first player.  
+/// The colour you play in each game matters if the [`StickoConfig`] is set up with an advantage for the first player.  
 /// It makes sense to do so in Chess, or Sports with an home-team-advantage.
 ///
 /// ---

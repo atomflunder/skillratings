@@ -86,7 +86,7 @@ pub struct USCFRating {
 
 impl USCFRating {
     #[must_use]
-    /// Initialize a new `USCFRating` with a new rating dependent on the age of the player.  
+    /// Initialise a new `USCFRating` with a new rating dependent on the age of the player.  
     /// The age is the actual age of the player, if unsure or unavailable set this to `26`.  
     /// The rating of a 26 year old will be 1300.0.
     pub fn new(age: usize) -> Self {
@@ -141,7 +141,7 @@ pub struct USCFConfig {
 
 impl USCFConfig {
     #[must_use]
-    /// Initialize a new `USCFConfig` with a t value of 14.0.
+    /// Initialise a new `USCFConfig` with a t value of 14.0.
     pub const fn new() -> Self {
         Self { t: 14.0 }
     }

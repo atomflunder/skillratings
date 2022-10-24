@@ -9,7 +9,7 @@
 //! Developed specifically for online games with multiple teams and multiple players,
 //! this algorithm aims to be simpler and faster (~2.5 - 6.5x) than TrueSkill while yielding similar accuracy.
 //!
-//! While TrueSkill is based upon a Gaussian distibution, this algorithm is based upon a logistical distribution, the Bradley-Terry model.
+//! While TrueSkill is based upon a Gaussian distribution, this algorithm is based upon a logistical distribution, the Bradley-Terry model.
 //!
 //! # Quickstart
 //!
@@ -54,7 +54,7 @@
 //! # More Information
 //! - [Original Paper (PDF)](https://jmlr.csail.mit.edu/papers/volume12/weng11a/weng11a.pdf)
 //! - [Bradley-Terry model Wikipedia](https://en.wikipedia.org/wiki/Bradley–Terry_model)
-//! - [Approximate Bayesian computaion Wikipedia](https://en.wikipedia.org/wiki/Approximate_Bayesian_computation)
+//! - [Approximate Bayesian computation Wikipedia](https://en.wikipedia.org/wiki/Approximate_Bayesian_computation)
 //! - [Logistic distribution Wikipedia](https://en.wikipedia.org/wiki/Logistic_distribution)
 
 #[cfg(feature = "serde")]
@@ -79,7 +79,7 @@ pub struct WengLinRating {
 
 impl WengLinRating {
     #[must_use]
-    /// Initialize a new WengLinRating with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
+    /// Initialise a new WengLinRating with a rating of 25.0, and an uncertainty of 25/3 ≈ 8.33.
     pub fn new() -> Self {
         Self {
             rating: 25.0,
@@ -122,7 +122,7 @@ pub struct WengLinConfig {
 
 impl WengLinConfig {
     #[must_use]
-    /// Initialize a new `WengLinConfig` with a beta value of 25 / 6 ≈ `4.167`
+    /// Initialise a new `WengLinConfig` with a beta value of 25 / 6 ≈ `4.167`
     /// and an uncertainty tolerance of `0.000_001`.
     pub fn new() -> Self {
         Self {
@@ -280,7 +280,7 @@ pub fn weng_lin_rating_period(
             .sqrt();
 
         // Normally we would just call expected_points(),
-        // but we would have to construct a rating first which seems inefficent.
+        // but we would have to construct a rating first which seems inefficient.
         // So we are just calculating it ourselves.
         let e1 = (player_rating / c).exp();
         let e2 = (opponent.rating / c).exp();
