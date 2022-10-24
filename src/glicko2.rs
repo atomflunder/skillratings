@@ -142,7 +142,7 @@ pub struct Glicko2Config {
 
 impl Glicko2Config {
     #[must_use]
-    /// initialise a new `Glicko2Config` with a tau value of `0.5` and a convergence tolerance of `0.000_001`.
+    /// Initialise a new `Glicko2Config` with a tau value of `0.5` and a convergence tolerance of `0.000_001`.
     pub const fn new() -> Self {
         Self {
             tau: 0.5,

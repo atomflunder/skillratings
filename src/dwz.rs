@@ -72,7 +72,7 @@ pub struct DWZRating {
 
 impl DWZRating {
     #[must_use]
-    /// initialise a new `DWZRating` with a rating of 1000.0, an index of 1 and the specified age.  
+    /// Initialise a new `DWZRating` with a rating of 1000.0, an index of 1 and the specified age.  
     /// The age is the actual age of the player, if unsure or unavailable set this to `>25`.
     pub const fn new(age: usize) -> Self {
         Self {
