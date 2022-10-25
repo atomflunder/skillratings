@@ -347,4 +347,22 @@ mod tests {
 
         assert!((winner_expected + loser_expected - 1.0).abs() < f64::EPSILON);
     }
+
+    #[test]
+    #[allow(clippy::clone_on_copy)]
+    fn test_misc_stuff() {
+        let player_one = EloRating::new();
+        let config = EloConfig::new();
+
+        assert_eq!(player_one, player_one.clone());
+        assert!((config.k - config.clone().k).abs() < f64::EPSILON);
+
+        assert!(!format!("{:?}", player_one).is_empty());
+        assert!(!format!("{:?}", config).is_empty());
+
+        let outcome = Outcomes::WIN;
+
+        assert_eq!(outcome, outcome.clone());
+        assert!(!format!("{:?}", outcome).is_empty());
+    }
 }

@@ -398,4 +398,17 @@ mod tests {
 
         assert!((new_player.rating.round() - 69.0).abs() < f64::EPSILON);
     }
+
+    #[test]
+    #[allow(clippy::clone_on_copy)]
+    fn test_misc_stuff() {
+        let player_one = EGFRating::new();
+        let config = EGFConfig::new();
+
+        assert_eq!(player_one, player_one.clone());
+        assert!((config.handicap - config.clone().handicap).abs() < f64::EPSILON);
+
+        assert!(!format!("{:?}", player_one).is_empty());
+        assert!(!format!("{:?}", config).is_empty());
+    }
 }

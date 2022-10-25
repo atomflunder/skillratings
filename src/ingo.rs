@@ -405,4 +405,14 @@ mod tests {
 
         assert!((elo_player.rating - 1000.0).abs() < f64::EPSILON);
     }
+
+    #[test]
+    #[allow(clippy::clone_on_copy)]
+    fn test_misc_stuff() {
+        let player_one = IngoRating::new(14);
+
+        assert_eq!(player_one, player_one.clone());
+
+        assert!(!format!("{:?}", player_one).is_empty());
+    }
 }

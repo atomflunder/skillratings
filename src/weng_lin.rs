@@ -885,4 +885,17 @@ mod tests {
 
         assert!((other_weng_lin_player.rating - 35.0).abs() < f64::EPSILON);
     }
+
+    #[test]
+    #[allow(clippy::clone_on_copy)]
+    fn test_misc_stuff() {
+        let player_one = WengLinRating::new();
+        let config = WengLinConfig::new();
+
+        assert_eq!(player_one, player_one.clone());
+        assert!((config.beta - config.clone().beta).abs() < f64::EPSILON);
+
+        assert!(!format!("{:?}", player_one).is_empty());
+        assert!(!format!("{:?}", config).is_empty());
+    }
 }

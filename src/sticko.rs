@@ -869,4 +869,17 @@ mod tests {
         assert!((black_player.rating.round() - 1335.0).abs() < f64::EPSILON);
         assert!((black_player.deviation.round() - 108.0).abs() < f64::EPSILON);
     }
+
+    #[test]
+    #[allow(clippy::clone_on_copy)]
+    fn test_misc_stuff() {
+        let player_one = StickoRating::new();
+        let config = StickoConfig::new();
+
+        assert_eq!(player_one, player_one.clone());
+        assert!((config.c - config.clone().c).abs() < f64::EPSILON);
+
+        assert!(!format!("{:?}", player_one).is_empty());
+        assert!(!format!("{:?}", config).is_empty());
+    }
 }

@@ -1483,4 +1483,17 @@ mod tests {
 
         assert!(v3 == NEG_INFINITY);
     }
+
+    #[test]
+    #[allow(clippy::clone_on_copy)]
+    fn test_misc_stuff() {
+        let player_one = TrueSkillRating::new();
+        let config = TrueSkillConfig::new();
+
+        assert_eq!(player_one, player_one.clone());
+        assert!((config.beta - config.clone().beta).abs() < f64::EPSILON);
+
+        assert!(!format!("{:?}", player_one).is_empty());
+        assert!(!format!("{:?}", config).is_empty());
+    }
 }

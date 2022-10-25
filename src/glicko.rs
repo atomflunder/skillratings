@@ -633,11 +633,21 @@ mod tests {
     }
 
     #[test]
-    fn test_default() {
+    #[allow(clippy::clone_on_copy)]
+    fn test_misc_stuff() {
         let player_new = GlickoRating::new();
         let player_default = GlickoRating::default();
 
         assert!((player_new.rating - player_default.rating).abs() < f64::EPSILON);
         assert!((player_new.deviation - player_new.deviation).abs() < f64::EPSILON);
+
+        let player_one = GlickoRating::new();
+        let config = GlickoConfig::new();
+
+        assert_eq!(player_one, player_one.clone());
+        assert!((config.c - config.clone().c).abs() < f64::EPSILON);
+
+        assert!(!format!("{:?}", player_one).is_empty());
+        assert!(!format!("{:?}", config).is_empty());
     }
 }

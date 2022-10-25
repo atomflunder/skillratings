@@ -847,11 +847,14 @@ mod tests {
     }
 
     #[test]
-    fn default_new() {
+    fn test_misc_stuff() {
         let player_one = DWZRating::default();
 
         let player_two = DWZRating::new(26);
 
         assert_eq!(player_one, player_two);
+
+        assert_eq!(player_one, player_one.clone());
+        assert!(!format!("{:?}", player_one).is_empty());
     }
 }

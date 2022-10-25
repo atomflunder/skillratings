@@ -684,6 +684,11 @@ mod tests {
 
         assert!((new_one.rating - 1337.5).abs() < f64::EPSILON);
         assert!((new_two.rating - 1162.5).abs() < f64::EPSILON);
+
+        let (new_one, new_two) = uscf(&player_one, &player_two, &Outcomes::LOSS, &config);
+
+        assert!((new_one.rating - 1237.5).abs() < f64::EPSILON);
+        assert!((new_two.rating - 1262.5).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -697,6 +702,8 @@ mod tests {
         let new2 = USCFRating::new(15);
 
         assert_ne!(new2, default);
+
+        let new3 = USCFRating::new(1);
 
         let elo = EloRating { rating: 1779.0 };
 
@@ -713,5 +720,21 @@ mod tests {
         assert!((uscf2.rating - 2280.9).abs() < f64::EPSILON);
         assert_eq!(uscf2.games, 10);
         assert_eq!(EloRating::from(uscf2), elo2);
+
+        assert!((new3.rating - 100.0).abs() < f64::EPSILON);
+        assert_eq!(new3.games, 0);
+    }
+
+    #[test]
+    #[allow(clippy::clone_on_copy)]
+    fn test_misc_stuff() {
+        let player_one = USCFRating::new(55);
+        let config = USCFConfig::new();
+
+        assert_eq!(player_one, player_one.clone());
+        assert!((config.t - config.clone().t).abs() < f64::EPSILON);
+
+        assert!(!format!("{:?}", player_one).is_empty());
+        assert!(!format!("{:?}", config).is_empty());
     }
 }

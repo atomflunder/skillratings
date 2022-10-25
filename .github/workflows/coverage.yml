@@ -1,22 +1,22 @@
-name: coverage
+name: Coverage
 
-on: [push]
+on: [pull_request, push]
+
 jobs:
-  test:
-    name: coverage
+  coverage:
     runs-on: ubuntu-latest
-    container:
-      image: xd009642/tarpaulin:develop-nightly
-      options: --security-opt seccomp=unconfined
+    env:
+      CARGO_TERM_COLOR: always
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
+      - uses: actions/checkout@v3
+      - name: Install Rust Nightly # Currently the --doctests flag is unstable and only available on the nightly toolchain
+        run: rustup update nightly
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate code coverage
-        run: |
-          cargo +nightly tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
-
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v2
+        run: cargo +nightly llvm-cov --all-features --doctests --workspace --lcov --output-path lcov.info
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
         with:
+          files: lcov.info
           fail_ci_if_error: true

@@ -943,4 +943,17 @@ mod tests {
         assert!((new_h.rating - 2_348.033_407_382_116).abs() < f64::EPSILON);
         assert!((new_h.deviation - 113.650_398_230_347_6).abs() < f64::EPSILON);
     }
+
+    #[test]
+    #[allow(clippy::clone_on_copy)]
+    fn test_misc_stuff() {
+        let player_one = GlickoBoostRating::new();
+        let config = GlickoBoostConfig::new();
+
+        assert_eq!(player_one, player_one.clone());
+        assert!((config.eta - config.clone().eta).abs() < f64::EPSILON);
+
+        assert!(!format!("{:?}", player_one).is_empty());
+        assert!(!format!("{:?}", config).is_empty());
+    }
 }
