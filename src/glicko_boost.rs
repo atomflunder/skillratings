@@ -377,7 +377,7 @@ pub fn glicko_boost_rating_period(
         return decay_deviation(player, config);
     }
 
-    let d_sum = results
+    let d_sum: f64 = results
         .iter()
         .map(|r| {
             let g = g_value(q, r.0.deviation);
@@ -392,9 +392,9 @@ pub fn glicko_boost_rating_period(
 
             g.powi(2) * e * (1.0 - e)
         })
-        .sum::<f64>();
+        .sum();
 
-    let d_sq: f64 = (q.powi(2) * d_sum).recip();
+    let d_sq = (q.powi(2) * d_sum).recip();
 
     let m = results
         .iter()
@@ -413,7 +413,7 @@ pub fn glicko_boost_rating_period(
 
             g * (s - e)
         })
-        .sum::<f64>();
+        .sum();
 
     let z = m / d_sum.sqrt();
 

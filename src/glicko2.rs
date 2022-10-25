@@ -352,7 +352,7 @@ pub fn glicko2_rating_period(
         .sum::<f64>()
         .recip();
 
-    let scores = (results.iter().map(|r| {
+    let scores: f64 = (results.iter().map(|r| {
         let g = g_value(r.0.deviation / 173.7178);
 
         let e = e_value(player_rating, (r.0.rating - 1500.0) / 173.7178, g);
@@ -361,7 +361,7 @@ pub fn glicko2_rating_period(
 
         g * (s - e)
     }))
-    .sum::<f64>();
+    .sum();
 
     let delta = v * scores;
 

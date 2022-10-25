@@ -296,7 +296,7 @@ pub fn glicko_rating_period(
         return decay_deviation(player, config);
     }
 
-    let d_sq: f64 = (q.powi(2)
+    let d_sq = (q.powi(2)
         * results
             .iter()
             .map(|r| {
@@ -320,7 +320,7 @@ pub fn glicko_rating_period(
 
             g * (s - e)
         })
-        .sum::<f64>();
+        .sum();
 
     let new_rating =
         (q / (player.deviation.powi(2).recip() + d_sq.recip())).mul_add(m, player.rating);

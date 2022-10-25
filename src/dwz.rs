@@ -239,12 +239,9 @@ pub fn dwz(
 /// ```
 pub fn dwz_rating_period(player: &DWZRating, results: &Vec<(DWZRating, Outcomes)>) -> DWZRating {
     // DWZ was designed to be used in tournaments, so we do not need to loop over the opponents here.
-    let points = results.iter().map(|r| r.1.to_chess_points()).sum::<f64>();
+    let points = results.iter().map(|r| r.1.to_chess_points()).sum();
 
-    let expected_points = results
-        .iter()
-        .map(|r| expected_score(player, &r.0).0)
-        .sum::<f64>();
+    let expected_points = results.iter().map(|r| expected_score(player, &r.0).0).sum();
 
     let new_rating = (800.0
         / (e_value(
@@ -365,7 +362,7 @@ pub fn get_first_dwz(player_age: usize, results: &Vec<(DWZRating, Outcomes)>) ->
         return None;
     }
 
-    let points = results.iter().map(|r| r.1.to_chess_points()).sum::<f64>();
+    let points: f64 = results.iter().map(|r| r.1.to_chess_points()).sum();
 
     // If you have a 100% or 0% win rate, we return None.
     if (points - results.len() as f64).abs() < f64::EPSILON || points == 0.0 {

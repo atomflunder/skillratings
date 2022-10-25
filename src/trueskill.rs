@@ -439,11 +439,11 @@ pub fn trueskill_teams(
 
     let draw_margin = draw_margin(config.draw_probability, config.beta, total_players);
 
-    let rating_one_sum = team_one.iter().map(|p| p.rating).sum::<f64>();
-    let rating_two_sum = team_two.iter().map(|p| p.rating).sum::<f64>();
+    let rating_one_sum: f64 = team_one.iter().map(|p| p.rating).sum();
+    let rating_two_sum: f64 = team_two.iter().map(|p| p.rating).sum();
 
-    let uncertainty_one_sum = team_one.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
-    let uncertainty_two_sum = team_two.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
+    let uncertainty_one_sum: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let uncertainty_two_sum: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
 
     let c = total_players
         .mul_add(
@@ -607,11 +607,11 @@ pub fn match_quality_teams(
 ) -> f64 {
     let total_players = (team_one.len() + team_two.len()) as f64;
 
-    let rating_one_sum = team_one.iter().map(|p| p.rating).sum::<f64>();
-    let rating_two_sum = team_two.iter().map(|p| p.rating).sum::<f64>();
+    let rating_one_sum: f64 = team_one.iter().map(|p| p.rating).sum();
+    let rating_two_sum: f64 = team_two.iter().map(|p| p.rating).sum();
 
-    let uncertainty_one_sum = team_one.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
-    let uncertainty_two_sum = team_two.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
+    let uncertainty_one_sum: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let uncertainty_two_sum: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
 
     let a = ((total_players * config.beta.powi(2))
         / (total_players.mul_add(config.beta.powi(2), uncertainty_one_sum) + uncertainty_two_sum))
@@ -733,11 +733,11 @@ pub fn expected_score_teams(
 ) -> (f64, f64) {
     let player_count = (team_one.len() + team_two.len()) as f64;
 
-    let rating_one_sum = team_one.iter().map(|p| p.rating).sum::<f64>();
-    let rating_two_sum = team_two.iter().map(|p| p.rating).sum::<f64>();
+    let rating_one_sum: f64 = team_one.iter().map(|p| p.rating).sum();
+    let rating_two_sum: f64 = team_two.iter().map(|p| p.rating).sum();
 
-    let uncertainty_one_sum = team_one.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
-    let uncertainty_two_sum = team_two.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
+    let uncertainty_one_sum: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let uncertainty_two_sum: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
 
     let delta = rating_one_sum - rating_two_sum;
 

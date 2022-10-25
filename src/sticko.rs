@@ -418,10 +418,10 @@ pub fn sticko_rating_period(
             .sum::<f64>())
     .recip();
 
-    let lambda: f64 = (config.lambda / 100.0)
+    let lambda = (config.lambda / 100.0)
         * ((results.iter().map(|r| r.0.rating).sum::<f64>() / matches) - player.rating);
 
-    let m = results
+    let m: f64 = results
         .iter()
         .map(|r| {
             let g = g_value(q, r.0.deviation);
@@ -438,7 +438,7 @@ pub fn sticko_rating_period(
 
             g * (s - e + config.beta)
         })
-        .sum::<f64>();
+        .sum();
 
     let new_deviation = ((player
         .deviation

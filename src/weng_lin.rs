@@ -363,8 +363,8 @@ pub fn weng_lin_teams(
         return (team_one.clone(), team_two.clone());
     }
 
-    let team_one_uncertainties = team_one.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
-    let team_two_uncertainties = team_two.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
+    let team_one_uncertainties: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let team_two_uncertainties: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
 
     let c = 2.0f64
         .mul_add(
@@ -535,11 +535,11 @@ pub fn expected_score_teams(
     team_two: &Vec<WengLinRating>,
     config: &WengLinConfig,
 ) -> (f64, f64) {
-    let team_one_ratings = team_one.iter().map(|p| p.rating).sum::<f64>();
-    let team_two_ratings = team_two.iter().map(|p| p.rating).sum::<f64>();
+    let team_one_ratings: f64 = team_one.iter().map(|p| p.rating).sum();
+    let team_two_ratings: f64 = team_two.iter().map(|p| p.rating).sum();
 
-    let team_one_uncertainties = team_one.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
-    let team_two_uncertainties = team_two.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
+    let team_one_uncertainties: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let team_two_uncertainties: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
 
     let c = 2.0f64
         .mul_add(

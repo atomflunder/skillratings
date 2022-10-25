@@ -329,12 +329,12 @@ pub fn uscf_rating_period(
         let wins = results
             .iter()
             .map(|r| if r.1 == Outcomes::WIN { 1 } else { 0 })
-            .sum::<i32>();
+            .sum();
 
         let losses = results
             .iter()
             .map(|r| if r.1 == Outcomes::LOSS { 1 } else { 0 })
-            .sum::<i32>();
+            .sum();
 
         let new_rating = new_rating_provisional(
             player.rating,
@@ -351,12 +351,12 @@ pub fn uscf_rating_period(
         };
     }
 
-    let score = results.iter().map(|r| r.1.to_chess_points()).sum::<f64>();
+    let score = results.iter().map(|r| r.1.to_chess_points()).sum();
 
     let exp_sum = results
         .iter()
         .map(|r| e_value(player.rating, r.0.rating))
-        .sum::<f64>();
+        .sum();
 
     let new_rating = new_rating(
         player.rating,
@@ -503,7 +503,7 @@ mod tests {
         let e = [1250.0, 1400.0, 1500.0, 1550.0]
             .iter()
             .map(|r| e_value(player.rating, *r))
-            .sum::<f64>();
+            .sum();
 
         let boost = get_boost_value(played_games, k, e, 3.5, 12.0);
 
