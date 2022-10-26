@@ -414,7 +414,7 @@ fn new_rating_provisional(
     wins: i32,
     losses: i32,
 ) -> f64 {
-    ((wins - losses) as f64).mul_add(
+    f64::from(wins - losses).mul_add(
         400.0,
         (past_games as f64).mul_add(rating, played_games as f64 * opponent_rating),
     ) / (past_games + played_games) as f64

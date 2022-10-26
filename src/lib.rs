@@ -1,15 +1,17 @@
-#![warn(missing_docs)]
 #![warn(
+    missing_docs,
     clippy::pedantic,
     clippy::nursery,
     clippy::unwrap_used,
     clippy::expect_used
 )]
 #![allow(
-    clippy::module_name_repetitions, // This is turned off because of the rating values
-    clippy::doc_markdown,   // This is turned off because "TrueSkill" shows up as a false positive
-    clippy::cast_precision_loss, // We need to cast usizes to f64s in places where precision is not that important
-    clippy::cast_lossless
+    // This is turned off because of the rating values in the structs
+    clippy::module_name_repetitions,
+    // "TrueSkill" shows up as a false positive otherwise
+    clippy::doc_markdown,   
+    // Need to cast usizes to f64s where precision is not that important, also there seems to be no good alternative.
+    clippy::cast_precision_loss, 
 )]
 
 //! Skillratings provides a collection of well-known (and lesser known) skill rating algorithms, that allow you to assess a player's skill level instantly.  
