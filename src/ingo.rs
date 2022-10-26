@@ -81,6 +81,19 @@ impl Default for IngoRating {
     }
 }
 
+impl From<(f64, usize)> for IngoRating {
+    fn from((r, a): (f64, usize)) -> Self {
+        Self { rating: r, age: a }
+    }
+}
+
+// Just in case the age is unknown.
+impl From<f64> for IngoRating {
+    fn from(r: f64) -> Self {
+        Self { rating: r, age: 26 }
+    }
+}
+
 impl From<EloRating> for IngoRating {
     fn from(e: EloRating) -> Self {
         Self {
@@ -414,5 +427,7 @@ mod tests {
         assert_eq!(player_one, player_one.clone());
 
         assert!(!format!("{:?}", player_one).is_empty());
+
+        assert_eq!(IngoRating::from((222.0, 26)), IngoRating::from(222.0));
     }
 }

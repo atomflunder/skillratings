@@ -104,6 +104,15 @@ impl Default for StickoRating {
     }
 }
 
+impl From<(f64, f64)> for StickoRating {
+    fn from((r, d): (f64, f64)) -> Self {
+        Self {
+            rating: r,
+            deviation: d,
+        }
+    }
+}
+
 impl From<GlickoRating> for StickoRating {
     fn from(g: GlickoRating) -> Self {
         Self {
@@ -881,5 +890,7 @@ mod tests {
 
         assert!(!format!("{:?}", player_one).is_empty());
         assert!(!format!("{:?}", config).is_empty());
+
+        assert_eq!(player_one, StickoRating::from((1500.0, 350.0)));
     }
 }

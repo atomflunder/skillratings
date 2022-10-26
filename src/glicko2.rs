@@ -95,6 +95,16 @@ impl Default for Glicko2Rating {
     }
 }
 
+impl From<(f64, f64, f64)> for Glicko2Rating {
+    fn from((r, d, v): (f64, f64, f64)) -> Self {
+        Self {
+            rating: r,
+            deviation: d,
+            volatility: v,
+        }
+    }
+}
+
 impl From<GlickoRating> for Glicko2Rating {
     fn from(g: GlickoRating) -> Self {
         Self {
@@ -958,5 +968,7 @@ mod tests {
 
         assert!(!format!("{:?}", player_one).is_empty());
         assert!(!format!("{:?}", config).is_empty());
+
+        assert_eq!(player_one, Glicko2Rating::from((1500.0, 350.0, 0.06)));
     }
 }

@@ -89,6 +89,27 @@ impl Default for DWZRating {
     }
 }
 
+impl From<(f64, usize, usize)> for DWZRating {
+    fn from((r, i, a): (f64, usize, usize)) -> Self {
+        Self {
+            rating: r,
+            index: i,
+            age: a,
+        }
+    }
+}
+
+// Just in case the age is unknown.
+impl From<(f64, usize)> for DWZRating {
+    fn from((r, i): (f64, usize)) -> Self {
+        Self {
+            rating: r,
+            index: i,
+            age: 26,
+        }
+    }
+}
+
 impl From<EloRating> for DWZRating {
     fn from(e: EloRating) -> Self {
         Self {
@@ -856,5 +877,10 @@ mod tests {
 
         assert_eq!(player_one, player_one.clone());
         assert!(!format!("{:?}", player_one).is_empty());
+
+        assert_eq!(
+            DWZRating::from((1400.0, 20)),
+            DWZRating::from((1400.0, 20, 26))
+        );
     }
 }

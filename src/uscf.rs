@@ -93,7 +93,7 @@ impl USCFRating {
         Self {
             rating: if age < 2 {
                 100.0
-            } else if age > 26 {
+            } else if age >= 26 {
                 1300.0
             } else {
                 age as f64 * 50.0
@@ -106,6 +106,15 @@ impl USCFRating {
 impl Default for USCFRating {
     fn default() -> Self {
         Self::new(26)
+    }
+}
+
+impl From<(f64, usize)> for USCFRating {
+    fn from((r, g): (f64, usize)) -> Self {
+        Self {
+            rating: r,
+            games: g,
+        }
     }
 }
 
@@ -736,5 +745,7 @@ mod tests {
 
         assert!(!format!("{:?}", player_one).is_empty());
         assert!(!format!("{:?}", config).is_empty());
+
+        assert_eq!(player_one, USCFRating::from((1300.0, 0)));
     }
 }

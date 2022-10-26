@@ -73,6 +73,12 @@ impl Default for EloRating {
     }
 }
 
+impl From<f64> for EloRating {
+    fn from(r: f64) -> Self {
+        Self { rating: r }
+    }
+}
+
 impl From<IngoRating> for EloRating {
     fn from(i: IngoRating) -> Self {
         Self {
@@ -364,5 +370,7 @@ mod tests {
 
         assert_eq!(outcome, outcome.clone());
         assert!(!format!("{:?}", outcome).is_empty());
+
+        assert_eq!(player_one, EloRating::from(1000.0));
     }
 }

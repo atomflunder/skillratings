@@ -86,6 +86,12 @@ impl Default for EGFRating {
     }
 }
 
+impl From<f64> for EGFRating {
+    fn from(r: f64) -> Self {
+        Self { rating: r }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// Constants used in the EGF Calculations.
@@ -410,5 +416,7 @@ mod tests {
 
         assert!(!format!("{:?}", player_one).is_empty());
         assert!(!format!("{:?}", config).is_empty());
+
+        assert_eq!(player_one, EGFRating::from(0.0));
     }
 }

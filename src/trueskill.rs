@@ -104,6 +104,15 @@ impl Default for TrueSkillRating {
     }
 }
 
+impl From<(f64, f64)> for TrueSkillRating {
+    fn from((r, u): (f64, f64)) -> Self {
+        Self {
+            rating: r,
+            uncertainty: u,
+        }
+    }
+}
+
 impl From<WengLinRating> for TrueSkillRating {
     fn from(w: WengLinRating) -> Self {
         Self {
@@ -1495,5 +1504,7 @@ mod tests {
 
         assert!(!format!("{:?}", player_one).is_empty());
         assert!(!format!("{:?}", config).is_empty());
+
+        assert_eq!(player_one, TrueSkillRating::from((25.0, 25.0 / 3.0)));
     }
 }
