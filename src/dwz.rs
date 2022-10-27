@@ -220,7 +220,7 @@ pub fn dwz(
 #[must_use]
 /// The "traditional" way of calculating a DWZ Rating of a player in a rating period or tournament.
 ///
-/// Takes in a player as an [`DWZRating`] and their results as a Vec of tuples containing the opponent as an [`DWZRating`]
+/// Takes in a player as an [`DWZRating`] and their results as a Slice of tuples containing the opponent as an [`DWZRating`]
 /// and the outcome of the game as an [`Outcome`](Outcomes).
 ///
 /// All of the outcomes are from the perspective of the player.
@@ -258,7 +258,7 @@ pub fn dwz(
 /// assert!((new_player.rating.round() - 1635.0).abs() < f64::EPSILON);
 /// assert_eq!(new_player.index, 18);
 /// ```
-pub fn dwz_rating_period(player: &DWZRating, results: &Vec<(DWZRating, Outcomes)>) -> DWZRating {
+pub fn dwz_rating_period(player: &DWZRating, results: &[(DWZRating, Outcomes)]) -> DWZRating {
     // DWZ was designed to be used in tournaments, so we do not need to loop over the opponents here.
     let points = results.iter().map(|r| r.1.to_chess_points()).sum();
 
@@ -324,7 +324,7 @@ pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f
 /// consider using [`DWZRating::from()`](DWZRating) if you have an [`EloRating`](crate::elo::EloRating)
 /// or [`DWZRating::new()`](DWZRating) if not.
 ///
-/// Takes in the player's age and their results as a Vec of tuples containing the opponent and the outcome.
+/// Takes in the player's age and their results as a Slice of tuples containing the opponent and the outcome.
 /// If the actual player's age is unavailable or unknown, choose something `>25`.
 ///
 /// This only returns a DWZ rating if the results include at least 5 matches,
@@ -378,7 +378,7 @@ pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f
 /// assert!((player.rating - 1491.0).abs() < f64::EPSILON);
 /// assert_eq!(player.index, 1);
 /// ```
-pub fn get_first_dwz(player_age: usize, results: &Vec<(DWZRating, Outcomes)>) -> Option<DWZRating> {
+pub fn get_first_dwz(player_age: usize, results: &[(DWZRating, Outcomes)]) -> Option<DWZRating> {
     if results.len() < 5 {
         return None;
     }
@@ -709,7 +709,7 @@ mod tests {
         #[allow(clippy::unwrap_used)]
         let player = get_first_dwz(
             26,
-            &vec![
+            &[
                 (o1, Outcomes::WIN),
                 (o2, Outcomes::DRAW),
                 (o3, Outcomes::LOSS),
@@ -724,7 +724,7 @@ mod tests {
 
         let all_win_player = get_first_dwz(
             17,
-            &vec![
+            &[
                 (o1, Outcomes::WIN),
                 (o2, Outcomes::WIN),
                 (o3, Outcomes::WIN),
@@ -737,7 +737,7 @@ mod tests {
 
         let all_lose_player = get_first_dwz(
             17,
-            &vec![
+            &[
                 (o1, Outcomes::LOSS),
                 (o2, Outcomes::LOSS),
                 (o3, Outcomes::LOSS),
@@ -750,7 +750,7 @@ mod tests {
 
         let less_than_5 = get_first_dwz(
             32,
-            &vec![
+            &[
                 (o1, Outcomes::LOSS),
                 (o2, Outcomes::WIN),
                 (o3, Outcomes::DRAW),
@@ -796,7 +796,7 @@ mod tests {
         #[allow(clippy::unwrap_used)]
         let bad_player = get_first_dwz(
             26,
-            &vec![
+            &[
                 (o1, Outcomes::LOSS),
                 (o2, Outcomes::DRAW),
                 (o3, Outcomes::LOSS),

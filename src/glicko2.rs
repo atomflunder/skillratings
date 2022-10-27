@@ -280,13 +280,14 @@ pub fn glicko2(
     (player_one_new, player_two_new)
 }
 
+#[must_use]
 /// The "traditional" way of calculating a [`Glicko2Rating`] of a player in a rating period.
 ///
 /// Note that in this case, all of the matches are considered to be played at once.  
 /// This means that the player will not get updated in-between matches, as you might expect.  
 /// This will result in *slightly* different results than if you were to use the [`glicko2`] function in a loop.
 ///
-/// Takes in a player as an [`Glicko2Rating`] and their results as a Vec of tuples containing the opponent as an [`Glicko2Rating`],
+/// Takes in a player as an [`Glicko2Rating`] and their results as a Slice of tuples containing the opponent as an [`Glicko2Rating`],
 /// the outcome of the game as an [`Outcome`](Outcomes) and a [`Glicko2Config`].
 ///
 /// The outcome of the match is in the perspective of the player.
@@ -337,10 +338,9 @@ pub fn glicko2(
 /// assert!((new_player.deviation.round() - 152.0).abs() < f64::EPSILON);
 /// assert!((new_player.volatility - 0.059995984286488495).abs() < f64::EPSILON);
 /// ```
-#[must_use]
 pub fn glicko2_rating_period(
     player: &Glicko2Rating,
-    results: &Vec<(Glicko2Rating, Outcomes)>,
+    results: &[(Glicko2Rating, Outcomes)],
     config: &Glicko2Config,
 ) -> Glicko2Rating {
     if results.is_empty() {
@@ -855,7 +855,7 @@ mod tests {
 
         let (np, _) = glicko2(&player, &opponent, &Outcomes::WIN, &config);
 
-        let rp = glicko2_rating_period(&player, &vec![(opponent, Outcomes::WIN)], &config);
+        let rp = glicko2_rating_period(&player, &[(opponent, Outcomes::WIN)], &config);
 
         assert_eq!(rp, np);
     }

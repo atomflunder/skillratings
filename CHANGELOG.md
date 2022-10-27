@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.19.2 - 2022-10-27
+
+- Change every function that takes a Vec to now take a Slice
+
 ## v0.19.1 - 2022-10-26
 
 - Add more From implementations for rating structs

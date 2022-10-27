@@ -239,13 +239,14 @@ pub fn glicko(
     )
 }
 
+#[must_use]
 /// The "traditional" way of calculating a [`GlickoRating`] of a player in a rating period.
 ///
 /// Note that in this case, all of the matches are considered to be played at once.  
 /// This means that the player will not get updated in-between matches, as you might expect.  
 /// This will result in *slightly* different results than if you were to use the [`glicko`] function in a loop.
 ///
-/// Takes in a player as an [`GlickoRating`] and their results as a Vec of tuples containing the opponent as an [`GlickoRating`],
+/// Takes in a player as an [`GlickoRating`] and their results as a Slice of tuples containing the opponent as an [`GlickoRating`],
 /// the outcome of the game as an [`Outcome`](Outcomes) and a [`GlickoConfig`].
 ///
 /// The outcome of the match is in the perspective of the player.
@@ -293,10 +294,9 @@ pub fn glicko(
 /// assert!((new_player.rating.round() - 1464.0).abs() < f64::EPSILON);
 /// assert!((new_player.deviation.round() - 151.0).abs() < f64::EPSILON);
 /// ```
-#[must_use]
 pub fn glicko_rating_period(
     player: &GlickoRating,
-    results: &Vec<(GlickoRating, Outcomes)>,
+    results: &[(GlickoRating, Outcomes)],
     config: &GlickoConfig,
 ) -> GlickoRating {
     let q = 10_f64.ln() / 400.0;
@@ -558,7 +558,7 @@ mod tests {
 
         let (np, _) = glicko(&player, &opponent, &Outcomes::WIN);
 
-        let rp = glicko_rating_period(&player, &vec![(opponent, Outcomes::WIN)], &config);
+        let rp = glicko_rating_period(&player, &[(opponent, Outcomes::WIN)], &config);
 
         assert_eq!(rp, np);
     }

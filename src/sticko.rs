@@ -332,7 +332,7 @@ pub fn sticko(
 #[must_use]
 /// The "traditional" way of calculating a [`StickoRating`] of a player in a rating period.
 ///
-/// Takes in a player as an [`StickoRating`] and their results as a Vec of tuples containing the opponent as an [`StickoRating`],
+/// Takes in a player as an [`StickoRating`] and their results as a Slice of tuples containing the opponent as an [`StickoRating`],
 /// the outcome of the game as an [`Outcome`](Outcomes) and a [`bool`] specifying if the player was playing as player one, and a [`StickoConfig`].
 ///
 /// ---
@@ -397,7 +397,7 @@ pub fn sticko(
 /// ```
 pub fn sticko_rating_period(
     player: &StickoRating,
-    results: &Vec<(StickoRating, Outcomes, bool)>,
+    results: &[(StickoRating, Outcomes, bool)],
     config: &StickoConfig,
 ) -> StickoRating {
     let q = 10_f64.ln() / 400.0;
@@ -696,7 +696,7 @@ mod tests {
 
         let new_player = sticko_rating_period(
             &player,
-            &vec![
+            &[
                 (opponent1, Outcomes::WIN, true),
                 (opponent2, Outcomes::LOSS, true),
                 (opponent3, Outcomes::LOSS, true),
@@ -707,7 +707,7 @@ mod tests {
         assert!((new_player.rating.round() - 1464.0).abs() < f64::EPSILON);
         assert!((new_player.deviation - 151.398_902_447_969_33).abs() < f64::EPSILON);
 
-        let after_player = sticko_rating_period(&player, &vec![], &config);
+        let after_player = sticko_rating_period(&player, &[], &config);
 
         assert_eq!(player, after_player);
     }
@@ -733,7 +733,7 @@ mod tests {
 
         let (np, _) = sticko(&player, &opponent, &Outcomes::WIN, &config);
 
-        let rp = sticko_rating_period(&player, &vec![(opponent, Outcomes::WIN, true)], &config);
+        let rp = sticko_rating_period(&player, &[(opponent, Outcomes::WIN, true)], &config);
 
         assert_eq!(rp, np);
     }

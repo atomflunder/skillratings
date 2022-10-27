@@ -280,7 +280,7 @@ pub fn trueskill(
 /// Calculates a [`TrueSkillRating`] in a non-traditional way using a rating period,
 /// for compatibility with the other algorithms.
 ///
-/// Takes in a player as an [`TrueSkillRating`] and their results as a Vec of tuples containing the opponent as an [`TrueSkillRating`],
+/// Takes in a player as an [`TrueSkillRating`] and their results as a Slice of tuples containing the opponent as an [`TrueSkillRating`],
 /// the outcome of the game as an [`Outcome`](Outcomes) and a [`TrueSkillConfig`].
 ///
 /// The outcome of the match is in the perspective of the player.
@@ -328,7 +328,7 @@ pub fn trueskill(
 /// ```
 pub fn trueskill_rating_period(
     player: &TrueSkillRating,
-    results: &Vec<(TrueSkillRating, Outcomes)>,
+    results: &[(TrueSkillRating, Outcomes)],
     config: &TrueSkillConfig,
 ) -> TrueSkillRating {
     let mut player_rating = player.rating;
@@ -386,7 +386,7 @@ pub fn trueskill_rating_period(
 #[must_use]
 /// Calculates the [`TrueSkillRating`] of two teams based on their ratings, uncertainties, and the outcome of the game.
 ///
-/// Takes in two teams as a Vec of [`TrueSkillRating`]s, the outcome of the game as an [`Outcome`](Outcomes) and a [`TrueSkillConfig`].
+/// Takes in two teams as a Slice of [`TrueSkillRating`]s, the outcome of the game as an [`Outcome`](Outcomes) and a [`TrueSkillConfig`].
 ///
 /// The outcome of the match is in the perspective of `team_one`.
 /// This means [`Outcomes::WIN`] is a win for `team_one` and [`Outcomes::LOSS`] is a win for `team_two`.
@@ -435,13 +435,13 @@ pub fn trueskill_rating_period(
 /// assert!((team_two[1].rating - 36.210_764_756_738_115).abs() < f64::EPSILON);
 /// ```
 pub fn trueskill_teams(
-    team_one: &Vec<TrueSkillRating>,
-    team_two: &Vec<TrueSkillRating>,
+    team_one: &[TrueSkillRating],
+    team_two: &[TrueSkillRating],
     outcome: &Outcomes,
     config: &TrueSkillConfig,
 ) -> (Vec<TrueSkillRating>, Vec<TrueSkillRating>) {
     if team_one.is_empty() || team_two.is_empty() {
-        return (team_one.clone(), team_two.clone());
+        return (team_one.to_vec(), team_two.to_vec());
     }
 
     let total_players = (team_one.len() + team_two.len()) as f64;
@@ -574,7 +574,7 @@ pub fn match_quality(
 /// Gets the quality of the match, which is equal to the probability that the match will end in a draw.
 /// The higher the Value, the better the quality of the match.
 ///
-/// Takes in two teams as Vec of [`TrueSkillRating`]s and returns the probability of a draw occurring as an [`f64`] between 1.0 and 0.0.
+/// Takes in two teams as a Slice of [`TrueSkillRating`]s and returns the probability of a draw occurring as an [`f64`] between 1.0 and 0.0.
 ///
 /// Similar to [`match_quality`].
 ///
@@ -610,8 +610,8 @@ pub fn match_quality(
 /// assert!((quality - 0.084_108_145_418_343_24).abs() < f64::EPSILON);
 /// ```
 pub fn match_quality_teams(
-    team_one: &Vec<TrueSkillRating>,
-    team_two: &Vec<TrueSkillRating>,
+    team_one: &[TrueSkillRating],
+    team_two: &[TrueSkillRating],
     config: &TrueSkillConfig,
 ) -> f64 {
     let total_players = (team_one.len() + team_two.len()) as f64;
@@ -693,7 +693,7 @@ pub fn expected_score(
 #[must_use]
 /// Calculates the expected outcome of two teams based on TrueSkill.
 ///
-/// Takes in two teams as Vec of [`TrueSkillRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// Takes in two teams as a Slice of [`TrueSkillRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -736,8 +736,8 @@ pub fn expected_score(
 /// assert!(((exp2 * 100.0).round() - 88.0).abs() < f64::EPSILON);
 /// ```
 pub fn expected_score_teams(
-    team_one: &Vec<TrueSkillRating>,
-    team_two: &Vec<TrueSkillRating>,
+    team_one: &[TrueSkillRating],
+    team_two: &[TrueSkillRating],
     config: &TrueSkillConfig,
 ) -> (f64, f64) {
     let player_count = (team_one.len() + team_two.len()) as f64;
@@ -1058,7 +1058,7 @@ mod tests {
 
         let player = trueskill_rating_period(
             &player_one,
-            &vec![(player_two, Outcomes::WIN)],
+            &[(player_two, Outcomes::WIN)],
             &TrueSkillConfig::new(),
         );
 
@@ -1067,7 +1067,7 @@ mod tests {
 
         let player = trueskill_rating_period(
             &player_one,
-            &vec![
+            &[
                 (player_two, Outcomes::WIN),
                 (player_three, Outcomes::DRAW),
                 (player_four, Outcomes::LOSS),
@@ -1115,7 +1115,7 @@ mod tests {
 
         let p1 = trueskill_rating_period(
             &player_one,
-            &vec![(player_two, Outcomes::DRAW)],
+            &[(player_two, Outcomes::DRAW)],
             &TrueSkillConfig::new(),
         );
 
@@ -1172,8 +1172,8 @@ mod tests {
         };
 
         let (team_one, team_two) = trueskill_teams(
-            &vec![player_one, player_two],
-            &vec![player_three, player_four],
+            &[player_one, player_two],
+            &[player_three, player_four],
             &Outcomes::WIN,
             &TrueSkillConfig::new(),
         );
@@ -1189,8 +1189,8 @@ mod tests {
         assert!((team_two[1].uncertainty - 4.767_945_180_134_836).abs() < f64::EPSILON);
 
         let (team_two, team_one) = trueskill_teams(
-            &vec![player_three, player_four],
-            &vec![player_one, player_two],
+            &[player_three, player_four],
+            &[player_one, player_two],
             &Outcomes::LOSS,
             &TrueSkillConfig::new(),
         );
@@ -1224,8 +1224,8 @@ mod tests {
         };
 
         let (team_one, team_two) = trueskill_teams(
-            &vec![player_one, player_two],
-            &vec![player_three, player_four],
+            &[player_one, player_two],
+            &[player_three, player_four],
             &Outcomes::DRAW,
             &TrueSkillConfig::new(),
         );
@@ -1240,12 +1240,8 @@ mod tests {
         assert!((team_two[0].uncertainty - 3.832_975_356_683_128).abs() < f64::EPSILON);
         assert!((team_two[1].uncertainty - 2.930_957_525_591_959_5).abs() < f64::EPSILON);
 
-        let (team_one, _) = trueskill_teams(
-            &vec![player_one],
-            &vec![],
-            &Outcomes::WIN,
-            &TrueSkillConfig::new(),
-        );
+        let (team_one, _) =
+            trueskill_teams(&[player_one], &[], &Outcomes::WIN, &TrueSkillConfig::new());
 
         assert_eq!(team_one[0], player_one);
     }
@@ -1265,8 +1261,8 @@ mod tests {
             &TrueSkillConfig::new(),
         );
         let (tp1, tp2) = trueskill_teams(
-            &vec![player_one],
-            &vec![player_two],
+            &[player_one],
+            &[player_two],
             &Outcomes::WIN,
             &TrueSkillConfig::new(),
         );
@@ -1296,14 +1292,14 @@ mod tests {
         };
 
         let quality = match_quality_teams(
-            &vec![player_one, player_two],
-            &vec![player_three, player_four],
+            &[player_one, player_two],
+            &[player_three, player_four],
             &TrueSkillConfig::new(),
         );
 
         let quality2 = match_quality_teams(
-            &vec![player_three, player_four],
-            &vec![player_one, player_two],
+            &[player_three, player_four],
+            &[player_one, player_two],
             &TrueSkillConfig::new(),
         );
 
@@ -1333,8 +1329,8 @@ mod tests {
         };
 
         let (exp1, exp2) = expected_score_teams(
-            &vec![player_one, player_two],
-            &vec![player_three, player_four],
+            &[player_one, player_two],
+            &[player_three, player_four],
             &TrueSkillConfig::new(),
         );
 
@@ -1356,7 +1352,7 @@ mod tests {
             rating: 48.0,
             uncertainty: 1.2,
         };
-        #[allow(clippy::default_trait_access)]
+
         let player_two = TrueSkillRating {
             rating: 12.0,
             ..Default::default()

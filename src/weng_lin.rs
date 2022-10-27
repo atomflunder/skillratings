@@ -148,7 +148,6 @@ impl Default for WengLinConfig {
 }
 
 #[must_use]
-#[allow(clippy::needless_pass_by_value)]
 /// Calculates the [`WengLinRating`]s of two players based on their old ratings, uncertainties, and the outcome of the game.
 ///
 /// Takes in two players as [`WengLinRating`]s, an [`Outcome`](Outcomes), and a [`WengLinConfig`].
@@ -237,7 +236,7 @@ pub fn weng_lin(
 /// Calculates a [`WengLinRating`] in a non-traditional way using a rating period,
 /// for compatibility with the other algorithms.
 ///
-/// Takes in a player as an [`WengLinRating`] and their results as a Vec of tuples containing the opponent as an [`WengLinRating`],
+/// Takes in a player as an [`WengLinRating`] and their results as a Slice of tuples containing the opponent as an [`WengLinRating`],
 /// the outcome of the game as an [`Outcome`](Outcomes) and a [`WengLinConfig`].
 ///
 /// The outcome of the match is in the perspective of the player.
@@ -274,7 +273,7 @@ pub fn weng_lin(
 /// ```
 pub fn weng_lin_rating_period(
     player: &WengLinRating,
-    results: &Vec<(WengLinRating, Outcomes)>,
+    results: &[(WengLinRating, Outcomes)],
     config: &WengLinConfig,
 ) -> WengLinRating {
     let mut player_rating = player.rating;
@@ -313,7 +312,7 @@ pub fn weng_lin_rating_period(
 #[must_use]
 /// Calculates the [`WengLinRating`] of two teams based on their ratings, uncertainties, and the outcome of the game.
 ///
-/// Takes in two teams as a Vec of [`WengLinRating`]s, the outcome of the game as an [`Outcome`](Outcomes) and a [`WengLinConfig`].
+/// Takes in two teams as a Slice of [`WengLinRating`]s, the outcome of the game as an [`Outcome`](Outcomes) and a [`WengLinConfig`].
 ///
 /// The outcome of the match is in the perspective of `team_one`.
 /// This means [`Outcomes::WIN`] is a win for `team_one` and [`Outcomes::LOSS`] is a win for `team_two`.
@@ -363,13 +362,13 @@ pub fn weng_lin_rating_period(
 /// assert!(((new_two[2].rating * 100.0).round() - 1843.0).abs() < f64::EPSILON);
 /// ```
 pub fn weng_lin_teams(
-    team_one: &Vec<WengLinRating>,
-    team_two: &Vec<WengLinRating>,
+    team_one: &[WengLinRating],
+    team_two: &[WengLinRating],
     outcome: &Outcomes,
     config: &WengLinConfig,
 ) -> (Vec<WengLinRating>, Vec<WengLinRating>) {
     if team_one.is_empty() || team_two.is_empty() {
-        return (team_one.clone(), team_two.clone());
+        return (team_one.to_vec(), team_two.to_vec());
     }
 
     let team_one_uncertainties: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
@@ -495,10 +494,9 @@ pub fn expected_score(
 }
 
 #[must_use]
-#[allow(clippy::ptr_arg)]
 /// Calculates the expected outcome of two teams based on the Bradley-Terry model.
 ///
-/// Takes in two teams as Vec of [`WengLinRating`]s and a [`WengLinConfig`],
+/// Takes in two teams as a Slice of [`WengLinRating`]s and a [`WengLinConfig`],
 /// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
 ///
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
@@ -540,8 +538,8 @@ pub fn expected_score(
 /// assert!(((exp1 * 100.0).round() - 21.0).abs() < f64::EPSILON);
 /// ```
 pub fn expected_score_teams(
-    team_one: &Vec<WengLinRating>,
-    team_two: &Vec<WengLinRating>,
+    team_one: &[WengLinRating],
+    team_two: &[WengLinRating],
     config: &WengLinConfig,
 ) -> (f64, f64) {
     let team_one_ratings: f64 = team_one.iter().map(|p| p.rating).sum();
@@ -754,7 +752,7 @@ mod tests {
         let outcome = Outcomes::WIN;
 
         let (op1, op2) = weng_lin(&player_one, &player_two, &outcome, &config);
-        let (tp1, tp2) = weng_lin_teams(&vec![player_one], &vec![player_two], &outcome, &config);
+        let (tp1, tp2) = weng_lin_teams(&[player_one], &[player_two], &outcome, &config);
 
         assert_eq!(op1, tp1[0]);
         assert_eq!(op2, tp2[0]);
@@ -867,7 +865,7 @@ mod tests {
 
         let rating_player = weng_lin_rating_period(
             &player,
-            &vec![
+            &[
                 (opponent_one, Outcomes::WIN),
                 (opponent_two, Outcomes::DRAW),
                 (opponent_two, Outcomes::LOSS),

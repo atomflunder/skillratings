@@ -183,6 +183,7 @@ pub fn elo(
     )
 }
 
+#[must_use]
 /// Calculates an [`EloRating`] in a non-traditional way using a rating period,
 /// for compatibility with the other algorithms.
 ///
@@ -218,10 +219,9 @@ pub fn elo(
 ///
 /// assert!((new_player.rating.round() - 1210.0).abs() < f64::EPSILON);
 /// ```
-#[must_use]
 pub fn elo_rating_period(
     player: &EloRating,
-    results: &Vec<(EloRating, Outcomes)>,
+    results: &[(EloRating, Outcomes)],
     config: &EloConfig,
 ) -> EloRating {
     let mut player_rating = player.rating;
@@ -322,7 +322,7 @@ mod tests {
 
         let new_player = elo_rating_period(
             &player,
-            &vec![
+            &[
                 (opponent1, Outcomes::WIN),
                 (opponent2, Outcomes::DRAW),
                 (opponent3, Outcomes::LOSS),

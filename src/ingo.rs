@@ -171,7 +171,7 @@ pub fn ingo(
 #[must_use]
 /// The "traditional" way of calculating a [`IngoRating`] of a player in a rating period.
 ///
-/// Takes in a player as an [`IngoRating`] and their results as a Vec of tuples containing the opponent as an [`IngoRating`],
+/// Takes in a player as an [`IngoRating`] and their results as a Slice of tuples containing the opponent as an [`IngoRating`],
 /// and the outcome of the game as an [`Outcome`](Outcomes)
 ///
 /// The outcome of the match is in the perspective of the player.
@@ -220,10 +220,7 @@ pub fn ingo(
 ///
 /// assert!((new_player.rating.round() - 126.0).abs() < f64::EPSILON);
 /// ```
-pub fn ingo_rating_period(
-    player: &IngoRating,
-    results: &Vec<(IngoRating, Outcomes)>,
-) -> IngoRating {
+pub fn ingo_rating_period(player: &IngoRating, results: &[(IngoRating, Outcomes)]) -> IngoRating {
     // Ingo was meant to be used in tournaments, so we do not need to loop over the opponents here.
     let development = age_to_devcoefficent(player.age);
 

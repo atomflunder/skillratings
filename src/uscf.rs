@@ -276,7 +276,7 @@ pub fn uscf(
 /// This means that the player will not get updated in-between matches, as you might expect.  
 /// This will result in *slightly* different results than if you were to use the [`uscf`] function in a loop.
 ///
-/// Takes in a player as an [`USCFRating`] and their results as a Vec of tuples containing the opponent as an [`USCFRating`],
+/// Takes in a player as an [`USCFRating`] and their results as a Slice of tuples containing the opponent as an [`USCFRating`],
 /// the outcome of the game as an [`Outcome`](Outcomes) and a [`USCFConfig`].
 ///
 /// The outcome of the match is in the perspective of the player.
@@ -324,7 +324,7 @@ pub fn uscf(
 /// ```
 pub fn uscf_rating_period(
     player: &USCFRating,
-    results: &Vec<(USCFRating, Outcomes)>,
+    results: &[(USCFRating, Outcomes)],
     config: &USCFConfig,
 ) -> USCFRating {
     if results.is_empty() {
@@ -619,7 +619,7 @@ mod tests {
             games: 39,
         };
 
-        let rp = uscf_rating_period(&player, &vec![], &USCFConfig::new());
+        let rp = uscf_rating_period(&player, &[], &USCFConfig::new());
 
         assert_eq!(player, rp);
     }
@@ -638,7 +638,7 @@ mod tests {
         let config = USCFConfig::new();
 
         let (np, _) = uscf(&player, &opponent, &Outcomes::WIN, &config);
-        let npr = uscf_rating_period(&player, &vec![(opponent, Outcomes::WIN)], &config);
+        let npr = uscf_rating_period(&player, &[(opponent, Outcomes::WIN)], &config);
 
         assert_eq!(np, npr);
 
@@ -652,7 +652,7 @@ mod tests {
         };
 
         let (np, _) = uscf(&player, &opponent, &Outcomes::WIN, &config);
-        let npr = uscf_rating_period(&player, &vec![(opponent, Outcomes::WIN)], &config);
+        let npr = uscf_rating_period(&player, &[(opponent, Outcomes::WIN)], &config);
 
         assert_eq!(np, npr);
     }

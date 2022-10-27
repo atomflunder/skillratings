@@ -185,7 +185,7 @@ pub fn egf(
 #[must_use]
 /// Calculates an [`EGFRating`] in a traditional way using a rating period, commonly used for tournaments.
 ///
-/// Takes in a player as an [`EGFRating`], their results as a Vec of tuples containing the opponent as an [`EGFRating`],
+/// Takes in a player as an [`EGFRating`], their results as a Slice of tuples containing the opponent as an [`EGFRating`],
 /// the outcome of the game as an [`Outcome`](Outcomes), and an [`EGFConfig`] where you can specify handicaps for the players.
 ///
 /// ---
@@ -235,7 +235,7 @@ pub fn egf(
 /// ```
 pub fn egf_rating_period(
     player: &EGFRating,
-    results: &Vec<(EGFRating, Outcomes, EGFConfig)>,
+    results: &[(EGFRating, Outcomes, EGFConfig)],
 ) -> EGFRating {
     // According to the EGF, the rating values are not updated in between games.
     // Only the change in rating is kept track of.

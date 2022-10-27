@@ -312,7 +312,7 @@ pub fn glicko_boost(
 #[must_use]
 /// The "traditional" way of calculating a [`GlickoBoostRating`] of a player in a rating period.
 ///
-/// Takes in a player as an [`GlickoBoostRating`] and their results as a Vec of tuples containing the opponent as a [`GlickoBoostRating`],
+/// Takes in a player as an [`GlickoBoostRating`] and their results as a Slice of tuples containing the opponent as a [`GlickoBoostRating`],
 /// the outcome of the game as an [`Outcome`](Outcomes) and a [`bool`] specifying if the player was playing as player one, and a [`GlickoBoostConfig`].
 ///
 /// ---
@@ -377,7 +377,7 @@ pub fn glicko_boost(
 /// ```
 pub fn glicko_boost_rating_period(
     player: &GlickoBoostRating,
-    results: &Vec<(GlickoBoostRating, Outcomes, bool)>,
+    results: &[(GlickoBoostRating, Outcomes, bool)],
     config: &GlickoBoostConfig,
 ) -> GlickoBoostRating {
     let q = 10_f64.ln() / 400.0;
@@ -650,8 +650,7 @@ mod tests {
         let config = GlickoBoostConfig::new();
 
         let (np, _) = glicko_boost(&player, &opponent, &Outcomes::WIN, &config);
-        let rp =
-            glicko_boost_rating_period(&player, &vec![(opponent, Outcomes::WIN, true)], &config);
+        let rp = glicko_boost_rating_period(&player, &[(opponent, Outcomes::WIN, true)], &config);
 
         assert_eq!(np, rp);
     }
@@ -734,7 +733,7 @@ mod tests {
         };
 
         let decayed_player = decay_deviation(&player, &GlickoBoostConfig::new());
-        let rp_player = glicko_boost_rating_period(&player, &vec![], &GlickoBoostConfig::new());
+        let rp_player = glicko_boost_rating_period(&player, &[], &GlickoBoostConfig::new());
 
         assert_eq!(decayed_player, rp_player);
         assert!((decayed_player.deviation - 64.669_444_203_475_88).abs() < f64::EPSILON);
