@@ -1,5 +1,5 @@
 //! The Elo algorithm, the most widespread rating system and the gold-standard in chess and other games.  
-//! Used in the official FIDE chess ratings, FIFA World Rankings, and many online video games.
+//! Used in the official FIDE chess ratings, many online games, and the basis of even more rating systems.
 //!
 //! The higher the Elo rating number, the stronger the player.
 //! Compared to other rating algorithms, Elo ratings are relatively static, but very transparent and simple to calculate.
@@ -42,12 +42,11 @@
 //! - [Wikipedia Article](https://en.wikipedia.org/wiki/Elo_rating_system)
 //! - [Elo Calculator](https://www.omnicalculator.com/sports/elo)
 //! - [FIDE Ratings](https://ratings.fide.com/)
-//! - [FIFA Ratings](https://www.fifa.com/fifa-world-ranking)
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{dwz::DWZRating, ingo::IngoRating, uscf::USCFRating, Outcomes};
+use crate::{dwz::DWZRating, fifa::FifaRating, ingo::IngoRating, uscf::USCFRating, Outcomes};
 
 /// The Elo rating of a player.
 ///
@@ -104,6 +103,12 @@ impl From<USCFRating> for EloRating {
                 rating: (u.rating - 20.0) / 1.02,
             }
         }
+    }
+}
+
+impl From<FifaRating> for EloRating {
+    fn from(f: FifaRating) -> Self {
+        Self { rating: f.rating }
     }
 }
 
@@ -243,7 +248,6 @@ pub fn elo_rating_period(
 }
 
 /// Calculates the expected score of two players based on their elo rating.
-/// Meant for usage in the elo function, but you can also use it to predict games yourself.
 ///
 /// Takes in two players as [`EloRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.

@@ -9,14 +9,14 @@
     // This is turned off because of the rating values in the structs
     clippy::module_name_repetitions,
     // "TrueSkill" shows up as a false positive otherwise
-    clippy::doc_markdown,   
+    clippy::doc_markdown,
     // Need to cast usizes to f64s where precision is not that important, also there seems to be no good alternative.
-    clippy::cast_precision_loss, 
+    clippy::cast_precision_loss,
 )]
 
 //! Skillratings provides a collection of well-known (and lesser known) skill rating algorithms, that allow you to assess a player's skill level instantly.  
 //! You can easily calculate skill ratings instantly in 1vs1 matches, Team vs Team matches, or in tournaments / rating periods.  
-//! This library is incredibly lightweight (no dependencies), user-friendly, and of course, blazingly fast.  
+//! This library is incredibly lightweight (no dependencies by default), user-friendly, and of course, *blazingly fast*.  
 //!
 //! Currently we support these skill rating systems:  
 //! - **[`Elo`](crate::elo)**
@@ -24,6 +24,7 @@
 //! - **[`Glicko-2`](crate::glicko2)**
 //! - **[`TrueSkill`](crate::trueskill)**
 //! - **[`Weng-Lin`](crate::weng_lin)**
+//! - **[`FIFA Men's World Ranking`](crate::fifa)**
 //! - **[`Sticko`](crate::sticko)**
 //! - **[`Glicko-Boost`](crate::glicko_boost)**
 //! - **[`USCF (US Chess Federation)`](crate::uscf)**
@@ -46,7 +47,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.19"
+//! skillratings = "0.20"
 //! ```
 //!
 //! ## Serde support
@@ -63,7 +64,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = {version = "0.19", features = ["serde"]}
+//! skillratings = {version = "0.20", features = ["serde"]}
 //! ```
 //!
 //! # Usage and Examples
@@ -223,6 +224,7 @@ use serde::{Deserialize, Serialize};
 pub mod dwz;
 pub mod egf;
 pub mod elo;
+pub mod fifa;
 pub mod glicko;
 pub mod glicko2;
 pub mod glicko_boost;

@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.20.0 - 2022-11-06
+
+- Added FIFA rating algorithm (Men)
+
 ## v0.19.2 - 2022-10-27
 
 - Change every function that takes a Vec to now take a Slice

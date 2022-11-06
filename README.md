@@ -16,6 +16,7 @@ Currently supported algorithms:
 - [Glicko-2](https://docs.rs/skillratings/latest/skillratings/glicko2/)
 - [TrueSkill](https://docs.rs/skillratings/latest/skillratings/trueskill/)
 - [Weng-Lin (Bayesian Approximation System)](https://docs.rs/skillratings/latest/skillratings/weng_lin/)
+- [FIFA Men's World Ranking](https://docs.rs/skillratings/latest/skillratings/fifa/)
 - [Sticko (Stephenson Rating System)](https://docs.rs/skillratings/latest/skillratings/sticko/)
 - [Glicko-Boost](https://docs.rs/skillratings/latest/skillratings/glicko_boost/)
 - [USCF (US Chess Federation Ratings)](https://docs.rs/skillratings/latest/skillratings/uscf/)
@@ -38,7 +39,7 @@ Alternatively, you can add the following to your `Cargo.toml` file manually:
 
 ```toml
 [dependencies]
-skillratings = "0.19"
+skillratings = "0.20"
 ```
 
 ### Serde support
@@ -55,7 +56,7 @@ By editing `Cargo.toml` manually:
 
 ```toml
 [dependencies]
-skillratings = {version = "0.19", features = ["serde"]}
+skillratings = {version = "0.20", features = ["serde"]}
 ```
 
 ## Usage and Examples
