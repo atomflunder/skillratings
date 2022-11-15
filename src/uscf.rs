@@ -222,8 +222,8 @@ pub fn uscf(
             player_one.games,
             1,
             player_two.rating,
-            if outcome == &Outcomes::WIN { 1 } else { 0 },
-            if outcome == &Outcomes::LOSS { 1 } else { 0 },
+            i32::from(outcome == &Outcomes::WIN),
+            i32::from(outcome == &Outcomes::LOSS),
         )
     } else {
         new_rating(
@@ -242,8 +242,8 @@ pub fn uscf(
             player_two.games,
             1,
             player_one.rating,
-            if outcome == &Outcomes::LOSS { 1 } else { 0 },
-            if outcome == &Outcomes::WIN { 1 } else { 0 },
+            i32::from(outcome == &Outcomes::LOSS),
+            i32::from(outcome == &Outcomes::WIN),
         )
     } else {
         new_rating(
@@ -337,12 +337,12 @@ pub fn uscf_rating_period(
 
         let wins = results
             .iter()
-            .map(|r| if r.1 == Outcomes::WIN { 1 } else { 0 })
+            .map(|r| i32::from(r.1 == Outcomes::WIN))
             .sum();
 
         let losses = results
             .iter()
-            .map(|r| if r.1 == Outcomes::LOSS { 1 } else { 0 })
+            .map(|r| i32::from(r.1 == Outcomes::LOSS))
             .sum();
 
         let new_rating = new_rating_provisional(
