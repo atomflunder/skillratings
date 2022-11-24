@@ -46,7 +46,7 @@
 //! - [Official DWZ scoring system rules (German)](https://www.schachbund.de/wertungsordnung.html)
 //! - [Probability Table](https://www.schachbund.de/wertungsordnung-anhang-2-tabellen/articles/wertungsordnung-anhang-21-wahrscheinlichkeitstabelle.html)
 
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error, fmt::Display};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -120,6 +120,29 @@ impl From<EloRating> for DWZRating {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// The error types that can occur when calculating a new DWZ Rating.  
+/// Only gets raised in the [`get_first_dwz`] function.
+pub enum GetFirstDWZError {
+    /// The player has played less than 5 games.
+    NotEnoughGames,
+    /// The player has a winrate of 0% or 100%.
+    InvalidWinRate,
+}
+
+impl Display for GetFirstDWZError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotEnoughGames => {
+                write!(f, "You need at least 5 games to calculate a DWZ Rating.")
+            }
+            Self::InvalidWinRate => write!(f, "Your winrate cannot be 0% or 100%."),
+        }
+    }
+}
+
+impl Error for GetFirstDWZError {}
 
 #[must_use]
 /// Calculates new [`DWZRating`] of two players based on their old rating, index, age and outcome of the game.
@@ -259,7 +282,6 @@ pub fn dwz(
 /// assert_eq!(new_player.index, 18);
 /// ```
 pub fn dwz_rating_period(player: &DWZRating, results: &[(DWZRating, Outcomes)]) -> DWZRating {
-    // DWZ was designed to be used in tournaments, so we do not need to loop over the opponents here.
     let points = results.iter().map(|r| r.1.to_chess_points()).sum();
 
     let expected_points = results.iter().map(|r| expected_score(player, &r.0).0).sum();
@@ -317,7 +339,6 @@ pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f
     (exp_one, exp_two)
 }
 
-#[must_use]
 /// Gets a proper first [`DWZRating`].
 ///
 /// In the case that you do not have enough opponents to rate a player against,
@@ -327,8 +348,11 @@ pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f
 /// Takes in the player's age and their results as a Slice of tuples containing the opponent and the outcome.
 /// If the actual player's age is unavailable or unknown, choose something `>25`.
 ///
-/// This only returns a DWZ rating if the results include at least 5 matches,
-/// and you don't have a 100% or a 0% win record. Otherwise it will return [`None`].
+///
+/// # Errors
+///
+/// This function returns [`GetFirstDWZError::NotEnoughGames`] if the player has played less than 5 games,
+/// or [`GetFirstDWZError::InvalidWinRate`] if the player has a winrate of either 0% or 100%.
 ///
 /// # Examples
 /// ```
@@ -378,16 +402,19 @@ pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f
 /// assert!((player.rating - 1491.0).abs() < f64::EPSILON);
 /// assert_eq!(player.index, 1);
 /// ```
-pub fn get_first_dwz(player_age: usize, results: &[(DWZRating, Outcomes)]) -> Option<DWZRating> {
+pub fn get_first_dwz(
+    player_age: usize,
+    results: &[(DWZRating, Outcomes)],
+) -> Result<DWZRating, GetFirstDWZError> {
     if results.len() < 5 {
-        return None;
+        return Err(GetFirstDWZError::NotEnoughGames);
     }
 
     let points: f64 = results.iter().map(|r| r.1.to_chess_points()).sum();
 
     // If you have a 100% or 0% win rate, we return None.
     if (points - results.len() as f64).abs() < f64::EPSILON || points == 0.0 {
-        return None;
+        return Err(GetFirstDWZError::InvalidWinRate);
     }
 
     let average_rating = results.iter().map(|r| r.0.rating).sum::<f64>() / results.len() as f64;
@@ -457,12 +484,12 @@ pub fn get_first_dwz(player_age: usize, results: &[(DWZRating, Outcomes)]) -> Op
     let mut new_rating = if p > 50 {
         // If the performance is positive, we convert the values above to a positive number.
         // The value for 30 is the same as for 70, but negative.
-        let temp = probability_table.get(&(p - 100).abs())?;
+        let temp = probability_table.get(&(p - 100).abs()).unwrap_or(&0.);
 
         f64::abs(*temp) + average_rating
     } else {
         // Else we just use the negative number above.
-        probability_table.get(&p)? + average_rating
+        probability_table.get(&p).unwrap_or(&0.) + average_rating
     };
 
     // If the rating would be too low we revise it upwards.
@@ -470,7 +497,7 @@ pub fn get_first_dwz(player_age: usize, results: &[(DWZRating, Outcomes)]) -> Op
         new_rating = 700.0 + (new_rating / 8.0);
     }
 
-    Some(DWZRating {
+    Ok(DWZRating {
         rating: new_rating,
         index: 1,
         age: player_age,
@@ -733,7 +760,7 @@ mod tests {
             ],
         );
 
-        assert_eq!(all_win_player, None);
+        assert_eq!(all_win_player, Err(GetFirstDWZError::InvalidWinRate));
 
         let all_lose_player = get_first_dwz(
             17,
@@ -746,7 +773,7 @@ mod tests {
             ],
         );
 
-        assert_eq!(all_lose_player, None);
+        assert_eq!(all_lose_player, Err(GetFirstDWZError::InvalidWinRate));
 
         let less_than_5 = get_first_dwz(
             32,
@@ -758,7 +785,7 @@ mod tests {
             ],
         );
 
-        assert_eq!(less_than_5, None);
+        assert_eq!(less_than_5, Err(GetFirstDWZError::NotEnoughGames));
     }
 
     #[test]
@@ -881,6 +908,17 @@ mod tests {
         assert_eq!(
             DWZRating::from((1400.0, 20)),
             DWZRating::from((1400.0, 20, 26))
+        );
+
+        assert!(!format!("{:?}", GetFirstDWZError::NotEnoughGames).is_empty());
+        assert!(!format!("{:?}", GetFirstDWZError::InvalidWinRate).is_empty());
+
+        assert!(!format!("{}", GetFirstDWZError::NotEnoughGames).is_empty());
+        assert!(!format!("{}", GetFirstDWZError::InvalidWinRate).is_empty());
+
+        assert_eq!(
+            GetFirstDWZError::NotEnoughGames,
+            GetFirstDWZError::NotEnoughGames.clone()
         );
     }
 }

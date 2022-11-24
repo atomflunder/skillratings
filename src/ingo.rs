@@ -336,7 +336,7 @@ mod tests {
     fn test_ingo_rating_period() {
         let player_one = IngoRating {
             rating: 130.0,
-            age: 40,
+            age: 22,
         };
         let player_two = IngoRating {
             rating: 160.0,
@@ -361,7 +361,7 @@ mod tests {
 
         let player_four = IngoRating {
             rating: 55.0,
-            age: 40,
+            age: 22,
         };
 
         let player_five = IngoRating {
@@ -378,7 +378,7 @@ mod tests {
 
         let p1 = ingo_rating_period(&player_one, &results);
 
-        assert!((p1.rating.round() - 126.0).abs() < f64::EPSILON);
+        assert!((p1.rating.round() - 124.0).abs() < f64::EPSILON);
     }
 
     #[test]
