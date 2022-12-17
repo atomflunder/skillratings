@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.21.1 - 2022-12-17
+
+- Perform Step 1 of Glicko calculation
+- Perform Step 6 of Glicko-Boost calculation
+
 ## v0.21.0 - 2022-11-24
 
 - Return a more descriptive error on `get_first_dwz` function instead of returning None

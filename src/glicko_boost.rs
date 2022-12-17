@@ -248,10 +248,10 @@ impl Default for GlickoBoostConfig {
 /// let (new_one, new_two) = glicko_boost(&player_one, &player_two, &outcome, &config);
 ///
 /// assert!((new_one.rating.round() - 1672.0).abs() < f64::EPSILON);
-/// assert!((new_one.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// assert!((new_one.deviation.round() - 291.0).abs() < f64::EPSILON);
 ///
 /// assert!((new_two.rating.round() - 1328.0).abs() < f64::EPSILON);
-/// assert!((new_two.deviation.round() - 290.0).abs() < f64::EPSILON);
+/// assert!((new_two.deviation.round() - 291.0).abs() < f64::EPSILON);
 /// ```
 pub fn glicko_boost(
     player_one: &GlickoBoostRating,
@@ -297,14 +297,55 @@ pub fn glicko_boost(
     let new_rating1 = new_rating(player_one.rating, new_deviation1, outcome1, q, g1, e1);
     let new_rating2 = new_rating(player_two.rating, new_deviation2, outcome2, q, g2, e2);
 
+    let end_deviation1 = (new_deviation1
+        .mul_add(
+            new_deviation1,
+            config
+                .alpha
+                .4
+                .mul_add(
+                    (new_rating1 / 1000.0).powi(2),
+                    config.alpha.3.mul_add(
+                        new_rating1 / 1000.0,
+                        (config.alpha.2 * new_deviation1).mul_add(
+                            new_rating1 / 1000.0,
+                            config.alpha.1.mul_add(new_deviation1, config.alpha.0),
+                        ),
+                    ),
+                )
+                .exp(),
+        )
+        .sqrt())
+    .min(350.0);
+    let end_deviation2 = (new_deviation2
+        .mul_add(
+            new_deviation2,
+            config
+                .alpha
+                .4
+                .mul_add(
+                    (new_rating2 / 1000.0).powi(2),
+                    config.alpha.3.mul_add(
+                        new_rating2 / 1000.0,
+                        (config.alpha.2 * new_deviation2).mul_add(
+                            new_rating2 / 1000.0,
+                            config.alpha.1.mul_add(new_deviation2, config.alpha.0),
+                        ),
+                    ),
+                )
+                .exp(),
+        )
+        .sqrt())
+    .min(350.0);
+
     (
         GlickoBoostRating {
             rating: new_rating1,
-            deviation: new_deviation1,
+            deviation: end_deviation1,
         },
         GlickoBoostRating {
             rating: new_rating2,
-            deviation: new_deviation2,
+            deviation: end_deviation2,
         },
     )
 }
@@ -373,7 +414,7 @@ pub fn glicko_boost(
 /// let new_player = glicko_boost_rating_period(&player, &results, &config);
 ///
 /// assert!((new_player.rating.round() - 1461.0).abs() < f64::EPSILON);
-/// assert!((new_player.deviation.round() - 152.0).abs() < f64::EPSILON);
+/// assert!((new_player.deviation.round() - 153.0).abs() < f64::EPSILON);
 /// ```
 pub fn glicko_boost_rating_period(
     player: &GlickoBoostRating,
@@ -430,9 +471,30 @@ pub fn glicko_boost_rating_period(
 
     let new_rating = (new_deviation.powi(2) * q).mul_add(m, player.rating);
 
+    let end_deviation = (new_deviation
+        .mul_add(
+            new_deviation,
+            config
+                .alpha
+                .4
+                .mul_add(
+                    (new_rating / 1000.0).powi(2),
+                    config.alpha.3.mul_add(
+                        new_rating / 1000.0,
+                        (config.alpha.2 * new_deviation).mul_add(
+                            new_rating / 1000.0,
+                            config.alpha.1.mul_add(new_deviation, config.alpha.0),
+                        ),
+                    ),
+                )
+                .exp(),
+        )
+        .sqrt())
+    .min(350.0);
+
     GlickoBoostRating {
         rating: new_rating,
-        deviation: new_deviation,
+        deviation: end_deviation,
     }
 }
 
@@ -511,7 +573,7 @@ pub fn decay_deviation(
     player: &GlickoBoostRating,
     config: &GlickoBoostConfig,
 ) -> GlickoBoostRating {
-    let decayed_deviation = player
+    let decayed_deviation = (player
         .deviation
         .mul_add(
             player.deviation,
@@ -530,7 +592,8 @@ pub fn decay_deviation(
                 )
                 .exp(),
         )
-        .sqrt();
+        .sqrt())
+    .min(350.0);
 
     GlickoBoostRating {
         rating: player.rating,
@@ -632,8 +695,8 @@ mod tests {
         assert!((new_one.rating.round() - 1606.0).abs() < f64::EPSILON);
         assert!((new_two.rating.round() - 1589.0).abs() < f64::EPSILON);
 
-        assert!((new_one.deviation - 176.712_026_249_318_3).abs() < f64::EPSILON);
-        assert!((new_two.deviation - 101.884_803_269_463_72).abs() < f64::EPSILON);
+        assert!((new_one.deviation - 177.634_630_775_565_48).abs() < f64::EPSILON);
+        assert!((new_two.deviation - 103.511_394_589_339_77).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -694,7 +757,7 @@ mod tests {
         let new_player = glicko_boost_rating_period(&player, &results, &config);
 
         assert!((new_player.rating.round() - 1464.0).abs() < f64::EPSILON);
-        assert!((new_player.deviation - 151.398_902_447_969_33).abs() < f64::EPSILON);
+        assert!((new_player.deviation - 151.402_204_945_799_04).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -928,28 +991,28 @@ mod tests {
         // Due to skipping step 2 and 4, these ratings are comparable to the ratings of step 3.
         // They are not exactly equal (Difference of <1.0%) due to 1: rounding errors and 2: skipping of step 2.
         assert!((new_a.rating - 2_209.502_401_056_321_6).abs() < f64::EPSILON);
-        assert!((new_a.deviation - 104.262_263_942_491_94).abs() < f64::EPSILON);
+        assert!((new_a.deviation - 105.846_722_882_642_35).abs() < f64::EPSILON);
 
         assert!((new_b.rating - 2_343.331_676_741_51).abs() < f64::EPSILON);
-        assert!((new_b.deviation - 70.904_516_394_890_78).abs() < f64::EPSILON);
+        assert!((new_b.deviation - 73.239_139_081_695_3).abs() < f64::EPSILON);
 
         assert!((new_c.rating - 2_386.917_144_473_656_7).abs() < f64::EPSILON);
-        assert!((new_c.deviation - 108.069_121_110_009).abs() < f64::EPSILON);
+        assert!((new_c.deviation - 109.595_379_480_830_47).abs() < f64::EPSILON);
 
         assert!((new_d.rating - 2_204.280_099_158_658_7).abs() < f64::EPSILON);
-        assert!((new_d.deviation - 63.774_912_996_457_86).abs() < f64::EPSILON);
+        assert!((new_d.deviation - 66.367_566_777_947_56).abs() < f64::EPSILON);
 
         assert!((new_e.rating - 2_287.443_303_658_628_3).abs() < f64::EPSILON);
-        assert!((new_e.deviation - 77.866_268_543_702_84).abs() < f64::EPSILON);
+        assert!((new_e.deviation - 79.993_286_777_344_75).abs() < f64::EPSILON);
 
         assert!((new_f.rating - 2_051.583_061_993_349_5).abs() < f64::EPSILON);
-        assert!((new_f.deviation - 121.460_019_250_684_13).abs() < f64::EPSILON);
+        assert!((new_f.deviation - 122.816_328_678_587_84).abs() < f64::EPSILON);
 
         assert!((new_g.rating - 2_231.929_694_167_278).abs() < f64::EPSILON);
-        assert!((new_g.deviation - 47.575_794_114_122_24).abs() < f64::EPSILON);
+        assert!((new_g.deviation - 51.016_495_555_231_394).abs() < f64::EPSILON);
 
         assert!((new_h.rating - 2_348.033_407_382_116).abs() < f64::EPSILON);
-        assert!((new_h.deviation - 113.650_398_230_347_6).abs() < f64::EPSILON);
+        assert!((new_h.deviation - 115.100_184_487_094_04).abs() < f64::EPSILON);
     }
 
     #[test]

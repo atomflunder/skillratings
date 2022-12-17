@@ -527,7 +527,7 @@ mod tests {
         // not performing calculations from step 1.
         let player = GlickoRating {
             rating: 1500.0,
-            deviation: 189.751837935762825,
+            deviation: 189.751_837_935_762_84,
         };
 
         let opponent1 = GlickoRating {
