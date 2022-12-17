@@ -15,7 +15,7 @@
 //!
 //! ```
 //! use skillratings::{
-//!     glicko::{glicko, GlickoRating},
+//!     glicko::{glicko, GlickoConfig, GlickoRating},
 //!     Outcomes,
 //! };
 //!
@@ -33,8 +33,15 @@
 //! // The outcome of the match is from the perspective of player one.
 //! let outcome = Outcomes::WIN;
 //!
+//! // The config allows you to specify certain values in the Glicko calculation.
+//! // Here we set the c value to 23.75, instead of the default 63.2.
+//! // This will decrease the amount by which rating deviation increases per rating period.
+//! let config = GlickoConfig {
+//!     c: 23.75,
+//! };
+//!
 //! // The glicko function will calculate the new ratings for both players and return them.
-//! let (new_player_one, new_player_two) = glicko(&player_one, &player_two, &outcome);
+//! let (new_player_one, new_player_two) = glicko(&player_one, &player_two, &outcome, &config);
 //! ```
 //!
 //! # More Information
@@ -163,7 +170,7 @@ impl Default for GlickoConfig {
 /// # Examples
 /// ```
 /// use skillratings::{
-///     glicko::{glicko, GlickoRating},
+///     glicko::{glicko, GlickoConfig, GlickoRating},
 ///     Outcomes,
 /// };
 ///
@@ -178,7 +185,9 @@ impl Default for GlickoConfig {
 ///
 /// let outcome = Outcomes::WIN;
 ///
-/// let (new_one, new_two) = glicko(&player_one, &player_two, &outcome);
+/// let config = GlickoConfig::new();
+///
+/// let (new_one, new_two) = glicko(&player_one, &player_two, &outcome, &config);
 ///
 /// assert!((new_one.rating.round() - 1662.0).abs() < f64::EPSILON);
 /// assert!((new_one.deviation.round() - 290.0).abs() < f64::EPSILON);
@@ -190,6 +199,7 @@ pub fn glicko(
     player_one: &GlickoRating,
     player_two: &GlickoRating,
     outcome: &Outcomes,
+    config: &GlickoConfig,
 ) -> (GlickoRating, GlickoRating) {
     let q = 10_f64.ln() / 400.0;
 
@@ -205,9 +215,12 @@ pub fn glicko(
     let d1 = d_value(q, g1, e1);
     let d2 = d_value(q, g2, e2);
 
+    let player_one_pre_deviation = player_one.deviation.hypot(config.c).min(350.0);
+    let player_two_pre_deviation = player_two.deviation.hypot(config.c).min(350.0);
+
     let player_one_new_rating = new_rating(
         player_one.rating,
-        player_one.deviation,
+        player_one_pre_deviation,
         outcome1,
         q,
         g1,
@@ -216,7 +229,7 @@ pub fn glicko(
     );
     let player_two_new_rating = new_rating(
         player_two.rating,
-        player_two.deviation,
+        player_two_pre_deviation,
         outcome2,
         q,
         g2,
@@ -224,8 +237,8 @@ pub fn glicko(
         d2,
     );
 
-    let player_one_new_deviation = new_deviation(player_one.deviation, d1);
-    let player_two_new_deviation = new_deviation(player_two.deviation, d2);
+    let player_one_new_deviation = new_deviation(player_one_pre_deviation, d1);
+    let player_two_new_deviation = new_deviation(player_two_pre_deviation, d2);
 
     (
         GlickoRating {
@@ -291,8 +304,8 @@ pub fn glicko(
 ///
 /// let new_player = glicko_rating_period(&player, &results, &config);
 ///
-/// assert!((new_player.rating.round() - 1464.0).abs() < f64::EPSILON);
-/// assert!((new_player.deviation.round() - 151.0).abs() < f64::EPSILON);
+/// assert!((new_player.rating.round() - 1462.0).abs() < f64::EPSILON);
+/// assert!((new_player.deviation.round() - 155.0).abs() < f64::EPSILON);
 /// ```
 pub fn glicko_rating_period(
     player: &GlickoRating,
@@ -331,9 +344,9 @@ pub fn glicko_rating_period(
         })
         .sum();
 
-    let new_rating =
-        (q / (player.deviation.powi(2).recip() + d_sq.recip())).mul_add(m, player.rating);
-    let new_deviation = (player.deviation.powi(2).recip() + d_sq.recip())
+    let pre_deviation = player.deviation.hypot(config.c).min(350.0);
+    let new_rating = (q / (pre_deviation.powi(2).recip() + d_sq.recip())).mul_add(m, player.rating);
+    let new_deviation = (pre_deviation.powi(2).recip() + d_sq.recip())
         .recip()
         .sqrt();
 
@@ -436,12 +449,20 @@ pub fn confidence_interval(player: &GlickoRating) -> (f64, f64) {
     )
 }
 
-fn new_deviation(old_deviation: f64, d: f64) -> f64 {
-    (old_deviation.powi(2).recip() + d.recip()).recip().sqrt()
+fn new_deviation(pre_deviation: f64, d: f64) -> f64 {
+    (pre_deviation.powi(2).recip() + d.recip()).recip().sqrt()
 }
 
-fn new_rating(old_rating: f64, deviation: f64, score: f64, q: f64, g: f64, e: f64, d: f64) -> f64 {
-    ((q / (deviation.powi(2).recip() + d.recip())) * g).mul_add(score - e, old_rating)
+fn new_rating(
+    old_rating: f64,
+    pre_deviation: f64,
+    score: f64,
+    q: f64,
+    g: f64,
+    e: f64,
+    d: f64,
+) -> f64 {
+    ((q / (pre_deviation.powi(2).recip() + d.recip())) * g).mul_add(score - e, old_rating)
 }
 
 fn g_value(q: f64, opponent_deviation: f64) -> f64 {
@@ -484,14 +505,16 @@ mod tests {
             deviation: 300.0,
         };
 
-        let (player1, _) = glicko(&player1, &opponent1, &Outcomes::WIN);
+        let config = GlickoConfig::default();
 
-        let (player1, _) = glicko(&player1, &opponent2, &Outcomes::LOSS);
+        let (player1, _) = glicko(&player1, &opponent1, &Outcomes::WIN, &config);
 
-        let (player1, _) = glicko(&player1, &opponent3, &Outcomes::LOSS);
+        let (player1, _) = glicko(&player1, &opponent2, &Outcomes::LOSS, &config);
 
-        assert!((player1.rating.round() - 1464.0).abs() < f64::EPSILON);
-        assert!((player1.deviation - 151.253_743_431_783_2).abs() < f64::EPSILON);
+        let (player1, _) = glicko(&player1, &opponent3, &Outcomes::LOSS, &config);
+
+        assert!((player1.rating.round() - 1449.0).abs() < f64::EPSILON);
+        assert!((player1.deviation - 171.684_472_141_285_57).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -500,9 +523,11 @@ mod tests {
     /// The result will be slightly different from above,
     /// because the games in a rating period are considered to be played at the same time.
     fn test_glicko_rating_period() {
+        // This weird deviation compensates for official example
+        // not performing calculations from step 1.
         let player = GlickoRating {
             rating: 1500.0,
-            deviation: 200.0,
+            deviation: 189.751837935762825,
         };
 
         let opponent1 = GlickoRating {
@@ -556,7 +581,7 @@ mod tests {
 
         let config = GlickoConfig::new();
 
-        let (np, _) = glicko(&player, &opponent, &Outcomes::WIN);
+        let (np, _) = glicko(&player, &opponent, &Outcomes::WIN, &config);
 
         let rp = glicko_rating_period(&player, &[(opponent, Outcomes::WIN)], &config);
 
@@ -632,13 +657,18 @@ mod tests {
             deviation: 41.0,
         };
 
-        (player, opponent) = glicko(&player, &opponent, &Outcomes::DRAW);
+        (player, opponent) = glicko(
+            &player,
+            &opponent,
+            &Outcomes::DRAW,
+            &GlickoConfig::default(),
+        );
 
         assert!((player.rating.round() - 1820.0).abs() < f64::EPSILON);
         assert!((player.deviation.round() - 340.0).abs() < f64::EPSILON);
 
-        assert!((opponent.rating.round() - 2227.0).abs() < f64::EPSILON);
-        assert!((opponent.deviation.round() - 41.0).abs() < f64::EPSILON);
+        assert!((opponent.rating.round() - 2220.0).abs() < f64::EPSILON);
+        assert!((opponent.deviation.round() - 75.0).abs() < f64::EPSILON);
     }
 
     #[test]
