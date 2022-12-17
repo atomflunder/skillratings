@@ -291,9 +291,12 @@ pub fn sticko(
     let d1 = d_value(q, g1, e1);
     let d2 = d_value(q, g2, e2);
 
+    let player_one_pre_deviation = player_one.deviation.hypot(config.c).min(350.0);
+    let player_two_pre_deviation = player_two.deviation.hypot(config.c).min(350.0);
+
     let player_one_new_rating = new_rating(
         player_one.rating,
-        player_one.deviation,
+        player_one_pre_deviation,
         q,
         d1,
         g1,
@@ -304,7 +307,7 @@ pub fn sticko(
     );
     let player_two_new_rating = new_rating(
         player_two.rating,
-        player_two.deviation,
+        player_two_pre_deviation,
         q,
         d2,
         g2,
@@ -314,8 +317,8 @@ pub fn sticko(
         lambda2,
     );
 
-    let player_one_new_deviation = new_deviation(player_one.deviation, d1, config.h);
-    let player_two_new_deviation = new_deviation(player_two.deviation, d2, config.h);
+    let player_one_new_deviation = new_deviation(player_one_pre_deviation, d1, config.h);
+    let player_two_new_deviation = new_deviation(player_two_pre_deviation, d2, config.h);
 
     (
         StickoRating {
@@ -393,7 +396,7 @@ pub fn sticko(
 /// let new_player = sticko_rating_period(&player, &results, &config);
 ///
 /// assert!((new_player.rating.round() - 1465.0).abs() < f64::EPSILON);
-/// assert!((new_player.deviation.round() - 151.0).abs() < f64::EPSILON);
+/// assert!((new_player.deviation.round() - 152.0).abs() < f64::EPSILON);
 /// ```
 pub fn sticko_rating_period(
     player: &StickoRating,
@@ -449,9 +452,9 @@ pub fn sticko_rating_period(
         })
         .sum();
 
-    let new_deviation = ((player
-        .deviation
-        .mul_add(player.deviation, config.h * matches)
+    let pre_deviation = player.deviation.hypot(config.c).min(350.0);
+    let new_deviation = ((pre_deviation
+        .mul_add(pre_deviation, config.h * matches)
         .recip()
         + d_sq.recip())
     .recip()
@@ -459,7 +462,7 @@ pub fn sticko_rating_period(
     .min(350.0);
 
     let new_rating =
-        (q / (player.deviation.powi(2).recip() + d_sq.recip())).mul_add(m, player.rating) + lambda;
+        (q / (pre_deviation.powi(2).recip() + d_sq.recip())).mul_add(m, player.rating) + lambda;
 
     StickoRating {
         rating: new_rating,
@@ -715,7 +718,7 @@ mod tests {
     #[test]
     fn test_single_rp() {
         let player = StickoRating {
-            rating: 1200.0,
+            rating: 1300.0,
             deviation: 25.0,
         };
         let opponent = StickoRating {
@@ -754,10 +757,10 @@ mod tests {
 
         let (p1, p2) = sticko(&player_one, &player_two, &Outcomes::DRAW, &config);
 
-        assert!((p1.rating.round() - 2221.0).abs() < f64::EPSILON);
+        assert!((p1.rating.round() - 2220.0).abs() < f64::EPSILON);
         assert!((p1.deviation.round() - 195.0).abs() < f64::EPSILON);
-        assert!((p2.rating.round() - 1811.0).abs() < f64::EPSILON);
-        assert!((p2.deviation.round() - 20.0).abs() < f64::EPSILON);
+        assert!((p2.rating.round() - 1812.0).abs() < f64::EPSILON);
+        assert!((p2.deviation.round() - 23.0).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -871,12 +874,12 @@ mod tests {
         let white_player = sticko_rating_period(&player, &tournament1, &config);
 
         assert!((white_player.rating.round() - 1323.0).abs() < f64::EPSILON);
-        assert!((white_player.deviation.round() - 107.0).abs() < f64::EPSILON);
+        assert!((white_player.deviation.round() - 108.0).abs() < f64::EPSILON);
 
         let black_player = sticko_rating_period(&player, &tournament2, &config);
 
         assert!((black_player.rating.round() - 1335.0).abs() < f64::EPSILON);
-        assert!((black_player.deviation.round() - 108.0).abs() < f64::EPSILON);
+        assert!((black_player.deviation.round() - 109.0).abs() < f64::EPSILON);
     }
 
     #[test]
