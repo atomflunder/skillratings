@@ -263,3 +263,47 @@ impl Outcomes {
         }
     }
 }
+
+/// Outcome for a free-for-all match or a match that involves more than two teams.
+///
+/// Every team is assigned a rank, depending on their placement. The lower the rank, the better.  
+/// If two or more teams tie with each other, assign them the same rank.
+///
+/// For example: Team A takes 1st place, Team C takes 2nd place, Team B takes 3rd place,
+/// and Teams D and E tie with each other and both take the 4th place.  
+/// In that case you would assign Team A = 1, Team B = 3, Team C = 2, Team D = 4, and Team E = 4.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct MultiTeamOutcome(usize);
+
+impl MultiTeamOutcome {
+    #[must_use]
+    #[inline]
+    /// Makes a new `MultiTeamOutcome` from a given rank.
+    pub const fn new(rank: usize) -> Self {
+        Self(rank)
+    }
+
+    #[must_use]
+    #[inline]
+    /// Returns the rank that corresponds to this `MultiTeamOutcome`.
+    pub const fn rank(self) -> usize {
+        self.0
+    }
+}
+
+impl From<usize> for MultiTeamOutcome {
+    #[must_use]
+    #[inline]
+    fn from(v: usize) -> Self {
+        Self(v)
+    }
+}
+
+impl From<MultiTeamOutcome> for usize {
+    #[must_use]
+    #[inline]
+    fn from(v: MultiTeamOutcome) -> Self {
+        v.0
+    }
+}

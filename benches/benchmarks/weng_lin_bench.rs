@@ -1,9 +1,9 @@
 use skillratings::{
     weng_lin::{
-        expected_score, expected_score_teams, weng_lin, weng_lin_rating_period, weng_lin_teams,
-        WengLinConfig, WengLinRating,
+        expected_score, expected_score_teams, weng_lin, weng_lin_multi_team,
+        weng_lin_rating_period, weng_lin_two_teams, WengLinConfig, WengLinRating,
     },
-    Outcomes,
+    MultiTeamOutcome, Outcomes,
 };
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
@@ -32,7 +32,7 @@ pub fn weng_lin_benchmark(c: &mut Criterion) {
     });
 }
 
-pub fn weng_lin_team_benchmark(c: &mut Criterion) {
+pub fn weng_lin_two_teams_benchmark(c: &mut Criterion) {
     let team_one = vec![
         WengLinRating {
             rating: 32.1,
@@ -75,13 +75,82 @@ pub fn weng_lin_team_benchmark(c: &mut Criterion) {
 
     c.bench_function("WengLin 4v4", |b| {
         b.iter(|| {
-            weng_lin_teams(
+            weng_lin_two_teams(
                 black_box(&team_one),
                 black_box(&team_two),
                 black_box(&outcome),
                 black_box(&config),
             )
         })
+    });
+}
+
+pub fn weng_lin_multi_team_benchmark(c: &mut Criterion) {
+    let team_one = vec![
+        WengLinRating {
+            rating: 32.1,
+            uncertainty: 4.233,
+        },
+        WengLinRating {
+            rating: 41.01,
+            uncertainty: 1.34,
+        },
+        WengLinRating {
+            rating: 32.1,
+            uncertainty: 4.233,
+        },
+        WengLinRating {
+            rating: 41.01,
+            uncertainty: 1.34,
+        },
+    ];
+    let team_two = vec![
+        WengLinRating {
+            rating: 29.1,
+            uncertainty: 4.233,
+        },
+        WengLinRating {
+            rating: 12.01,
+            uncertainty: 1.34,
+        },
+        WengLinRating {
+            rating: 9.1,
+            uncertainty: 4.233,
+        },
+        WengLinRating {
+            rating: 53.01,
+            uncertainty: 1.34,
+        },
+    ];
+    let team_three = vec![
+        WengLinRating {
+            rating: 13.1,
+            uncertainty: 4.233,
+        },
+        WengLinRating {
+            rating: 25.01,
+            uncertainty: 1.34,
+        },
+        WengLinRating {
+            rating: 43.1,
+            uncertainty: 4.233,
+        },
+        WengLinRating {
+            rating: 50.0,
+            uncertainty: 1.34,
+        },
+    ];
+
+    let game = vec![
+        (&team_one[..], MultiTeamOutcome::new(2)),
+        (&team_two[..], MultiTeamOutcome::new(1)),
+        (&team_three[..], MultiTeamOutcome::new(3)),
+    ];
+
+    let config = WengLinConfig::new();
+
+    c.bench_function("WengLin 4v4v4", |b| {
+        b.iter(|| weng_lin_multi_team(black_box(&game), black_box(&config)))
     });
 }
 
@@ -250,7 +319,8 @@ pub fn rating_period_wenglin(c: &mut Criterion) {
 criterion_group!(
     benches,
     weng_lin_benchmark,
-    weng_lin_team_benchmark,
+    weng_lin_two_teams_benchmark,
+    weng_lin_multi_team_benchmark,
     expected_wenglin,
     expected_wenglin_teams,
     rating_period_wenglin,

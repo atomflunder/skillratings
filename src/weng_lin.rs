@@ -60,7 +60,8 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{trueskill::TrueSkillRating, Outcomes};
+use crate::{trueskill::TrueSkillRating, MultiTeamOutcome, Outcomes};
+use std::cmp::Ordering;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -197,28 +198,18 @@ pub fn weng_lin(
         )
         .sqrt();
 
-    let (p1, p2) = expected_score(player_one, player_two, config);
+    let (p1, p2) = p_value(player_one.rating, player_two.rating, c);
 
     let outcome1 = outcome.to_chess_points();
     let outcome2 = 1.0 - outcome1;
 
-    let new_rating1 = new_rating(player_one.rating, player_one.uncertainty, c, outcome1, p1);
-    let new_rating2 = new_rating(player_two.rating, player_two.uncertainty, c, outcome2, p2);
+    let new_rating1 = new_rating(player_one.rating, player_one.uncertainty, c, p1, outcome1);
+    let new_rating2 = new_rating(player_two.rating, player_two.uncertainty, c, p2, outcome2);
 
-    let new_uncertainty1 = new_uncertainty(
-        player_one.uncertainty,
-        c,
-        p1,
-        p2,
-        config.uncertainty_tolerance,
-    );
-    let new_uncertainty2 = new_uncertainty(
-        player_two.uncertainty,
-        c,
-        p2,
-        p1,
-        config.uncertainty_tolerance,
-    );
+    let new_uncertainty1 =
+        new_uncertainty(player_one.uncertainty, c, p1, config.uncertainty_tolerance);
+    let new_uncertainty2 =
+        new_uncertainty(player_two.uncertainty, c, p2, config.uncertainty_tolerance);
 
     (
         WengLinRating {
@@ -287,20 +278,12 @@ pub fn weng_lin_rating_period(
             )
             .sqrt();
 
-        // Normally we would just call expected_points(),
-        // but we would have to construct a rating first which seems inefficient.
-        // So we are just calculating it ourselves.
-        let e1 = (player_rating / c).exp();
-        let e2 = (opponent.rating / c).exp();
-
-        let p1 = e1 / (e1 + e2);
-        let p2 = 1.0 - p1;
-
+        let (p, _) = p_value(player_rating, opponent.rating, c);
         let outcome = result.to_chess_points();
 
-        player_rating = new_rating(player_rating, player_uncertainty, c, outcome, p1);
+        player_rating = new_rating(player_rating, player_uncertainty, c, p, outcome);
         player_uncertainty =
-            new_uncertainty(player_uncertainty, c, p1, p2, config.uncertainty_tolerance);
+            new_uncertainty(player_uncertainty, c, p, config.uncertainty_tolerance);
     }
 
     WengLinRating {
@@ -322,7 +305,7 @@ pub fn weng_lin_rating_period(
 /// # Examples
 /// ```
 /// use skillratings::{
-///     weng_lin::{weng_lin_teams, WengLinConfig, WengLinRating},
+///     weng_lin::{weng_lin_two_teams, WengLinConfig, WengLinRating},
 ///     Outcomes,
 /// };
 ///
@@ -351,7 +334,7 @@ pub fn weng_lin_rating_period(
 /// ];
 ///
 /// let (new_one, new_two) =
-///     weng_lin_teams(&team_one, &team_two, &Outcomes::WIN, &WengLinConfig::new());
+///     weng_lin_two_teams(&team_one, &team_two, &Outcomes::WIN, &WengLinConfig::new());
 ///
 /// assert!(((new_one[0].rating * 100.0).round() - 2790.0).abs() < f64::EPSILON);
 /// assert!(((new_one[1].rating * 100.0).round() - 3006.0).abs() < f64::EPSILON);
@@ -361,7 +344,7 @@ pub fn weng_lin_rating_period(
 /// assert!(((new_two[1].rating * 100.0).round() - 4092.0).abs() < f64::EPSILON);
 /// assert!(((new_two[2].rating * 100.0).round() - 1843.0).abs() < f64::EPSILON);
 /// ```
-pub fn weng_lin_teams(
+pub fn weng_lin_two_teams(
     team_one: &[WengLinRating],
     team_two: &[WengLinRating],
     outcome: &Outcomes,
@@ -371,40 +354,58 @@ pub fn weng_lin_teams(
         return (team_one.to_vec(), team_two.to_vec());
     }
 
-    let team_one_uncertainties: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
-    let team_two_uncertainties: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let team_one_rating: f64 = team_one.iter().map(|p| p.rating).sum();
+    let team_two_rating: f64 = team_two.iter().map(|p| p.rating).sum();
+
+    let team_one_uncertainty_sq: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let team_two_uncertainty_sq: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
 
     let c = 2.0f64
         .mul_add(
             config.beta.powi(2),
-            team_one_uncertainties + team_two_uncertainties,
+            team_one_uncertainty_sq + team_two_uncertainty_sq,
         )
         .sqrt();
 
-    let (p1, p2) = expected_score_teams(team_one, team_two, config);
+    let (p1, p2) = p_value(team_one_rating, team_two_rating, c);
 
     let outcome1 = outcome.to_chess_points();
     let outcome2 = 1.0 - outcome1;
+
+    // Small delta is equivalent to omega as there are only two teams.
+    let team_one_small_delta = small_delta(team_one_uncertainty_sq, c, p1, outcome1);
+    let team_two_small_delta = small_delta(team_two_uncertainty_sq, c, p2, outcome2);
+
+    // Eta is equivalent to large delta as there are only two teams.
+    let team_one_eta = eta(
+        team_one_uncertainty_sq,
+        c,
+        p1,
+        gamma(team_one_uncertainty_sq, c),
+    );
+    let team_two_eta = eta(
+        team_two_uncertainty_sq,
+        c,
+        p2,
+        gamma(team_two_uncertainty_sq, c),
+    );
 
     let mut new_team_one = Vec::new();
     let mut new_team_two = Vec::new();
 
     for player in team_one {
+        let player_uncertainty_sq = player.uncertainty.powi(2);
         let new_rating = new_rating_teams(
             player.rating,
-            player.uncertainty,
-            team_one_uncertainties,
-            c,
-            outcome1,
-            p1,
+            player_uncertainty_sq,
+            team_one_uncertainty_sq,
+            team_one_small_delta,
         );
         let new_uncertainty = new_uncertainty_teams(
-            player.uncertainty,
-            team_one_uncertainties,
-            c,
-            p1,
-            p2,
+            player_uncertainty_sq,
+            team_one_uncertainty_sq,
             config.uncertainty_tolerance,
+            team_one_eta,
         );
 
         new_team_one.push(WengLinRating {
@@ -414,21 +415,18 @@ pub fn weng_lin_teams(
     }
 
     for player in team_two {
+        let player_uncertainty_sq = player.uncertainty.powi(2);
         let new_rating = new_rating_teams(
             player.rating,
-            player.uncertainty,
-            team_two_uncertainties,
-            c,
-            outcome2,
-            p2,
+            player_uncertainty_sq,
+            team_two_uncertainty_sq,
+            team_two_small_delta,
         );
         let new_uncertainty = new_uncertainty_teams(
-            player.uncertainty,
-            team_two_uncertainties,
-            c,
-            p2,
-            p1,
+            player_uncertainty_sq,
+            team_two_uncertainty_sq,
             config.uncertainty_tolerance,
+            team_two_eta,
         );
 
         new_team_two.push(WengLinRating {
@@ -438,6 +436,170 @@ pub fn weng_lin_teams(
     }
 
     (new_team_one, new_team_two)
+}
+
+#[must_use]
+/// Calculates the [`WengLinRating`] of several teams based on their ratings, uncertainties, and ranks of the teams.
+///
+/// Takes in a slice, which contains tuples of teams, which are just slices of [`WengLinRating`]s,
+/// as well the rank of the team as an [`MultiTeamOutcome`] and a [`WengLinConfig`].
+///
+/// Ties are represented by several teams having the same rank.
+///
+/// Returns new ratings and uncertainties of players in the teams in the same order.
+///
+/// Similar to [`weng_lin_two_teams`].
+///
+/// # Examples
+/// ```
+/// use skillratings::{
+///     weng_lin::{weng_lin_multi_team, WengLinConfig, WengLinRating},
+///     MultiTeamOutcome,
+/// };
+///
+/// let team_one = vec![
+///     WengLinRating::new(),
+///     WengLinRating {
+///         rating: 30.0,
+///         uncertainty: 1.2,
+///     },
+///     WengLinRating {
+///         rating: 21.0,
+///         uncertainty: 6.5,
+///     },
+/// ];
+///
+/// let team_two = vec![
+///     WengLinRating::default(),
+///     WengLinRating {
+///         rating: 41.0,
+///         uncertainty: 1.4,
+///     },
+///     WengLinRating {
+///         rating: 19.2,
+///         uncertainty: 4.3,
+///     },
+/// ];
+///
+/// let team_three = vec![
+///     WengLinRating::default(),
+///     WengLinRating {
+///         rating: 29.4,
+///         uncertainty: 1.6,
+///     },
+///     WengLinRating {
+///         rating: 17.2,
+///         uncertainty: 2.1,
+///     },
+/// ];
+///
+/// let teams_and_ranks = vec![
+///     (&team_one[..], MultiTeamOutcome::new(2)), // Team 1 takes the second place.
+///     (&team_two[..], MultiTeamOutcome::new(1)), // Team 2 takes the first place.
+///     (&team_three[..], MultiTeamOutcome::new(3)), // Team 3 takes the third place.
+/// ];
+///
+/// let new_teams =
+///     weng_lin_multi_team(&teams_and_ranks, &WengLinConfig::new());
+///
+/// assert_eq!(new_teams.len(), 3);
+///
+/// let new_one = &new_teams[0];
+/// let new_two = &new_teams[1];
+/// let new_three = &new_teams[2];
+///
+/// assert!(((new_one[0].rating * 100.0).round() - 2538.0).abs() < f64::EPSILON);
+/// assert!(((new_one[1].rating * 100.0).round() - 3001.0).abs() < f64::EPSILON);
+/// assert!(((new_one[2].rating * 100.0).round() - 2123.0).abs() < f64::EPSILON);
+///
+/// assert!(((new_two[0].rating * 100.0).round() - 2796.0).abs() < f64::EPSILON);
+/// assert!(((new_two[1].rating * 100.0).round() - 4108.0).abs() < f64::EPSILON);
+/// assert!(((new_two[2].rating * 100.0).round() - 1999.0).abs() < f64::EPSILON);
+///
+/// assert!(((new_three[0].rating * 100.0).round() - 2166.0).abs() < f64::EPSILON);
+/// assert!(((new_three[1].rating * 100.0).round() - 2928.0).abs() < f64::EPSILON);
+/// assert!(((new_three[2].rating * 100.0).round() - 1699.0).abs() < f64::EPSILON);
+/// ```
+pub fn weng_lin_multi_team(
+    teams_and_ranks: &[(&[WengLinRating], MultiTeamOutcome)],
+    config: &WengLinConfig,
+) -> Vec<Vec<WengLinRating>> {
+    if teams_and_ranks.is_empty() {
+        return Vec::new();
+    }
+
+    let mut teams_ratings = Vec::with_capacity(teams_and_ranks.len());
+    let mut teams_uncertainties_sq = Vec::with_capacity(teams_and_ranks.len());
+
+    for (team, _) in teams_and_ranks {
+        let team_rating: f64 = team.iter().map(|p| p.rating).sum();
+        let team_uncertainty_sq: f64 = team.iter().map(|p| p.uncertainty.powi(2)).sum();
+
+        teams_ratings.push(team_rating);
+        teams_uncertainties_sq.push(team_uncertainty_sq);
+    }
+
+    let mut new_teams = Vec::with_capacity(teams_and_ranks.len());
+    for (i, (team_one, rank_one)) in teams_and_ranks.iter().enumerate() {
+        let mut omega = 0.0;
+        let mut large_delta = 0.0;
+
+        for (q, (_, rank_two)) in teams_and_ranks.iter().enumerate() {
+            if i == q {
+                continue;
+            }
+
+            let c = 2.0f64
+                .mul_add(
+                    config.beta.powi(2),
+                    teams_uncertainties_sq[i] + teams_uncertainties_sq[q],
+                )
+                .sqrt();
+
+            let (p, _) = p_value(teams_ratings[i], teams_ratings[q], c);
+            let score = match rank_two.cmp(rank_one) {
+                Ordering::Greater => 1.0,
+                Ordering::Equal => 0.5,
+                Ordering::Less => 0.0,
+            };
+
+            let small_delta = small_delta(teams_uncertainties_sq[i], c, p, score);
+            let eta = eta(
+                teams_uncertainties_sq[i],
+                c,
+                p,
+                gamma(teams_uncertainties_sq[i], c),
+            );
+
+            omega += small_delta;
+            large_delta += eta;
+        }
+
+        let mut new_team = Vec::with_capacity(team_one.len());
+        for player in *team_one {
+            let player_uncertainty_sq = player.uncertainty.powi(2);
+            let new_rating = new_rating_teams(
+                player.rating,
+                player_uncertainty_sq,
+                teams_uncertainties_sq[i],
+                omega,
+            );
+            let new_uncertainty = new_uncertainty_teams(
+                player_uncertainty_sq,
+                teams_uncertainties_sq[i],
+                config.uncertainty_tolerance,
+                large_delta,
+            );
+
+            new_team.push(WengLinRating {
+                rating: new_rating,
+                uncertainty: new_uncertainty,
+            });
+        }
+        new_teams.push(new_team);
+    }
+
+    new_teams
 }
 
 #[must_use]
@@ -484,13 +646,7 @@ pub fn expected_score(
         )
         .sqrt();
 
-    let e1 = (player_one.rating / c).exp();
-    let e2 = (player_two.rating / c).exp();
-
-    let exp_one = e1 / (e1 + e2);
-    let exp_two = 1.0 - exp_one;
-
-    (exp_one, exp_two)
+    p_value(player_one.rating, player_two.rating, c)
 }
 
 #[must_use]
@@ -542,21 +698,25 @@ pub fn expected_score_teams(
     team_two: &[WengLinRating],
     config: &WengLinConfig,
 ) -> (f64, f64) {
-    let team_one_ratings: f64 = team_one.iter().map(|p| p.rating).sum();
-    let team_two_ratings: f64 = team_two.iter().map(|p| p.rating).sum();
+    let team_one_rating: f64 = team_one.iter().map(|p| p.rating).sum();
+    let team_two_rating: f64 = team_two.iter().map(|p| p.rating).sum();
 
-    let team_one_uncertainties: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
-    let team_two_uncertainties: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let team_one_uncertainty_sq: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let team_two_uncertainty_sq: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
 
     let c = 2.0f64
         .mul_add(
             config.beta.powi(2),
-            team_one_uncertainties + team_two_uncertainties,
+            team_one_uncertainty_sq + team_two_uncertainty_sq,
         )
         .sqrt();
 
-    let e1 = (team_one_ratings / c).exp();
-    let e2 = (team_two_ratings / c).exp();
+    p_value(team_one_rating, team_two_rating, c)
+}
+
+fn p_value(rating_one: f64, rating_two: f64, c_value: f64) -> (f64, f64) {
+    let e1 = (rating_one / c_value).exp();
+    let e2 = (rating_two / c_value).exp();
 
     let exp_one = e1 / (e1 + e2);
     let exp_two = 1.0 - exp_one;
@@ -564,51 +724,60 @@ pub fn expected_score_teams(
     (exp_one, exp_two)
 }
 
+fn small_delta(team_uncertainty_sq: f64, c_value: f64, p_value: f64, score: f64) -> f64 {
+    (team_uncertainty_sq / c_value) * (score - p_value)
+}
+
+// You could also set gamma to 1/k, with k being the amount of teams in a match.
+// But you need to change the 1v1 uncertainty function below accordingly.
+fn gamma(team_uncertainty_sq: f64, c_value: f64) -> f64 {
+    team_uncertainty_sq.sqrt() / c_value
+}
+
+fn eta(team_uncertainty_sq: f64, c_value: f64, p_value: f64, gamma: f64) -> f64 {
+    gamma * team_uncertainty_sq / c_value.powi(2) * p_value * (1.0 - p_value)
+}
+
 // We separate the 1v1 and teams functions, because we can use a few shortcuts on the 1v1 functions to increase performance.
-fn new_rating(rating: f64, uncertainty: f64, c: f64, score: f64, p: f64) -> f64 {
-    (uncertainty.powi(2) / c).mul_add(score - p, rating)
+fn new_rating(
+    player_rating: f64,
+    player_uncertainty: f64,
+    c_value: f64,
+    p_value: f64,
+    score: f64,
+) -> f64 {
+    (player_uncertainty.powi(2) / c_value).mul_add(score - p_value, player_rating)
 }
 
 fn new_uncertainty(
-    uncertainty: f64,
-    c: f64,
-    p: f64,
-    opponent_p: f64,
+    player_uncertainty: f64,
+    c_value: f64,
+    p_value: f64,
     uncertainty_tolerance: f64,
 ) -> f64 {
-    let eta = (uncertainty / c).powi(3) * p * opponent_p;
-
-    (uncertainty.powi(2) * (1.0 - eta).max(uncertainty_tolerance)).sqrt()
+    let eta = (player_uncertainty / c_value).powi(3) * p_value * (1.0 - p_value);
+    (player_uncertainty.powi(2) * (1.0 - eta).max(uncertainty_tolerance)).sqrt()
 }
 
 fn new_rating_teams(
-    rating: f64,
-    uncertainty: f64,
-    team_uncertainties: f64,
-    c: f64,
-    score: f64,
-    p: f64,
+    player_rating: f64,
+    player_uncertainty_sq: f64,
+    team_uncertainty_sq: f64,
+    omega: f64,
 ) -> f64 {
-    let delta = (team_uncertainties / c) * (score - p);
-
-    (uncertainty.powi(2) / team_uncertainties).mul_add(delta, rating)
+    (player_uncertainty_sq / team_uncertainty_sq).mul_add(omega, player_rating)
 }
 
 fn new_uncertainty_teams(
-    uncertainty: f64,
-    team_uncertainties: f64,
-    c: f64,
-    p: f64,
-    opponent_p: f64,
+    player_uncertainty_sq: f64,
+    team_uncertainty_sq: f64,
     uncertainty_tolerance: f64,
+    large_delta: f64,
 ) -> f64 {
-    // You could also set gamma to 1/k, with k being the amount of teams in a match.
-    // But you need to change the 1v1 uncertainty function above accordingly.
-    let gamma = team_uncertainties.sqrt() / c;
-    let eta = gamma * (team_uncertainties.sqrt() / c).powi(2) * p * opponent_p;
-    let sigma = (1.0 - (uncertainty.powi(2) / team_uncertainties) * eta).max(uncertainty_tolerance);
-
-    (uncertainty.powi(2) * sigma).sqrt()
+    let new_player_uncertainty_sq = (1.0
+        - ((player_uncertainty_sq / team_uncertainty_sq) * large_delta))
+        .max(uncertainty_tolerance);
+    (player_uncertainty_sq * new_player_uncertainty_sq).sqrt()
 }
 
 #[cfg(test)]
@@ -657,7 +826,7 @@ mod tests {
 
     #[test]
     #[allow(clippy::cognitive_complexity)]
-    fn test_weng_teams() {
+    fn test_weng_two_teams() {
         let t1 = vec![
             WengLinRating::new(),
             WengLinRating {
@@ -682,7 +851,7 @@ mod tests {
             },
         ];
 
-        let (nt1, nt2) = weng_lin_teams(&t1, &t2, &Outcomes::WIN, &WengLinConfig::new());
+        let (nt1, nt2) = weng_lin_two_teams(&t1, &t2, &Outcomes::WIN, &WengLinConfig::new());
 
         assert!((nt1[0].rating - 27.904_443_970_057_24).abs() < f64::EPSILON);
         assert!((nt1[1].rating - 30.060_226_550_163_108).abs() < f64::EPSILON);
@@ -700,7 +869,7 @@ mod tests {
         assert!((nt2[1].uncertainty - 1.399_187_149_975_365_4).abs() < f64::EPSILON);
         assert!((nt2[2].uncertainty - 4.276_389_807_576_043).abs() < f64::EPSILON);
 
-        let (nt1, nt2) = weng_lin_teams(&t1, &t2, &Outcomes::DRAW, &WengLinConfig::new());
+        let (nt1, nt2) = weng_lin_two_teams(&t1, &t2, &Outcomes::DRAW, &WengLinConfig::new());
 
         assert!((nt1[0].rating - 25.652_558_832_338_293).abs() < f64::EPSILON);
         assert!((nt1[1].rating - 30.013_531_459_947_366).abs() < f64::EPSILON);
@@ -713,7 +882,106 @@ mod tests {
         // The uncertainties do not change.
         assert!((nt1[0].uncertainty - 8.138_803_466_450_47).abs() < f64::EPSILON);
 
-        let (nt1, nt2) = weng_lin_teams(&t1, &t2, &Outcomes::LOSS, &WengLinConfig::default());
+        let (nt1, nt2) = weng_lin_two_teams(&t1, &t2, &Outcomes::LOSS, &WengLinConfig::default());
+
+        assert!((nt1[0].rating - 23.400_673_694_619_35).abs() < f64::EPSILON);
+        assert!((nt1[1].rating - 29.966_836_369_731_627).abs() < f64::EPSILON);
+        assert!((nt1[2].rating - 20.026_969_875_806_41).abs() < f64::EPSILON);
+
+        assert!((nt2[0].rating - 26.599_326_305_380_65).abs() < f64::EPSILON);
+        assert!((nt2[1].rating - 41.045_139_385_643_06).abs() < f64::EPSILON);
+        assert!((nt2[2].rating - 19.625_830_224_765_43).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    #[allow(clippy::cognitive_complexity)]
+    fn test_weng_multi_team_two() {
+        let t1 = vec![
+            WengLinRating::new(),
+            WengLinRating {
+                rating: 30.0,
+                uncertainty: 1.2,
+            },
+            WengLinRating {
+                rating: 21.0,
+                uncertainty: 6.5,
+            },
+        ];
+
+        let t2 = vec![
+            WengLinRating::default(),
+            WengLinRating {
+                rating: 41.0,
+                uncertainty: 1.4,
+            },
+            WengLinRating {
+                rating: 19.2,
+                uncertainty: 4.3,
+            },
+        ];
+
+        let game = vec![
+            (&t1[..], MultiTeamOutcome::new(1)),
+            (&t2[..], MultiTeamOutcome::new(2)),
+        ];
+
+        let results = weng_lin_multi_team(&game, &WengLinConfig::new());
+
+        assert_eq!(results.len(), 2);
+
+        let nt1 = &results[0];
+        let nt2 = &results[1];
+
+        assert!((nt1[0].rating - 27.904_443_970_057_24).abs() < f64::EPSILON);
+        assert!((nt1[1].rating - 30.060_226_550_163_108).abs() < f64::EPSILON);
+        assert!((nt1[2].rating - 22.767_063_711_382_825).abs() < f64::EPSILON);
+
+        assert!((nt2[0].rating - 22.095_556_029_942_76).abs() < f64::EPSILON);
+        assert!((nt2[1].rating - 40.918_024_973_389_1).abs() < f64::EPSILON);
+        assert!((nt2[2].rating - 18.426_674_366_308_44).abs() < f64::EPSILON);
+
+        assert!((nt1[0].uncertainty - 8.138_803_466_450_47).abs() < f64::EPSILON);
+        assert!((nt1[1].uncertainty - 1.199_425_779_255_630_7).abs() < f64::EPSILON);
+        assert!((nt1[2].uncertainty - 6.408_113_466_768_933).abs() < f64::EPSILON);
+
+        assert!((nt2[0].uncertainty - 8.160_155_338_979_159).abs() < f64::EPSILON);
+        assert!((nt2[1].uncertainty - 1.399_187_149_975_365_4).abs() < f64::EPSILON);
+        assert!((nt2[2].uncertainty - 4.276_389_807_576_043).abs() < f64::EPSILON);
+
+        let game = vec![
+            (&t1[..], MultiTeamOutcome::new(1)),
+            (&t2[..], MultiTeamOutcome::new(1)),
+        ];
+
+        let results = weng_lin_multi_team(&game, &WengLinConfig::new());
+
+        assert_eq!(results.len(), 2);
+
+        let nt1 = &results[0];
+        let nt2 = &results[1];
+
+        assert!((nt1[0].rating - 25.652_558_832_338_293).abs() < f64::EPSILON);
+        assert!((nt1[1].rating - 30.013_531_459_947_366).abs() < f64::EPSILON);
+        assert!((nt1[2].rating - 21.397_016_793_594_62).abs() < f64::EPSILON);
+
+        assert!((nt2[0].rating - 24.347_441_167_661_707).abs() < f64::EPSILON);
+        assert!((nt2[1].rating - 40.981_582_179_516_08).abs() < f64::EPSILON);
+        assert!((nt2[2].rating - 19.026_252_295_536_935).abs() < f64::EPSILON);
+
+        // The uncertainties do not change.
+        assert!((nt1[0].uncertainty - 8.138_803_466_450_47).abs() < f64::EPSILON);
+
+        let game = vec![
+            (&t1[..], MultiTeamOutcome::new(2)),
+            (&t2[..], MultiTeamOutcome::new(1)),
+        ];
+
+        let results = weng_lin_multi_team(&game, &WengLinConfig::new());
+
+        assert_eq!(results.len(), 2);
+
+        let nt1 = &results[0];
+        let nt2 = &results[1];
 
         assert!((nt1[0].rating - 23.400_673_694_619_35).abs() < f64::EPSILON);
         assert!((nt1[1].rating - 29.966_836_369_731_627).abs() < f64::EPSILON);
@@ -729,7 +997,7 @@ mod tests {
         let t1 = vec![WengLinRating::new()];
         let t2 = Vec::new();
 
-        let (nt1, nt2) = weng_lin_teams(&t1, &t2, &Outcomes::DRAW, &WengLinConfig::new());
+        let (nt1, nt2) = weng_lin_two_teams(&t1, &t2, &Outcomes::DRAW, &WengLinConfig::new());
 
         assert_eq!(t1, nt1);
         assert_eq!(t2, nt2);
@@ -752,7 +1020,7 @@ mod tests {
         let outcome = Outcomes::WIN;
 
         let (op1, op2) = weng_lin(&player_one, &player_two, &outcome, &config);
-        let (tp1, tp2) = weng_lin_teams(&[player_one], &[player_two], &outcome, &config);
+        let (tp1, tp2) = weng_lin_two_teams(&[player_one], &[player_two], &outcome, &config);
 
         assert_eq!(op1, tp1[0]);
         assert_eq!(op2, tp2[0]);
