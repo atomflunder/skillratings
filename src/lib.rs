@@ -158,6 +158,71 @@
 //! assert_eq!(new_team_one[0].rating.round(), 32.0);
 //! ```
 //!
+//! ### Free-For-Alls and Multiple Teams
+//!
+//! The *Weng-Lin* algorithm supports rating matches with multiple Teams.  
+//! Here is an example showing a 3-Team game with 3 players each.
+//!
+//! ```rust
+//! use skillratings::{
+//!     weng_lin::{weng_lin_multi_team, WengLinConfig, WengLinRating},
+//!     MultiTeamOutcome,
+//! };
+//!
+//! // Initialise the teams as Vecs of WengLinRatings.
+//! // Note that teams do not necessarily have to be the same size.
+//! let team_one = vec![
+//!     WengLinRating {
+//!         rating: 25.1,
+//!         uncertainty: 5.0,
+//!     },
+//!     WengLinRating {
+//!         rating: 24.0,
+//!         uncertainty: 1.2,
+//!     },
+//!     WengLinRating {
+//!         rating: 18.0,
+//!         uncertainty: 6.5,
+//!     },
+//! ];
+//!
+//! let team_two = vec![
+//!     WengLinRating {
+//!         rating: 44.0,
+//!         uncertainty: 1.2,
+//!     },
+//!     WengLinRating {
+//!         rating: 32.0,
+//!         uncertainty: 2.0,
+//!     },
+//!     WengLinRating {
+//!         rating: 12.0,
+//!         uncertainty: 3.2,
+//!     },
+//! ];
+//!
+//! // Using the default rating for team three for simplicity.
+//! let team_three = vec![
+//!     WengLinRating::new(),
+//!     WengLinRating::new(),
+//!     WengLinRating::new(),
+//! ];
+//!
+//! // Every team is assigned a rank, depending on their placement. The lower the rank, the better.
+//! // If two or more teams tie with each other, assign them the same rank.
+//! let rating_groups = vec![
+//!     (&team_one[..], MultiTeamOutcome::new(1)),      // team one takes the 1st place.
+//!     (&team_two[..], MultiTeamOutcome::new(3)),      // team two takes the 3rd place.
+//!     (&team_three[..], MultiTeamOutcome::new(2)),    // team three takes the 2nd place.
+//! ];
+//!
+//! // The weng_lin_multi_team function will calculate the new ratings for all teams and return them.
+//! let new_teams = weng_lin_multi_team(&rating_groups, &WengLinConfig::new());
+//!
+//! // The rating of the first player of team one increased by around ~2.9 points.
+//! assert_eq!(new_teams[0][0].rating.round(), 28.0);
+//! ```
+//!
 //! ### Expected outcome
 //!
 //! Every rating algorithm has an `expected_score` function that you can use to predict the outcome of a game.  
