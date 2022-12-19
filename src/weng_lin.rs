@@ -60,7 +60,8 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{trueskill::TrueSkillRating, Outcomes};
+use crate::{trueskill::TrueSkillRating, MultiTeamOutcome, Outcomes};
+use std::cmp::Ordering;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -438,6 +439,170 @@ pub fn weng_lin_two_teams(
 }
 
 #[must_use]
+/// Calculates the [`WengLinRating`] of several teams based on their ratings, uncertainties, and ranks of the teams.
+///
+/// Takes in a slice, which contains tuples of teams, which are just slices of [`WengLinRating`]s,
+/// as well the rank of the team as an [`MultiTeamOutcome`] and a [`WengLinConfig`].
+///
+/// Ties are represented by several teams having the same rank.
+///
+/// Returns new ratings and uncertainties of players in the teams in the same order.
+///
+/// Similar to [`weng_lin_two_teams`].
+///
+/// # Examples
+/// ```
+/// use skillratings::{
+///     weng_lin::{weng_lin_multi_team, WengLinConfig, WengLinRating},
+///     MultiTeamOutcome,
+/// };
+///
+/// let team_one = vec![
+///     WengLinRating::new(),
+///     WengLinRating {
+///         rating: 30.0,
+///         uncertainty: 1.2,
+///     },
+///     WengLinRating {
+///         rating: 21.0,
+///         uncertainty: 6.5,
+///     },
+/// ];
+///
+/// let team_two = vec![
+///     WengLinRating::default(),
+///     WengLinRating {
+///         rating: 41.0,
+///         uncertainty: 1.4,
+///     },
+///     WengLinRating {
+///         rating: 19.2,
+///         uncertainty: 4.3,
+///     },
+/// ];
+///
+/// let team_three = vec![
+///     WengLinRating::default(),
+///     WengLinRating {
+///         rating: 29.4,
+///         uncertainty: 1.6,
+///     },
+///     WengLinRating {
+///         rating: 17.2,
+///         uncertainty: 2.1,
+///     },
+/// ];
+///
+/// let teams_and_ranks = vec![
+///     (&team_one[..], MultiTeamOutcome::new(2)), // Team 1 takes the second place.
+///     (&team_two[..], MultiTeamOutcome::new(1)), // Team 2 takes the first place.
+///     (&team_three[..], MultiTeamOutcome::new(3)), // Team 3 takes the third place.
+/// ];
+///
+/// let new_teams =
+///     weng_lin_multi_team(&teams_and_ranks, &WengLinConfig::new());
+///
+/// assert_eq!(new_teams.len(), 3);
+///
+/// let new_one = &new_teams[0];
+/// let new_two = &new_teams[1];
+/// let new_three = &new_teams[2];
+///
+/// assert!(((new_one[0].rating * 100.0).round() - 2538.0).abs() < f64::EPSILON);
+/// assert!(((new_one[1].rating * 100.0).round() - 3001.0).abs() < f64::EPSILON);
+/// assert!(((new_one[2].rating * 100.0).round() - 2123.0).abs() < f64::EPSILON);
+///
+/// assert!(((new_two[0].rating * 100.0).round() - 2796.0).abs() < f64::EPSILON);
+/// assert!(((new_two[1].rating * 100.0).round() - 4108.0).abs() < f64::EPSILON);
+/// assert!(((new_two[2].rating * 100.0).round() - 1999.0).abs() < f64::EPSILON);
+///
+/// assert!(((new_three[0].rating * 100.0).round() - 2166.0).abs() < f64::EPSILON);
+/// assert!(((new_three[1].rating * 100.0).round() - 2928.0).abs() < f64::EPSILON);
+/// assert!(((new_three[2].rating * 100.0).round() - 1699.0).abs() < f64::EPSILON);
+/// ```
+pub fn weng_lin_multi_team(
+    teams_and_ranks: &[(&[WengLinRating], MultiTeamOutcome)],
+    config: &WengLinConfig,
+) -> Vec<Vec<WengLinRating>> {
+    if teams_and_ranks.is_empty() {
+        return Vec::new();
+    }
+
+    let mut teams_ratings = Vec::with_capacity(teams_and_ranks.len());
+    let mut teams_uncertainties_sq = Vec::with_capacity(teams_and_ranks.len());
+
+    for (team, _) in teams_and_ranks {
+        let team_rating: f64 = team.iter().map(|p| p.rating).sum();
+        let team_uncertainty_sq: f64 = team.iter().map(|p| p.uncertainty.powi(2)).sum();
+
+        teams_ratings.push(team_rating);
+        teams_uncertainties_sq.push(team_uncertainty_sq);
+    }
+
+    let mut new_teams = Vec::with_capacity(teams_and_ranks.len());
+    for (i, (team_one, rank_one)) in teams_and_ranks.iter().enumerate() {
+        let mut omega = 0.0;
+        let mut large_delta = 0.0;
+
+        for (q, (_, rank_two)) in teams_and_ranks.iter().enumerate() {
+            if i == q {
+                continue;
+            }
+
+            let c = 2.0f64
+                .mul_add(
+                    config.beta.powi(2),
+                    teams_uncertainties_sq[i] + teams_uncertainties_sq[q],
+                )
+                .sqrt();
+
+            let (p, _) = p_value(teams_ratings[i], teams_ratings[q], c);
+            let score = match rank_two.cmp(rank_one) {
+                Ordering::Greater => 1.0,
+                Ordering::Equal => 0.5,
+                Ordering::Less => 0.0,
+            };
+
+            let small_delta = small_delta(teams_uncertainties_sq[i], c, p, score);
+            let eta = eta(
+                teams_uncertainties_sq[i],
+                c,
+                p,
+                gamma(teams_uncertainties_sq[i], c),
+            );
+
+            omega += small_delta;
+            large_delta += eta;
+        }
+
+        let mut new_team = Vec::with_capacity(team_one.len());
+        for player in *team_one {
+            let player_uncertainty_sq = player.uncertainty.powi(2);
+            let new_rating = new_rating_teams(
+                player.rating,
+                player_uncertainty_sq,
+                teams_uncertainties_sq[i],
+                omega,
+            );
+            let new_uncertainty = new_uncertainty_teams(
+                player_uncertainty_sq,
+                teams_uncertainties_sq[i],
+                config.uncertainty_tolerance,
+                large_delta,
+            );
+
+            new_team.push(WengLinRating {
+                rating: new_rating,
+                uncertainty: new_uncertainty,
+            });
+        }
+        new_teams.push(new_team);
+    }
+
+    new_teams
+}
+
+#[must_use]
 /// Calculates the expected outcome of two players based on the Bradley-Terry model.
 ///
 /// Takes in two players as [`WengLinRating`]s and a [`WengLinConfig`],
@@ -718,6 +883,105 @@ mod tests {
         assert!((nt1[0].uncertainty - 8.138_803_466_450_47).abs() < f64::EPSILON);
 
         let (nt1, nt2) = weng_lin_two_teams(&t1, &t2, &Outcomes::LOSS, &WengLinConfig::default());
+
+        assert!((nt1[0].rating - 23.400_673_694_619_35).abs() < f64::EPSILON);
+        assert!((nt1[1].rating - 29.966_836_369_731_627).abs() < f64::EPSILON);
+        assert!((nt1[2].rating - 20.026_969_875_806_41).abs() < f64::EPSILON);
+
+        assert!((nt2[0].rating - 26.599_326_305_380_65).abs() < f64::EPSILON);
+        assert!((nt2[1].rating - 41.045_139_385_643_06).abs() < f64::EPSILON);
+        assert!((nt2[2].rating - 19.625_830_224_765_43).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    #[allow(clippy::cognitive_complexity)]
+    fn test_weng_multi_team_two() {
+        let t1 = vec![
+            WengLinRating::new(),
+            WengLinRating {
+                rating: 30.0,
+                uncertainty: 1.2,
+            },
+            WengLinRating {
+                rating: 21.0,
+                uncertainty: 6.5,
+            },
+        ];
+
+        let t2 = vec![
+            WengLinRating::default(),
+            WengLinRating {
+                rating: 41.0,
+                uncertainty: 1.4,
+            },
+            WengLinRating {
+                rating: 19.2,
+                uncertainty: 4.3,
+            },
+        ];
+
+        let game = vec![
+            (&t1[..], MultiTeamOutcome::new(1)),
+            (&t2[..], MultiTeamOutcome::new(2)),
+        ];
+
+        let results = weng_lin_multi_team(&game, &WengLinConfig::new());
+
+        assert_eq!(results.len(), 2);
+
+        let nt1 = &results[0];
+        let nt2 = &results[1];
+
+        assert!((nt1[0].rating - 27.904_443_970_057_24).abs() < f64::EPSILON);
+        assert!((nt1[1].rating - 30.060_226_550_163_108).abs() < f64::EPSILON);
+        assert!((nt1[2].rating - 22.767_063_711_382_825).abs() < f64::EPSILON);
+
+        assert!((nt2[0].rating - 22.095_556_029_942_76).abs() < f64::EPSILON);
+        assert!((nt2[1].rating - 40.918_024_973_389_1).abs() < f64::EPSILON);
+        assert!((nt2[2].rating - 18.426_674_366_308_44).abs() < f64::EPSILON);
+
+        assert!((nt1[0].uncertainty - 8.138_803_466_450_47).abs() < f64::EPSILON);
+        assert!((nt1[1].uncertainty - 1.199_425_779_255_630_7).abs() < f64::EPSILON);
+        assert!((nt1[2].uncertainty - 6.408_113_466_768_933).abs() < f64::EPSILON);
+
+        assert!((nt2[0].uncertainty - 8.160_155_338_979_159).abs() < f64::EPSILON);
+        assert!((nt2[1].uncertainty - 1.399_187_149_975_365_4).abs() < f64::EPSILON);
+        assert!((nt2[2].uncertainty - 4.276_389_807_576_043).abs() < f64::EPSILON);
+
+        let game = vec![
+            (&t1[..], MultiTeamOutcome::new(1)),
+            (&t2[..], MultiTeamOutcome::new(1)),
+        ];
+
+        let results = weng_lin_multi_team(&game, &WengLinConfig::new());
+
+        assert_eq!(results.len(), 2);
+
+        let nt1 = &results[0];
+        let nt2 = &results[1];
+
+        assert!((nt1[0].rating - 25.652_558_832_338_293).abs() < f64::EPSILON);
+        assert!((nt1[1].rating - 30.013_531_459_947_366).abs() < f64::EPSILON);
+        assert!((nt1[2].rating - 21.397_016_793_594_62).abs() < f64::EPSILON);
+
+        assert!((nt2[0].rating - 24.347_441_167_661_707).abs() < f64::EPSILON);
+        assert!((nt2[1].rating - 40.981_582_179_516_08).abs() < f64::EPSILON);
+        assert!((nt2[2].rating - 19.026_252_295_536_935).abs() < f64::EPSILON);
+
+        // The uncertainties do not change.
+        assert!((nt1[0].uncertainty - 8.138_803_466_450_47).abs() < f64::EPSILON);
+
+        let game = vec![
+            (&t1[..], MultiTeamOutcome::new(2)),
+            (&t2[..], MultiTeamOutcome::new(1)),
+        ];
+
+        let results = weng_lin_multi_team(&game, &WengLinConfig::new());
+
+        assert_eq!(results.len(), 2);
+
+        let nt1 = &results[0];
+        let nt2 = &results[1];
 
         assert!((nt1[0].rating - 23.400_673_694_619_35).abs() < f64::EPSILON);
         assert!((nt1[1].rating - 29.966_836_369_731_627).abs() < f64::EPSILON);
