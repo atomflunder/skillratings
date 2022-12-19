@@ -370,11 +370,6 @@ mod tests {
         assert!(!format!("{:?}", player_one).is_empty());
         assert!(!format!("{:?}", config).is_empty());
 
-        let outcome = Outcomes::WIN;
-
-        assert_eq!(outcome, outcome.clone());
-        assert!(!format!("{:?}", outcome).is_empty());
-
         assert_eq!(player_one, EloRating::from(1000.0));
     }
 }

@@ -47,7 +47,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.21"
+//! skillratings = "0.22"
 //! ```
 //!
 //! ## Serde support
@@ -64,7 +64,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = {version = "0.21", features = ["serde"]}
+//! skillratings = {version = "0.22", features = ["serde"]}
 //! ```
 //!
 //! # Usage and Examples
@@ -117,7 +117,7 @@
 //!
 //! ```rust
 //! use skillratings::{
-//!     trueskill::{trueskill_teams, TrueSkillConfig, TrueSkillRating},
+//!     trueskill::{trueskill_two_teams, TrueSkillConfig, TrueSkillRating},
 //!     Outcomes,
 //! };
 //!
@@ -152,7 +152,7 @@
 //! let config = TrueSkillConfig::new();
 //!
 //! // The trueskill_teams function will calculate the new ratings for both teams and return them.
-//! let (new_team_one, new_team_two) = trueskill_teams(&team_one, &team_two, &outcome, &config);
+//! let (new_team_one, new_team_two) = trueskill_two_teams(&team_one, &team_two, &outcome, &config);
 //!
 //! // The rating of the first player on team one decreased by around ~1.2 points.
 //! assert_eq!(new_team_one[0].rating.round(), 32.0);
@@ -305,5 +305,39 @@ impl From<MultiTeamOutcome> for usize {
     #[inline]
     fn from(v: MultiTeamOutcome) -> Self {
         v.0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_outcomes_to_chess_points() {
+        assert!((Outcomes::WIN.to_chess_points() - 1.0).abs() < f64::EPSILON);
+        assert!((Outcomes::DRAW.to_chess_points() - 0.5).abs() < f64::EPSILON);
+        assert!((Outcomes::LOSS.to_chess_points() - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_multi_team_outcome() {
+        let outcome = MultiTeamOutcome::new(1);
+        assert_eq!(outcome.rank(), 1);
+        assert_eq!(outcome, MultiTeamOutcome::from(1));
+        assert_eq!(outcome, 1.into());
+        assert_eq!(usize::from(MultiTeamOutcome::from(1)), 1);
+    }
+
+    #[test]
+    fn test_derives() {
+        let outcome = Outcomes::WIN;
+
+        assert_eq!(outcome, outcome.clone());
+        assert!(!format!("{:?}", outcome).is_empty());
+
+        let multi_team_outcome = MultiTeamOutcome::new(1);
+        assert_eq!(multi_team_outcome, multi_team_outcome.clone());
+        assert!(!format!("{:?}", multi_team_outcome).is_empty());
+        assert!(MultiTeamOutcome::new(1) < MultiTeamOutcome::new(2));
     }
 }

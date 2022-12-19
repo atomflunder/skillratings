@@ -2,6 +2,12 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.22.0 - 2022-12-19
+
+- Added `weng_lin_multi_team`, and `MultiTeamOutcome` struct
+- Renamed `weng_lin_teams` -> `weng_lin_two_teams`
+- Renamed `trueskill_teams` -> `trueskill_two_teams`
+
 ## v0.21.1 - 2022-12-17
 
 - Perform Step 1 of Glicko calculation

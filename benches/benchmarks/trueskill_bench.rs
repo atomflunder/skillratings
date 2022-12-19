@@ -1,7 +1,7 @@
 use skillratings::{
     trueskill::{
-        expected_score, expected_score_teams, trueskill, trueskill_rating_period, trueskill_teams,
-        TrueSkillConfig, TrueSkillRating,
+        expected_score, expected_score_teams, trueskill, trueskill_rating_period,
+        trueskill_two_teams, TrueSkillConfig, TrueSkillRating,
     },
     Outcomes,
 };
@@ -75,7 +75,7 @@ pub fn trueskill_team_benchmark(c: &mut Criterion) {
 
     c.bench_function("TrueSkill 4v4", |b| {
         b.iter(|| {
-            trueskill_teams(
+            trueskill_two_teams(
                 black_box(&team_one),
                 black_box(&team_two),
                 black_box(&outcome),

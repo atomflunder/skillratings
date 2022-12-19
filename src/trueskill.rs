@@ -171,7 +171,7 @@ impl Default for TrueSkillConfig {
 /// The outcome of the match is in the perspective of `player_one`.
 /// This means [`Outcomes::WIN`] is a win for `player_one` and [`Outcomes::LOSS`] is a win for `player_two`.
 ///
-/// Similar to [`trueskill_rating_period`] and [`trueskill_teams`].
+/// Similar to [`trueskill_rating_period`] and [`trueskill_two_teams`].
 ///
 /// **Caution regarding usage of TrueSkill**:  
 /// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.  
@@ -286,7 +286,7 @@ pub fn trueskill(
 /// The outcome of the match is in the perspective of the player.
 /// This means [`Outcomes::WIN`] is a win for the player and [`Outcomes::LOSS`] is a win for the opponent.
 ///
-/// Similar to [`trueskill`] or [`trueskill_teams`].
+/// Similar to [`trueskill`] or [`trueskill_two_teams`].
 ///
 /// **Caution regarding usage of TrueSkill**:  
 /// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.  
@@ -400,7 +400,7 @@ pub fn trueskill_rating_period(
 /// # Examples
 /// ```
 /// use skillratings::{
-///     trueskill::{trueskill_teams, TrueSkillConfig, TrueSkillRating},
+///     trueskill::{trueskill_two_teams, TrueSkillConfig, TrueSkillRating},
 ///     Outcomes,
 /// };
 ///
@@ -422,7 +422,7 @@ pub fn trueskill_rating_period(
 ///     uncertainty: 5.0,
 /// };
 ///
-/// let (team_one, team_two) = trueskill_teams(
+/// let (team_one, team_two) = trueskill_two_teams(
 ///     &vec![player_one, player_two],
 ///     &vec![player_three, player_four],
 ///     &Outcomes::WIN,
@@ -434,7 +434,7 @@ pub fn trueskill_rating_period(
 /// assert!((team_two[0].rating - 27.574_109_105_332_1).abs() < f64::EPSILON);
 /// assert!((team_two[1].rating - 36.210_764_756_738_115).abs() < f64::EPSILON);
 /// ```
-pub fn trueskill_teams(
+pub fn trueskill_two_teams(
     team_one: &[TrueSkillRating],
     team_two: &[TrueSkillRating],
     outcome: &Outcomes,
@@ -1171,7 +1171,7 @@ mod tests {
             uncertainty: 5.0,
         };
 
-        let (team_one, team_two) = trueskill_teams(
+        let (team_one, team_two) = trueskill_two_teams(
             &[player_one, player_two],
             &[player_three, player_four],
             &Outcomes::WIN,
@@ -1188,7 +1188,7 @@ mod tests {
         assert!((team_two[0].uncertainty - 6.346_250_279_230_62).abs() < f64::EPSILON);
         assert!((team_two[1].uncertainty - 4.767_945_180_134_836).abs() < f64::EPSILON);
 
-        let (team_two, team_one) = trueskill_teams(
+        let (team_two, team_one) = trueskill_two_teams(
             &[player_three, player_four],
             &[player_one, player_two],
             &Outcomes::LOSS,
@@ -1223,7 +1223,7 @@ mod tests {
             uncertainty: 3.0,
         };
 
-        let (team_one, team_two) = trueskill_teams(
+        let (team_one, team_two) = trueskill_two_teams(
             &[player_one, player_two],
             &[player_three, player_four],
             &Outcomes::DRAW,
@@ -1241,7 +1241,7 @@ mod tests {
         assert!((team_two[1].uncertainty - 2.930_957_525_591_959_5).abs() < f64::EPSILON);
 
         let (team_one, _) =
-            trueskill_teams(&[player_one], &[], &Outcomes::WIN, &TrueSkillConfig::new());
+            trueskill_two_teams(&[player_one], &[], &Outcomes::WIN, &TrueSkillConfig::new());
 
         assert_eq!(team_one[0], player_one);
     }
@@ -1260,7 +1260,7 @@ mod tests {
             &Outcomes::WIN,
             &TrueSkillConfig::new(),
         );
-        let (tp1, tp2) = trueskill_teams(
+        let (tp1, tp2) = trueskill_two_teams(
             &[player_one],
             &[player_two],
             &Outcomes::WIN,

@@ -156,7 +156,7 @@ impl Default for WengLinConfig {
 /// The outcome of the match is in the perspective of `player_one`.
 /// This means [`Outcomes::WIN`] is a win for `player_one` and [`Outcomes::LOSS`] is a win for `player_two`.
 ///
-/// Similar to [`weng_lin_rating_period`] and [`weng_lin_teams`].
+/// Similar to [`weng_lin_rating_period`] and [`weng_lin_two_teams`].
 ///
 /// # Examples
 /// ```
@@ -233,7 +233,7 @@ pub fn weng_lin(
 /// The outcome of the match is in the perspective of the player.
 /// This means [`Outcomes::WIN`] is a win for the player and [`Outcomes::LOSS`] is a win for the opponent.
 ///
-/// Similar to [`weng_lin`] or [`weng_lin_teams`].
+/// Similar to [`weng_lin`] or [`weng_lin_two_teams`].
 ///
 /// # Examples
 /// ```
@@ -526,6 +526,16 @@ pub fn weng_lin_multi_team(
 ) -> Vec<Vec<WengLinRating>> {
     if teams_and_ranks.is_empty() {
         return Vec::new();
+    }
+
+    // Just returning the original teams if a team is empty.
+    for (team, _) in teams_and_ranks {
+        if team.is_empty() {
+            return teams_and_ranks
+                .iter()
+                .map(|(team, _)| team.to_vec())
+                .collect();
+        }
     }
 
     let mut teams_ratings = Vec::with_capacity(teams_and_ranks.len());
@@ -1001,6 +1011,20 @@ mod tests {
 
         assert_eq!(t1, nt1);
         assert_eq!(t2, nt2);
+
+        let game = vec![
+            (&t1[..], MultiTeamOutcome::new(1)),
+            (&t2[..], MultiTeamOutcome::new(1)),
+        ];
+
+        let results = weng_lin_multi_team(&game, &WengLinConfig::new());
+
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0], t1);
+        assert_eq!(results[1], t2);
+
+        let result = weng_lin_multi_team(&[], &WengLinConfig::new());
+        assert_eq!(result.len(), 0);
     }
 
     #[test]
