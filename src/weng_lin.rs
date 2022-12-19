@@ -197,28 +197,18 @@ pub fn weng_lin(
         )
         .sqrt();
 
-    let (p1, p2) = expected_score(player_one, player_two, config);
+    let (p1, p2) = p_value(player_one.rating, player_two.rating, c);
 
     let outcome1 = outcome.to_chess_points();
     let outcome2 = 1.0 - outcome1;
 
-    let new_rating1 = new_rating(player_one.rating, player_one.uncertainty, c, outcome1, p1);
-    let new_rating2 = new_rating(player_two.rating, player_two.uncertainty, c, outcome2, p2);
+    let new_rating1 = new_rating(player_one.rating, player_one.uncertainty, c, p1, outcome1);
+    let new_rating2 = new_rating(player_two.rating, player_two.uncertainty, c, p2, outcome2);
 
-    let new_uncertainty1 = new_uncertainty(
-        player_one.uncertainty,
-        c,
-        p1,
-        p2,
-        config.uncertainty_tolerance,
-    );
-    let new_uncertainty2 = new_uncertainty(
-        player_two.uncertainty,
-        c,
-        p2,
-        p1,
-        config.uncertainty_tolerance,
-    );
+    let new_uncertainty1 =
+        new_uncertainty(player_one.uncertainty, c, p1, config.uncertainty_tolerance);
+    let new_uncertainty2 =
+        new_uncertainty(player_two.uncertainty, c, p2, config.uncertainty_tolerance);
 
     (
         WengLinRating {
@@ -287,20 +277,12 @@ pub fn weng_lin_rating_period(
             )
             .sqrt();
 
-        // Normally we would just call expected_points(),
-        // but we would have to construct a rating first which seems inefficient.
-        // So we are just calculating it ourselves.
-        let e1 = (player_rating / c).exp();
-        let e2 = (opponent.rating / c).exp();
-
-        let p1 = e1 / (e1 + e2);
-        let p2 = 1.0 - p1;
-
+        let (p, _) = p_value(player_rating, opponent.rating, c);
         let outcome = result.to_chess_points();
 
-        player_rating = new_rating(player_rating, player_uncertainty, c, outcome, p1);
+        player_rating = new_rating(player_rating, player_uncertainty, c, p, outcome);
         player_uncertainty =
-            new_uncertainty(player_uncertainty, c, p1, p2, config.uncertainty_tolerance);
+            new_uncertainty(player_uncertainty, c, p, config.uncertainty_tolerance);
     }
 
     WengLinRating {
@@ -371,40 +353,58 @@ pub fn weng_lin_teams(
         return (team_one.to_vec(), team_two.to_vec());
     }
 
-    let team_one_uncertainties: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
-    let team_two_uncertainties: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let team_one_rating: f64 = team_one.iter().map(|p| p.rating).sum();
+    let team_two_rating: f64 = team_two.iter().map(|p| p.rating).sum();
+
+    let team_one_uncertainty_sq: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let team_two_uncertainty_sq: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
 
     let c = 2.0f64
         .mul_add(
             config.beta.powi(2),
-            team_one_uncertainties + team_two_uncertainties,
+            team_one_uncertainty_sq + team_two_uncertainty_sq,
         )
         .sqrt();
 
-    let (p1, p2) = expected_score_teams(team_one, team_two, config);
+    let (p1, p2) = p_value(team_one_rating, team_two_rating, c);
 
     let outcome1 = outcome.to_chess_points();
     let outcome2 = 1.0 - outcome1;
+
+    // Small delta is equivalent to omega as there are only two teams.
+    let team_one_small_delta = small_delta(team_one_uncertainty_sq, c, p1, outcome1);
+    let team_two_small_delta = small_delta(team_two_uncertainty_sq, c, p2, outcome2);
+
+    // Eta is equivalent to large delta as there are only two teams.
+    let team_one_eta = eta(
+        team_one_uncertainty_sq,
+        c,
+        p1,
+        gamma(team_one_uncertainty_sq, c),
+    );
+    let team_two_eta = eta(
+        team_two_uncertainty_sq,
+        c,
+        p2,
+        gamma(team_two_uncertainty_sq, c),
+    );
 
     let mut new_team_one = Vec::new();
     let mut new_team_two = Vec::new();
 
     for player in team_one {
+        let player_uncertainty_sq = player.uncertainty.powi(2);
         let new_rating = new_rating_teams(
             player.rating,
-            player.uncertainty,
-            team_one_uncertainties,
-            c,
-            outcome1,
-            p1,
+            player_uncertainty_sq,
+            team_one_uncertainty_sq,
+            team_one_small_delta,
         );
         let new_uncertainty = new_uncertainty_teams(
-            player.uncertainty,
-            team_one_uncertainties,
-            c,
-            p1,
-            p2,
+            player_uncertainty_sq,
+            team_one_uncertainty_sq,
             config.uncertainty_tolerance,
+            team_one_eta,
         );
 
         new_team_one.push(WengLinRating {
@@ -414,21 +414,18 @@ pub fn weng_lin_teams(
     }
 
     for player in team_two {
+        let player_uncertainty_sq = player.uncertainty.powi(2);
         let new_rating = new_rating_teams(
             player.rating,
-            player.uncertainty,
-            team_two_uncertainties,
-            c,
-            outcome2,
-            p2,
+            player_uncertainty_sq,
+            team_two_uncertainty_sq,
+            team_two_small_delta,
         );
         let new_uncertainty = new_uncertainty_teams(
-            player.uncertainty,
-            team_two_uncertainties,
-            c,
-            p2,
-            p1,
+            player_uncertainty_sq,
+            team_two_uncertainty_sq,
             config.uncertainty_tolerance,
+            team_two_eta,
         );
 
         new_team_two.push(WengLinRating {
@@ -484,13 +481,7 @@ pub fn expected_score(
         )
         .sqrt();
 
-    let e1 = (player_one.rating / c).exp();
-    let e2 = (player_two.rating / c).exp();
-
-    let exp_one = e1 / (e1 + e2);
-    let exp_two = 1.0 - exp_one;
-
-    (exp_one, exp_two)
+    p_value(player_one.rating, player_two.rating, c)
 }
 
 #[must_use]
@@ -542,21 +533,25 @@ pub fn expected_score_teams(
     team_two: &[WengLinRating],
     config: &WengLinConfig,
 ) -> (f64, f64) {
-    let team_one_ratings: f64 = team_one.iter().map(|p| p.rating).sum();
-    let team_two_ratings: f64 = team_two.iter().map(|p| p.rating).sum();
+    let team_one_rating: f64 = team_one.iter().map(|p| p.rating).sum();
+    let team_two_rating: f64 = team_two.iter().map(|p| p.rating).sum();
 
-    let team_one_uncertainties: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
-    let team_two_uncertainties: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let team_one_uncertainty_sq: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let team_two_uncertainty_sq: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
 
     let c = 2.0f64
         .mul_add(
             config.beta.powi(2),
-            team_one_uncertainties + team_two_uncertainties,
+            team_one_uncertainty_sq + team_two_uncertainty_sq,
         )
         .sqrt();
 
-    let e1 = (team_one_ratings / c).exp();
-    let e2 = (team_two_ratings / c).exp();
+    p_value(team_one_rating, team_two_rating, c)
+}
+
+fn p_value(rating_one: f64, rating_two: f64, c_value: f64) -> (f64, f64) {
+    let e1 = (rating_one / c_value).exp();
+    let e2 = (rating_two / c_value).exp();
 
     let exp_one = e1 / (e1 + e2);
     let exp_two = 1.0 - exp_one;
@@ -564,51 +559,60 @@ pub fn expected_score_teams(
     (exp_one, exp_two)
 }
 
+fn small_delta(team_uncertainty_sq: f64, c_value: f64, p_value: f64, score: f64) -> f64 {
+    (team_uncertainty_sq / c_value) * (score - p_value)
+}
+
+// You could also set gamma to 1/k, with k being the amount of teams in a match.
+// But you need to change the 1v1 uncertainty function below accordingly.
+fn gamma(team_uncertainty_sq: f64, c_value: f64) -> f64 {
+    team_uncertainty_sq.sqrt() / c_value
+}
+
+fn eta(team_uncertainty_sq: f64, c_value: f64, p_value: f64, gamma: f64) -> f64 {
+    gamma * team_uncertainty_sq / c_value.powi(2) * p_value * (1.0 - p_value)
+}
+
 // We separate the 1v1 and teams functions, because we can use a few shortcuts on the 1v1 functions to increase performance.
-fn new_rating(rating: f64, uncertainty: f64, c: f64, score: f64, p: f64) -> f64 {
-    (uncertainty.powi(2) / c).mul_add(score - p, rating)
+fn new_rating(
+    player_rating: f64,
+    player_uncertainty: f64,
+    c_value: f64,
+    p_value: f64,
+    score: f64,
+) -> f64 {
+    (player_uncertainty.powi(2) / c_value).mul_add(score - p_value, player_rating)
 }
 
 fn new_uncertainty(
-    uncertainty: f64,
-    c: f64,
-    p: f64,
-    opponent_p: f64,
+    player_uncertainty: f64,
+    c_value: f64,
+    p_value: f64,
     uncertainty_tolerance: f64,
 ) -> f64 {
-    let eta = (uncertainty / c).powi(3) * p * opponent_p;
-
-    (uncertainty.powi(2) * (1.0 - eta).max(uncertainty_tolerance)).sqrt()
+    let eta = (player_uncertainty / c_value).powi(3) * p_value * (1.0 - p_value);
+    (player_uncertainty.powi(2) * (1.0 - eta).max(uncertainty_tolerance)).sqrt()
 }
 
 fn new_rating_teams(
-    rating: f64,
-    uncertainty: f64,
-    team_uncertainties: f64,
-    c: f64,
-    score: f64,
-    p: f64,
+    player_rating: f64,
+    player_uncertainty_sq: f64,
+    team_uncertainty_sq: f64,
+    omega: f64,
 ) -> f64 {
-    let delta = (team_uncertainties / c) * (score - p);
-
-    (uncertainty.powi(2) / team_uncertainties).mul_add(delta, rating)
+    (player_uncertainty_sq / team_uncertainty_sq).mul_add(omega, player_rating)
 }
 
 fn new_uncertainty_teams(
-    uncertainty: f64,
-    team_uncertainties: f64,
-    c: f64,
-    p: f64,
-    opponent_p: f64,
+    player_uncertainty_sq: f64,
+    team_uncertainty_sq: f64,
     uncertainty_tolerance: f64,
+    large_delta: f64,
 ) -> f64 {
-    // You could also set gamma to 1/k, with k being the amount of teams in a match.
-    // But you need to change the 1v1 uncertainty function above accordingly.
-    let gamma = team_uncertainties.sqrt() / c;
-    let eta = gamma * (team_uncertainties.sqrt() / c).powi(2) * p * opponent_p;
-    let sigma = (1.0 - (uncertainty.powi(2) / team_uncertainties) * eta).max(uncertainty_tolerance);
-
-    (uncertainty.powi(2) * sigma).sqrt()
+    let new_player_uncertainty_sq = (1.0
+        - ((player_uncertainty_sq / team_uncertainty_sq) * large_delta))
+        .max(uncertainty_tolerance);
+    (player_uncertainty_sq * new_player_uncertainty_sq).sqrt()
 }
 
 #[cfg(test)]
