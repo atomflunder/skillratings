@@ -304,7 +304,7 @@ pub fn weng_lin_rating_period(
 /// # Examples
 /// ```
 /// use skillratings::{
-///     weng_lin::{weng_lin_teams, WengLinConfig, WengLinRating},
+///     weng_lin::{weng_lin_two_teams, WengLinConfig, WengLinRating},
 ///     Outcomes,
 /// };
 ///
@@ -333,7 +333,7 @@ pub fn weng_lin_rating_period(
 /// ];
 ///
 /// let (new_one, new_two) =
-///     weng_lin_teams(&team_one, &team_two, &Outcomes::WIN, &WengLinConfig::new());
+///     weng_lin_two_teams(&team_one, &team_two, &Outcomes::WIN, &WengLinConfig::new());
 ///
 /// assert!(((new_one[0].rating * 100.0).round() - 2790.0).abs() < f64::EPSILON);
 /// assert!(((new_one[1].rating * 100.0).round() - 3006.0).abs() < f64::EPSILON);
@@ -343,7 +343,7 @@ pub fn weng_lin_rating_period(
 /// assert!(((new_two[1].rating * 100.0).round() - 4092.0).abs() < f64::EPSILON);
 /// assert!(((new_two[2].rating * 100.0).round() - 1843.0).abs() < f64::EPSILON);
 /// ```
-pub fn weng_lin_teams(
+pub fn weng_lin_two_teams(
     team_one: &[WengLinRating],
     team_two: &[WengLinRating],
     outcome: &Outcomes,
@@ -661,7 +661,7 @@ mod tests {
 
     #[test]
     #[allow(clippy::cognitive_complexity)]
-    fn test_weng_teams() {
+    fn test_weng_two_teams() {
         let t1 = vec![
             WengLinRating::new(),
             WengLinRating {
@@ -686,7 +686,7 @@ mod tests {
             },
         ];
 
-        let (nt1, nt2) = weng_lin_teams(&t1, &t2, &Outcomes::WIN, &WengLinConfig::new());
+        let (nt1, nt2) = weng_lin_two_teams(&t1, &t2, &Outcomes::WIN, &WengLinConfig::new());
 
         assert!((nt1[0].rating - 27.904_443_970_057_24).abs() < f64::EPSILON);
         assert!((nt1[1].rating - 30.060_226_550_163_108).abs() < f64::EPSILON);
@@ -704,7 +704,7 @@ mod tests {
         assert!((nt2[1].uncertainty - 1.399_187_149_975_365_4).abs() < f64::EPSILON);
         assert!((nt2[2].uncertainty - 4.276_389_807_576_043).abs() < f64::EPSILON);
 
-        let (nt1, nt2) = weng_lin_teams(&t1, &t2, &Outcomes::DRAW, &WengLinConfig::new());
+        let (nt1, nt2) = weng_lin_two_teams(&t1, &t2, &Outcomes::DRAW, &WengLinConfig::new());
 
         assert!((nt1[0].rating - 25.652_558_832_338_293).abs() < f64::EPSILON);
         assert!((nt1[1].rating - 30.013_531_459_947_366).abs() < f64::EPSILON);
@@ -717,7 +717,7 @@ mod tests {
         // The uncertainties do not change.
         assert!((nt1[0].uncertainty - 8.138_803_466_450_47).abs() < f64::EPSILON);
 
-        let (nt1, nt2) = weng_lin_teams(&t1, &t2, &Outcomes::LOSS, &WengLinConfig::default());
+        let (nt1, nt2) = weng_lin_two_teams(&t1, &t2, &Outcomes::LOSS, &WengLinConfig::default());
 
         assert!((nt1[0].rating - 23.400_673_694_619_35).abs() < f64::EPSILON);
         assert!((nt1[1].rating - 29.966_836_369_731_627).abs() < f64::EPSILON);
@@ -733,7 +733,7 @@ mod tests {
         let t1 = vec![WengLinRating::new()];
         let t2 = Vec::new();
 
-        let (nt1, nt2) = weng_lin_teams(&t1, &t2, &Outcomes::DRAW, &WengLinConfig::new());
+        let (nt1, nt2) = weng_lin_two_teams(&t1, &t2, &Outcomes::DRAW, &WengLinConfig::new());
 
         assert_eq!(t1, nt1);
         assert_eq!(t2, nt2);
@@ -756,7 +756,7 @@ mod tests {
         let outcome = Outcomes::WIN;
 
         let (op1, op2) = weng_lin(&player_one, &player_two, &outcome, &config);
-        let (tp1, tp2) = weng_lin_teams(&[player_one], &[player_two], &outcome, &config);
+        let (tp1, tp2) = weng_lin_two_teams(&[player_one], &[player_two], &outcome, &config);
 
         assert_eq!(op1, tp1[0]);
         assert_eq!(op2, tp2[0]);
