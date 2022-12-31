@@ -36,9 +36,7 @@
 //! // The config allows you to specify certain values in the Glicko calculation.
 //! // Here we set the c value to 23.75, instead of the default 63.2.
 //! // This will decrease the amount by which rating deviation increases per rating period.
-//! let config = GlickoConfig {
-//!     c: 23.75,
-//! };
+//! let config = GlickoConfig { c: 23.75 };
 //!
 //! // The glicko function will calculate the new ratings for both players and return them.
 //! let (new_player_one, new_player_two) = glicko(&player_one, &player_two, &outcome, &config);

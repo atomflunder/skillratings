@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.23.0 - 2022-12-31
+
+- Added `expected_score_multi_team` function for `weng_lin`
+- Renamed `expected_score_teams` -> `expected_score_two_teams` for both `weng_lin` and `trueskill`
+
 ## v0.22.0 - 2022-12-19
 
 - Added `weng_lin_multi_team`, and `MultiTeamOutcome` struct

@@ -1,6 +1,6 @@
 use skillratings::{
     weng_lin::{
-        expected_score, expected_score_teams, weng_lin, weng_lin_multi_team,
+        expected_score, expected_score_two_teams, weng_lin, weng_lin_multi_team,
         weng_lin_rating_period, weng_lin_two_teams, WengLinConfig, WengLinRating,
     },
     MultiTeamOutcome, Outcomes,
@@ -219,7 +219,7 @@ pub fn expected_wenglin_teams(c: &mut Criterion) {
 
     c.bench_function("WengLin 4v4 Expected Score", |b| {
         b.iter(|| {
-            expected_score_teams(
+            expected_score_two_teams(
                 black_box(&team_one),
                 black_box(&team_two),
                 black_box(&config),

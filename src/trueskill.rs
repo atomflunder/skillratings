@@ -642,7 +642,7 @@ pub fn match_quality_teams(
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
-/// Similar to [`expected_score_teams`].
+/// Similar to [`expected_score_two_teams`].
 ///
 /// To see the actual chances of a draw occurring, please use [`match_quality`].
 ///
@@ -703,7 +703,7 @@ pub fn expected_score(
 ///
 /// # Examples
 /// ```
-/// use skillratings::trueskill::{expected_score_teams, TrueSkillConfig, TrueSkillRating};
+/// use skillratings::trueskill::{expected_score_two_teams, TrueSkillConfig, TrueSkillRating};
 ///
 /// let player_one = TrueSkillRating {
 ///     rating: 38.0,
@@ -723,7 +723,7 @@ pub fn expected_score(
 ///     uncertainty: 3.0,
 /// };
 ///
-/// let (exp1, exp2) = expected_score_teams(
+/// let (exp1, exp2) = expected_score_two_teams(
 ///     &vec![player_one, player_two],
 ///     &vec![player_three, player_four],
 ///     &TrueSkillConfig::new(),
@@ -735,7 +735,7 @@ pub fn expected_score(
 /// assert!(((exp1 * 100.0).round() - 12.0).abs() < f64::EPSILON);
 /// assert!(((exp2 * 100.0).round() - 88.0).abs() < f64::EPSILON);
 /// ```
-pub fn expected_score_teams(
+pub fn expected_score_two_teams(
     team_one: &[TrueSkillRating],
     team_two: &[TrueSkillRating],
     config: &TrueSkillConfig,
@@ -1309,7 +1309,7 @@ mod tests {
     }
 
     #[test]
-    fn test_expected_score_teams() {
+    fn test_expected_score_two_teams() {
         let player_one = TrueSkillRating {
             rating: 38.0,
             uncertainty: 3.0,
@@ -1328,7 +1328,7 @@ mod tests {
             uncertainty: 3.0,
         };
 
-        let (exp1, exp2) = expected_score_teams(
+        let (exp1, exp2) = expected_score_two_teams(
             &[player_one, player_two],
             &[player_three, player_four],
             &TrueSkillConfig::new(),

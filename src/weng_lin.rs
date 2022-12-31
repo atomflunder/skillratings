@@ -499,8 +499,7 @@ pub fn weng_lin_two_teams(
 ///     (&team_three[..], MultiTeamOutcome::new(3)), // Team 3 takes the third place.
 /// ];
 ///
-/// let new_teams =
-///     weng_lin_multi_team(&teams_and_ranks, &WengLinConfig::new());
+/// let new_teams = weng_lin_multi_team(&teams_and_ranks, &WengLinConfig::new());
 ///
 /// assert_eq!(new_teams.len(), 3);
 ///
@@ -668,11 +667,11 @@ pub fn expected_score(
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
-/// Similar to [`expected_score`].
+/// Similar to [`expected_score`] and [`expected_score_multi_team`].
 ///
 /// # Examples
 /// ```
-/// use skillratings::weng_lin::{expected_score_teams, WengLinConfig, WengLinRating};
+/// use skillratings::weng_lin::{expected_score_two_teams, WengLinConfig, WengLinRating};
 ///
 /// let team_one = vec![
 ///     WengLinRating {
@@ -697,13 +696,13 @@ pub fn expected_score(
 ///     },
 /// ];
 ///
-/// let (exp1, exp2) = expected_score_teams(&team_one, &team_two, &WengLinConfig::new());
+/// let (exp1, exp2) = expected_score_two_teams(&team_one, &team_two, &WengLinConfig::new());
 ///
 /// assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
 ///
 /// assert!(((exp1 * 100.0).round() - 21.0).abs() < f64::EPSILON);
 /// ```
-pub fn expected_score_teams(
+pub fn expected_score_two_teams(
     team_one: &[WengLinRating],
     team_two: &[WengLinRating],
     config: &WengLinConfig,
@@ -722,6 +721,99 @@ pub fn expected_score_teams(
         .sqrt();
 
     p_value(team_one_rating, team_two_rating, c)
+}
+
+#[must_use]
+/// Calculates the expected outcome of mulitple teams based on the Bradley-Terry model.
+///
+/// Takes in a slice of teams as a slice of [`WengLinRating`]s and a [`WengLinConfig`],
+/// and returns the probability of victory for each team as an [`f64`] between 1.0 and 0.0.
+///
+/// 1.0 means a certain victory for the team, 0.0 means certain loss.
+/// Values near `1 / Number of Teams` mean a draw is likely to occur.
+///
+/// Similar to [`expected_score`] and [`expected_score_two_teams`].
+///
+/// # Examples
+/// ```
+/// use skillratings::weng_lin::{expected_score_multi_team, WengLinConfig, WengLinRating};
+///
+/// let team_one = vec![
+///     WengLinRating {
+///         rating: 42.0,
+///         uncertainty: 2.1,
+///     },
+///     WengLinRating::new(),
+///     WengLinRating {
+///         rating: 12.0,
+///         uncertainty: 3.2,
+///     },
+/// ];
+/// let team_two = vec![
+///     WengLinRating {
+///         rating: 31.0,
+///         uncertainty: 1.2,
+///     },
+///     WengLinRating::new(),
+///     WengLinRating {
+///         rating: 41.0,
+///         uncertainty: 1.2,
+///     },
+/// ];
+/// let team_three = vec![
+///     WengLinRating {
+///         rating: 31.0,
+///         uncertainty: 1.2,
+///     },
+///     WengLinRating::new(),
+///     WengLinRating {
+///         rating: 41.0,
+///         uncertainty: 1.2,
+///     },
+/// ];
+///
+/// let exp =
+///     expected_score_multi_team(&[&team_one, &team_two, &team_three], &WengLinConfig::new());
+///
+/// assert!((exp[0] + exp[1] + exp[2] - 1.0).abs() < f64::EPSILON);
+/// assert_eq!((exp[0] * 100.0).round(), 14.0);
+/// assert_eq!((exp[1] * 100.0).round(), 43.0);
+/// assert_eq!((exp[2] * 100.0).round(), 43.0);
+/// ```
+pub fn expected_score_multi_team(teams: &[&[WengLinRating]], config: &WengLinConfig) -> Vec<f64> {
+    let mut ratings = Vec::with_capacity(teams.len());
+
+    for team in teams {
+        let team_rating: f64 = team.iter().map(|p| p.rating).sum();
+        ratings.push(team_rating);
+    }
+
+    let mut uncertainties_sq = Vec::with_capacity(teams.len());
+
+    for team in teams {
+        let team_uncertainty_sq: f64 = team.iter().map(|p| p.uncertainty.powi(2)).sum();
+        uncertainties_sq.push(team_uncertainty_sq);
+    }
+
+    let c = 2.0f64
+        .mul_add(config.beta.powi(2), uncertainties_sq.iter().sum::<f64>())
+        .sqrt();
+
+    let mut exps = Vec::with_capacity(ratings.len());
+
+    let mut sum = 0.0;
+
+    for rating in ratings {
+        let e = (rating / c).exp();
+        exps.push(e);
+        sum += e;
+    }
+
+    for exp in &mut exps {
+        *exp /= sum;
+    }
+
+    exps
 }
 
 fn p_value(rating_one: f64, rating_two: f64, c_value: f64) -> (f64, f64) {
@@ -1081,7 +1173,7 @@ mod tests {
         let p1 = vec![WengLinRating::new()];
         let p2 = vec![WengLinRating::new()];
 
-        let (exp1, exp2) = expected_score_teams(&p1, &p2, &WengLinConfig::new());
+        let (exp1, exp2) = expected_score_two_teams(&p1, &p2, &WengLinConfig::new());
 
         assert!((exp1 - exp2).abs() < f64::EPSILON);
 
@@ -1094,7 +1186,7 @@ mod tests {
             uncertainty: 1.2,
         }];
 
-        let (exp1, exp2) = expected_score_teams(&p1, &p2, &WengLinConfig::new());
+        let (exp1, exp2) = expected_score_two_teams(&p1, &p2, &WengLinConfig::new());
 
         assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
 
@@ -1112,7 +1204,7 @@ mod tests {
             uncertainty: 1.2,
         });
 
-        let (exp1, exp2) = expected_score_teams(&p1, &p2, &WengLinConfig::new());
+        let (exp1, exp2) = expected_score_two_teams(&p1, &p2, &WengLinConfig::new());
 
         assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
 
@@ -1121,9 +1213,45 @@ mod tests {
 
         p2.push(WengLinRating::new());
 
-        let (exp1, _) = expected_score_teams(&p1, &p2, &WengLinConfig::new());
+        let (exp1, _) = expected_score_two_teams(&p1, &p2, &WengLinConfig::new());
 
         assert!((exp1 - 0.213_836_440_502_453_18).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_expected_score_multi_teams() {
+        let team_one = vec![WengLinRating::new()];
+        let team_two = vec![WengLinRating::new()];
+        let team_three = vec![WengLinRating::new()];
+        let team_four = vec![WengLinRating::new()];
+
+        let exp = expected_score_multi_team(
+            &[&team_one, &team_two, &team_three, &team_four],
+            &WengLinConfig::new(),
+        );
+
+        assert_eq!(exp.len(), 4);
+        assert!((exp.iter().sum::<f64>() - 1.0).abs() < f64::EPSILON);
+        assert!((exp[0] - 0.25).abs() < f64::EPSILON);
+        assert!((exp[1] - 0.25).abs() < f64::EPSILON);
+        assert!((exp[2] - 0.25).abs() < f64::EPSILON);
+        assert!((exp[3] - 0.25).abs() < f64::EPSILON);
+
+        let team_one = vec![WengLinRating {
+            rating: 42.0,
+            uncertainty: 2.1,
+        }];
+        let team_two = vec![WengLinRating {
+            rating: 31.0,
+            uncertainty: 1.2,
+        }];
+
+        let exp = expected_score_multi_team(&[&team_one, &team_two], &WengLinConfig::new());
+
+        assert!((exp[0] + exp[1] - 1.0).abs() < f64::EPSILON);
+
+        assert!((exp[0] - 0.849_021_123_412_260_5).abs() < f64::EPSILON);
+        assert!((exp[1] - 0.150_978_876_587_739_42).abs() < f64::EPSILON);
     }
 
     #[test]
