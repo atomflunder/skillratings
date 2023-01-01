@@ -529,7 +529,7 @@ pub fn trueskill_two_teams(
 ///
 /// Takes in two players as [`TrueSkillRating`]s and returns the probability of a draw occurring as an [`f64`] between 1.0 and 0.0.
 ///
-/// Similar to [`match:quality_two_teams`].
+/// Similar to [`match_quality_two_teams`].
 ///
 /// # Examples
 /// ```
@@ -580,7 +580,7 @@ pub fn match_quality(
 ///
 /// # Examples
 /// ```
-/// use skillratings::trueskill::{match:quality_two_teams, TrueSkillConfig, TrueSkillRating};
+/// use skillratings::trueskill::{match_quality_two_teams, TrueSkillConfig, TrueSkillRating};
 ///
 /// let player_one = TrueSkillRating {
 ///     rating: 20.0,
@@ -600,7 +600,7 @@ pub fn match_quality(
 ///     uncertainty: 5.0,
 /// };
 ///
-/// let quality = match:quality_two_teams(
+/// let quality = match_quality_two_teams(
 ///     &vec![player_one, player_two],
 ///     &vec![player_three, player_four],
 ///     &TrueSkillConfig::new(),
@@ -699,7 +699,7 @@ pub fn expected_score(
 ///
 /// Similar to [`expected_score`].
 ///
-/// To see the actual chances of a draw occurring, please use [`match:quality_two_teams`].
+/// To see the actual chances of a draw occurring, please use [`match_quality_two_teams`].
 ///
 /// # Examples
 /// ```
