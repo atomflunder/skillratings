@@ -8,7 +8,7 @@ repository = "https://github.com/atomflunder/skillratings"
 homepage = "https://github.com/atomflunder/skillratings"
 documentation = "https://docs.rs/skillratings/"
 license = "MIT OR Apache-2.0"
-keywords = ["elo", "glicko", "glicko-2", "trueskill", "rating"]
+keywords = ["elo", "glicko", "trueskill", "skill", "rating"]
 categories = ["game-development", "algorithms", "mathematics"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
