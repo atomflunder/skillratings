@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.24.0 - 2023-01-01
+
+- Renamed `match_quality_teams` to `match_quality_two_teams` for consistency
+
 ## v0.23.0 - 2022-12-31
 
 - Added `expected_score_multi_team` function for `weng_lin`

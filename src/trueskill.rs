@@ -609,7 +609,7 @@ pub fn match_quality(
 /// // There is a 8.4% chance of a draw occurring.
 /// assert!((quality - 0.084_108_145_418_343_24).abs() < f64::EPSILON);
 /// ```
-pub fn match_quality_teams(
+pub fn match_quality_two_teams(
     team_one: &[TrueSkillRating],
     team_two: &[TrueSkillRating],
     config: &TrueSkillConfig,
@@ -1291,13 +1291,13 @@ mod tests {
             uncertainty: 5.0,
         };
 
-        let quality = match_quality_teams(
+        let quality = match_quality_two_teams(
             &[player_one, player_two],
             &[player_three, player_four],
             &TrueSkillConfig::new(),
         );
 
-        let quality2 = match_quality_teams(
+        let quality2 = match_quality_two_teams(
             &[player_three, player_four],
             &[player_one, player_two],
             &TrueSkillConfig::new(),
