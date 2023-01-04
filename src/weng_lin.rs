@@ -39,7 +39,7 @@
 //! // The config allows you to specify certain values in the Weng-Lin calculation.
 //! // Here we change the beta value from the default of 25 / 6 ≈ 4.167.
 //! // The beta value measures the difference you need in rating points
-//! // to achieve an 80% win-rate over another player.
+//! // to achieve a ~67% win-rate over another player.
 //! // Lower this value if your game is heavily reliant on pure skill,
 //! // or increase it if randomness plays a big factor in the outcome of the game.
 //! let config = WengLinConfig {
@@ -118,7 +118,7 @@ impl From<TrueSkillRating> for WengLinRating {
 /// Constants used in the Weng-Lin calculations.
 pub struct WengLinConfig {
     /// The skill-class width, aka the number of difference in rating points
-    /// needed to have an 80% win probability against another player.  
+    /// needed to have a ~67% win probability against another player.  
     /// By default set to 25 / 6 ≈ `4.167`.  
     /// If your game is more reliant on pure skill, decrease this value,
     /// if there are more random factors, increase it.
