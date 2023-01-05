@@ -529,7 +529,7 @@ pub fn trueskill_two_teams(
 ///
 /// Takes in two players as [`TrueSkillRating`]s and returns the probability of a draw occurring as an [`f64`] between 1.0 and 0.0.
 ///
-/// Similar to [`match_quality_two_teams`].
+/// Similar to [`match_quality_two_teams`] and [`match_quality_multi_team`].
 ///
 /// # Examples
 /// ```
@@ -576,7 +576,7 @@ pub fn match_quality(
 ///
 /// Takes in two teams as a Slice of [`TrueSkillRating`]s and returns the probability of a draw occurring as an [`f64`] between 1.0 and 0.0.
 ///
-/// Similar to [`match_quality`].
+/// Similar to [`match_quality`] and [`match_quality_multi_team`].
 ///
 /// # Examples
 /// ```
@@ -633,6 +633,103 @@ pub fn match_quality_two_teams(
         .exp();
 
     a * b
+}
+
+#[must_use]
+/// Gets the quality of the match, which is equal to the probability that the match will end in a draw.
+/// The higher the Value, the better the quality of the match.
+///
+/// Takes in multiple teams as a Slices of [`TrueSkillRating`]s, a [`TrueSkillConfig`]
+/// and returns the probability of a draw occurring as an [`f64`] between 1.0 and 0.0.
+///
+/// Similar to [`match_quality`] and [`match_quality_two_teams`].
+///
+/// # Examples
+/// ```
+/// use skillratings::trueskill::{match_quality_multi_team, TrueSkillConfig, TrueSkillRating};
+///
+/// let team_one = vec![
+///     TrueSkillRating {
+///         rating: 20.0,
+///         uncertainty: 2.0,
+///     },
+///     TrueSkillRating {
+///         rating: 25.0,
+///         uncertainty: 2.0,
+///     },
+/// ];
+/// let team_two = vec![
+///     TrueSkillRating {
+///         rating: 35.0,
+///         uncertainty: 2.0,
+///     },
+///     TrueSkillRating {
+///         rating: 20.0,
+///         uncertainty: 3.0,
+///     },
+/// ];
+/// let team_three = vec![
+///     TrueSkillRating {
+///         rating: 20.0,
+///         uncertainty: 2.0,
+///     },
+///     TrueSkillRating {
+///         rating: 22.0,
+///         uncertainty: 1.0,
+///     },
+/// ];
+///
+/// let quality = match_quality_multi_team(
+///     &[&team_one, &team_two, &team_three],
+///     &TrueSkillConfig::new(),
+/// );
+///
+/// // There is a ~28.6% chance of a draw occurring.
+/// assert_eq!(quality, 0.285_578_468_347_742_1);
+/// ```
+pub fn match_quality_multi_team(teams: &[&[TrueSkillRating]], config: &TrueSkillConfig) -> f64 {
+    if teams.is_empty() {
+        return 0.0;
+    }
+
+    for team in teams {
+        if team.is_empty() {
+            return 0.0;
+        }
+    }
+
+    let total_players = teams.iter().map(|t| t.len()).sum::<usize>();
+
+    let team_uncertainties_sq_flatten = teams
+        .iter()
+        .flat_map(|team| {
+            team.iter()
+                .map(|p| p.uncertainty.powi(2))
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    let team_ratings_flatten = teams
+        .iter()
+        .flat_map(|team| team.iter().map(|p| p.rating).collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+
+    let mean_matrix = Matrix::new_from_data(&team_ratings_flatten, total_players, 1);
+    let variance_matrix = Matrix::new_diagonal(&team_uncertainties_sq_flatten);
+
+    let rotated_a_matrix = Matrix::create_rotated_a_matrix(teams);
+    let a_matrix = rotated_a_matrix.transpose();
+
+    let a_ta = rotated_a_matrix.clone() * a_matrix.clone() * config.beta.powi(2);
+    let atsa = rotated_a_matrix.clone() * variance_matrix * a_matrix.clone();
+    let start = a_matrix * mean_matrix.transpose();
+    let middle = a_ta.clone() + atsa;
+
+    let end = rotated_a_matrix * mean_matrix;
+
+    let e_arg = (start * middle.inverse() * end * -0.5).determinant();
+    let s_arg = a_ta.determinant() / middle.determinant();
+
+    e_arg.exp() * s_arg.sqrt()
 }
 
 #[must_use]
@@ -770,7 +867,7 @@ pub fn expected_score_two_teams(
 ///
 /// Similar to [`expected_score`] and [`expected_score_multi_team`].
 ///
-/// To see the actual chances of a draw occurring, please use [`match_quality_multi_teams`] (To be implemented).
+/// To see the actual chances of a draw occurring, please use [`match_quality_multi_team`].
 ///
 /// # Examples
 /// ```
@@ -898,6 +995,242 @@ pub fn expected_score_multi_team(
 /// ```
 pub fn get_rank(player: &TrueSkillRating) -> f64 {
     player.rating - (player.uncertainty * 3.0)
+}
+
+#[derive(Clone, Debug)]
+struct Matrix {
+    data: Vec<f64>,
+    rows: usize,
+    cols: usize,
+}
+
+impl Matrix {
+    fn set(&mut self, row: usize, col: usize, val: f64) {
+        self.data[row * self.cols + col] = val;
+    }
+
+    fn get(&self, row: usize, col: usize) -> f64 {
+        self.data[row * self.cols + col]
+    }
+
+    fn new(rows: usize, cols: usize) -> Self {
+        Self {
+            data: vec![0.0; rows * cols],
+            rows,
+            cols,
+        }
+    }
+
+    fn new_from_data(data: &[f64], rows: usize, cols: usize) -> Self {
+        Self {
+            data: data.to_vec(),
+            rows,
+            cols,
+        }
+    }
+
+    fn new_diagonal(data: &[f64]) -> Self {
+        let mut matrix = Self::new(data.len(), data.len());
+
+        for (i, val) in data.iter().enumerate() {
+            matrix.set(i, i, *val);
+        }
+
+        matrix
+    }
+
+    fn create_rotated_a_matrix(teams: &[&[TrueSkillRating]]) -> Self {
+        let total_players = teams.iter().map(|team| team.len()).sum::<usize>();
+
+        let mut player_assignments: Vec<f64> = vec![];
+
+        let mut total_previous_players = 0;
+
+        let team_assignments_list_count = teams.len();
+
+        for current_column in 0..team_assignments_list_count - 1 {
+            let current_team = teams[current_column];
+
+            player_assignments.append(&mut vec![0.0; total_previous_players]);
+
+            for _current_player in current_team {
+                player_assignments.push(1.0); // TODO: Replace 1.0 by weight
+                total_previous_players += 1;
+            }
+
+            let mut rows_remaining = total_players - total_previous_players;
+            let next_team = teams[current_column + 1];
+
+            for _next_player in next_team {
+                player_assignments.push(-1.0 * 1.0); // TODO: Replace 1.0 by weight
+                rows_remaining -= 1;
+            }
+
+            player_assignments.append(&mut vec![0.0; rows_remaining]);
+        }
+
+        Self::new_from_data(
+            &player_assignments,
+            team_assignments_list_count - 1,
+            total_players as usize,
+        )
+    }
+
+    fn transpose(&self) -> Self {
+        let mut matrix = Self::new(self.cols, self.rows);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                matrix.set(j, i, self.get(i, j));
+            }
+        }
+
+        matrix
+    }
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+    fn determinant(&self) -> f64 {
+        assert_eq!(self.rows, self.cols);
+
+        if self.rows == 1 {
+            return self.get(0, 0);
+        }
+
+        let mut sum = 0.0;
+
+        for i in 0..self.rows {
+            sum += self.get(0, i) * self.minor(0, i).determinant() * (-1.0_f64).powi(i as i32);
+        }
+
+        sum
+    }
+
+    fn minor(&self, row: usize, col: usize) -> Self {
+        let mut matrix = Self::new(self.rows - 1, self.cols - 1);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                if i != row && j != col {
+                    matrix.set(
+                        if i > row { i - 1 } else { i },
+                        if j > col { j - 1 } else { j },
+                        self.get(i, j),
+                    );
+                }
+            }
+        }
+
+        matrix
+    }
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+    fn adjugate(&self) -> Self {
+        let mut matrix = Self::new(self.rows, self.cols);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                matrix.set(
+                    i,
+                    j,
+                    self.minor(j, i).determinant() * (-1.0_f64).powi((i + j) as i32),
+                );
+            }
+        }
+
+        matrix
+    }
+
+    fn inverse(&self) -> Self {
+        let det = self.determinant();
+
+        // Avoiding 1/0
+        assert!((det != 0.0), "Matrix is not invertible");
+
+        self.adjugate() * det.recip()
+    }
+}
+
+impl std::ops::Mul for Matrix {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        if self.cols == rhs.rows {
+            let mut matrix = Self::new(self.rows, rhs.cols);
+
+            for i in 0..self.rows {
+                for j in 0..rhs.cols {
+                    let mut sum = 0.0;
+
+                    for k in 0..self.cols {
+                        sum += self.get(i, k) * rhs.get(k, j);
+                    }
+
+                    matrix.set(i, j, sum);
+                }
+            }
+
+            matrix
+        } else if self.rows == rhs.cols {
+            let mut matrix = Self::new(self.cols, rhs.rows);
+
+            for i in 0..self.cols {
+                for j in 0..rhs.rows {
+                    let mut sum = 0.0;
+
+                    for k in 0..self.rows {
+                        sum += self.get(k, i) * rhs.get(j, k);
+                    }
+
+                    matrix.set(i, j, sum);
+                }
+            }
+
+            matrix
+        } else {
+            panic!("Cannot multiply matrices with incompatible dimensions");
+        }
+    }
+}
+
+impl std::ops::Mul<f64> for Matrix {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        let mut matrix = Self::new(self.rows, self.cols);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                matrix.set(i, j, self.get(i, j) * rhs);
+            }
+        }
+
+        matrix
+    }
+}
+
+impl std::ops::Add for Matrix {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        assert_eq!(
+            self.rows, rhs.rows,
+            "Cannot add matrices with different row counts"
+        );
+        assert_eq!(
+            self.cols, rhs.cols,
+            "Cannot add matrices with different column counts"
+        );
+
+        let mut matrix = Self::new(self.rows, self.cols);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                matrix.set(i, j, self.get(i, j) + rhs.get(i, j));
+            }
+        }
+
+        matrix
+    }
 }
 
 fn draw_margin(draw_probability: f64, beta: f64, total_players: f64) -> f64 {
@@ -1515,6 +1848,21 @@ mod tests {
         assert!((e1 - e[1]).abs() < f64::EPSILON);
         assert!((exp1 - e[0]).abs() < f64::EPSILON);
         assert!((exp2 - e[1]).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_match_quality_multi_team() {
+        let team_one = vec![TrueSkillRating::new(); 2];
+        let team_two = vec![TrueSkillRating::from((30.0, 3.0)); 2];
+        let team_three = vec![TrueSkillRating::from((40.0, 2.0)); 2];
+
+        let exp = match_quality_multi_team(
+            &[&team_one, &team_two, &team_three],
+            &TrueSkillConfig::new(),
+        );
+
+        // Double checked this with the most popular python implementation.
+        assert!((exp - 0.017_538_349_223_941_27).abs() < f64::EPSILON);
     }
 
     #[test]
