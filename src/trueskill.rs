@@ -642,7 +642,7 @@ pub fn match_quality_two_teams(
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
-/// Similar to [`expected_score_two_teams`].
+/// Similar to [`expected_score_two_teams`] and [`expected_score_multi_team`].
 ///
 /// To see the actual chances of a draw occurring, please use [`match_quality`].
 ///
@@ -697,7 +697,7 @@ pub fn expected_score(
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
-/// Similar to [`expected_score`].
+/// Similar to [`expected_score`] and [`expected_score_multi_team`].
 ///
 /// To see the actual chances of a draw occurring, please use [`match_quality_two_teams`].
 ///
@@ -758,6 +758,116 @@ pub fn expected_score_two_teams(
     let exp_two = 1.0 - exp_one;
 
     (exp_one, exp_two)
+}
+
+#[must_use]
+/// Calculates the expected outcome of multiple teams based on TrueSkill.
+///
+/// Takes in multiple teams as Slices of [`TrueSkillRating`]s, a [`TrueSkillConfig`]
+/// and returns the probability of victory for each team as an [`f64`] between 1.0 and 0.0.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near `1 / Number of Teams` mean a draw is likely to occur.
+///
+/// Similar to [`expected_score`] and [`expected_score_multi_team`].
+///
+/// To see the actual chances of a draw occurring, please use [`match_quality_multi_teams`] (To be implemented).
+///
+/// # Examples
+/// ```
+/// use skillratings::trueskill::{expected_score_multi_team, TrueSkillConfig, TrueSkillRating};
+///
+/// let team_one = vec![
+///     TrueSkillRating {
+///         rating: 38.0,
+///         uncertainty: 3.0,
+///     },
+///     TrueSkillRating {
+///         rating: 38.0,
+///         uncertainty: 3.0,
+///     },
+/// ];
+///
+/// let team_two = vec![
+///     TrueSkillRating {
+///         rating: 44.0,
+///         uncertainty: 3.0,
+///     },
+///     TrueSkillRating {
+///         rating: 44.0,
+///         uncertainty: 3.0,
+///     },
+/// ];
+///
+/// let team_three = vec![
+///     TrueSkillRating {
+///         rating: 50.0,
+///         uncertainty: 3.0,
+///     },
+///     TrueSkillRating {
+///         rating: 50.0,
+///         uncertainty: 3.0,
+///     },
+/// ];
+///
+/// let exp = expected_score_multi_team(
+///     &[&team_one, &team_two, &team_three],
+///     &TrueSkillConfig::new(),
+/// );
+///
+/// assert!((exp.iter().sum::<f64>() - 1.0).abs() < f64::EPSILON);
+///
+/// // Team one has a 6% chance of winning, Team two a 33% and Team three a 61% chance.
+/// assert!((exp[0] * 100.0 - 6.0).round().abs() < f64::EPSILON);
+/// assert!((exp[1] * 100.0 - 33.0).round().abs() < f64::EPSILON);
+/// assert!((exp[2] * 100.0 - 61.0).round().abs() < f64::EPSILON);
+/// ```
+pub fn expected_score_multi_team(
+    teams: &[&[TrueSkillRating]],
+    config: &TrueSkillConfig,
+) -> Vec<f64> {
+    let player_count = teams.iter().map(|t| t.len()).sum::<usize>() as f64;
+
+    let mut win_probabilities = Vec::with_capacity(teams.len());
+    let mut total_probability = 0.0;
+
+    for (i, team_one) in teams.iter().enumerate() {
+        // We are calculating the probability of team_one winning against all other teams.
+        // We do this for every team, sum up the probabilities
+        // and then divide by the total probability to get the probability of winning for each team.
+        let mut current_team_probabilities = Vec::with_capacity(teams.len() - 1);
+        let team_one_ratings = team_one.iter().map(|p| p.rating).sum::<f64>();
+        let team_one_uncertainties = team_one.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
+
+        for (j, team_two) in teams.iter().enumerate() {
+            if i == j {
+                continue;
+            }
+
+            let team_two_ratings = team_two.iter().map(|p| p.rating).sum::<f64>();
+            let team_two_uncertainties =
+                team_two.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
+
+            let delta = team_one_ratings - team_two_ratings;
+            let denom = (team_two_uncertainties
+                + player_count.mul_add(config.beta.powi(2), team_one_uncertainties))
+            .sqrt();
+
+            let result = cdf(delta / denom, 0.0, 1.0);
+
+            current_team_probabilities.push(result);
+            total_probability += result;
+        }
+
+        win_probabilities.push(current_team_probabilities);
+    }
+
+    let mut expected_scores = Vec::new();
+
+    for probability in win_probabilities {
+        expected_scores.push(probability.iter().sum::<f64>() / total_probability);
+    }
+
+    expected_scores
 }
 
 #[must_use]
@@ -1393,6 +1503,91 @@ mod tests {
         assert!((exp2 * 100.0 - 20.0).round().abs() < f64::EPSILON);
 
         assert!((exp1.mul_add(100.0, exp2 * 100.0).round() - 100.0).abs() < f64::EPSILON);
+
+        // Testing if the other functions give the same result.
+        let team_one = [TrueSkillRating::from((44.0, 3.0))];
+        let team_two = [TrueSkillRating::from((38.0, 3.0))];
+
+        let (e0, e1) = expected_score_two_teams(&team_one, &team_two, &TrueSkillConfig::new());
+        let e = expected_score_multi_team(&[&team_one, &team_two], &TrueSkillConfig::new());
+
+        assert!((e0 - e[0]).abs() < f64::EPSILON);
+        assert!((e1 - e[1]).abs() < f64::EPSILON);
+        assert!((exp1 - e[0]).abs() < f64::EPSILON);
+        assert!((exp2 - e[1]).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_multi_team_expected() {
+        let team_one = vec![
+            TrueSkillRating {
+                rating: 38.0,
+                uncertainty: 3.0,
+            },
+            TrueSkillRating {
+                rating: 38.0,
+                uncertainty: 3.0,
+            },
+        ];
+
+        let team_two = vec![
+            TrueSkillRating {
+                rating: 44.0,
+                uncertainty: 3.0,
+            },
+            TrueSkillRating {
+                rating: 44.0,
+                uncertainty: 3.0,
+            },
+        ];
+
+        let team_three = vec![
+            TrueSkillRating {
+                rating: 50.0,
+                uncertainty: 3.0,
+            },
+            TrueSkillRating {
+                rating: 50.0,
+                uncertainty: 3.0,
+            },
+        ];
+
+        let exp = expected_score_multi_team(
+            &[&team_one, &team_two, &team_three],
+            &TrueSkillConfig::new(),
+        );
+
+        assert!((exp.iter().sum::<f64>() - 1.0).abs() < f64::EPSILON);
+
+        assert_eq!(
+            exp,
+            vec![
+                0.058_904_655_169_257_615,
+                0.333_333_333_333_333_3,
+                0.607_762_011_497_409
+            ]
+        );
+
+        let team_one = vec![TrueSkillRating::new(); 10];
+        let team_two = vec![TrueSkillRating::new(); 10];
+        let team_three = vec![TrueSkillRating::new(); 10];
+        let team_four = vec![TrueSkillRating::new(); 10];
+
+        let exp = expected_score_multi_team(
+            &[&team_one, &team_two, &team_three, &team_four],
+            &TrueSkillConfig::new(),
+        );
+
+        assert!((exp.iter().sum::<f64>() - 1.0).abs() < f64::EPSILON);
+        assert_eq!(
+            exp,
+            vec![
+                0.249_999_999_999_999_97,
+                0.249_999_999_999_999_97,
+                0.249_999_999_999_999_97,
+                0.249_999_999_999_999_97
+            ]
+        );
     }
 
     #[test]
