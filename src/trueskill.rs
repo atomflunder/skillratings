@@ -529,7 +529,7 @@ pub fn trueskill_two_teams(
 ///
 /// Takes in two players as [`TrueSkillRating`]s and returns the probability of a draw occurring as an [`f64`] between 1.0 and 0.0.
 ///
-/// Similar to [`match_quality_two_teams`].
+/// Similar to [`match_quality_two_teams`] and [`match_quality_multi_team`].
 ///
 /// # Examples
 /// ```
@@ -576,7 +576,7 @@ pub fn match_quality(
 ///
 /// Takes in two teams as a Slice of [`TrueSkillRating`]s and returns the probability of a draw occurring as an [`f64`] between 1.0 and 0.0.
 ///
-/// Similar to [`match_quality`].
+/// Similar to [`match_quality`] and [`match_quality_multi_team`].
 ///
 /// # Examples
 /// ```
@@ -636,13 +636,110 @@ pub fn match_quality_two_teams(
 }
 
 #[must_use]
+/// Gets the quality of the match, which is equal to the probability that the match will end in a draw.
+/// The higher the Value, the better the quality of the match.
+///
+/// Takes in multiple teams as a Slices of [`TrueSkillRating`]s, a [`TrueSkillConfig`]
+/// and returns the probability of a draw occurring as an [`f64`] between 1.0 and 0.0.
+///
+/// Similar to [`match_quality`] and [`match_quality_two_teams`].
+///
+/// # Examples
+/// ```
+/// use skillratings::trueskill::{match_quality_multi_team, TrueSkillConfig, TrueSkillRating};
+///
+/// let team_one = vec![
+///     TrueSkillRating {
+///         rating: 20.0,
+///         uncertainty: 2.0,
+///     },
+///     TrueSkillRating {
+///         rating: 25.0,
+///         uncertainty: 2.0,
+///     },
+/// ];
+/// let team_two = vec![
+///     TrueSkillRating {
+///         rating: 35.0,
+///         uncertainty: 2.0,
+///     },
+///     TrueSkillRating {
+///         rating: 20.0,
+///         uncertainty: 3.0,
+///     },
+/// ];
+/// let team_three = vec![
+///     TrueSkillRating {
+///         rating: 20.0,
+///         uncertainty: 2.0,
+///     },
+///     TrueSkillRating {
+///         rating: 22.0,
+///         uncertainty: 1.0,
+///     },
+/// ];
+///
+/// let quality = match_quality_multi_team(
+///     &[&team_one, &team_two, &team_three],
+///     &TrueSkillConfig::new(),
+/// );
+///
+/// // There is a ~28.6% chance of a draw occurring.
+/// assert_eq!(quality, 0.285_578_468_347_742_1);
+/// ```
+pub fn match_quality_multi_team(teams: &[&[TrueSkillRating]], config: &TrueSkillConfig) -> f64 {
+    if teams.is_empty() {
+        return 0.0;
+    }
+
+    for team in teams {
+        if team.is_empty() {
+            return 0.0;
+        }
+    }
+
+    let total_players = teams.iter().map(|t| t.len()).sum::<usize>();
+
+    let team_uncertainties_sq_flatten = teams
+        .iter()
+        .flat_map(|team| {
+            team.iter()
+                .map(|p| p.uncertainty.powi(2))
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    let team_ratings_flatten = teams
+        .iter()
+        .flat_map(|team| team.iter().map(|p| p.rating).collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+
+    let mean_matrix = Matrix::new_from_data(&team_ratings_flatten, total_players, 1);
+    let variance_matrix = Matrix::new_diagonal(&team_uncertainties_sq_flatten);
+
+    let rotated_a_matrix = Matrix::create_rotated_a_matrix(teams);
+    let a_matrix = rotated_a_matrix.transpose();
+
+    let a_ta = rotated_a_matrix.clone() * a_matrix.clone() * config.beta.powi(2);
+    let atsa = rotated_a_matrix.clone() * variance_matrix * a_matrix.clone();
+    let start = a_matrix * mean_matrix.transpose();
+    let middle = a_ta.clone() + atsa;
+
+    let end = rotated_a_matrix * mean_matrix;
+
+    let e_arg = (start * middle.inverse() * end * -0.5).determinant();
+    let s_arg = a_ta.determinant() / middle.determinant();
+
+    e_arg.exp() * s_arg.sqrt()
+}
+
+#[must_use]
 /// Calculates the expected outcome of two players based on TrueSkill.
 ///
 /// Takes in two players as [`TrueSkillRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
-/// Similar to [`expected_score_two_teams`].
+/// Similar to [`expected_score_two_teams`] and [`expected_score_multi_team`].
 ///
 /// To see the actual chances of a draw occurring, please use [`match_quality`].
 ///
@@ -697,7 +794,7 @@ pub fn expected_score(
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
-/// Similar to [`expected_score`].
+/// Similar to [`expected_score`] and [`expected_score_multi_team`].
 ///
 /// To see the actual chances of a draw occurring, please use [`match_quality_two_teams`].
 ///
@@ -758,6 +855,116 @@ pub fn expected_score_two_teams(
     let exp_two = 1.0 - exp_one;
 
     (exp_one, exp_two)
+}
+
+#[must_use]
+/// Calculates the expected outcome of multiple teams based on TrueSkill.
+///
+/// Takes in multiple teams as Slices of [`TrueSkillRating`]s, a [`TrueSkillConfig`]
+/// and returns the probability of victory for each team as an [`f64`] between 1.0 and 0.0.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near `1 / Number of Teams` mean a draw is likely to occur.
+///
+/// Similar to [`expected_score`] and [`expected_score_multi_team`].
+///
+/// To see the actual chances of a draw occurring, please use [`match_quality_multi_team`].
+///
+/// # Examples
+/// ```
+/// use skillratings::trueskill::{expected_score_multi_team, TrueSkillConfig, TrueSkillRating};
+///
+/// let team_one = vec![
+///     TrueSkillRating {
+///         rating: 38.0,
+///         uncertainty: 3.0,
+///     },
+///     TrueSkillRating {
+///         rating: 38.0,
+///         uncertainty: 3.0,
+///     },
+/// ];
+///
+/// let team_two = vec![
+///     TrueSkillRating {
+///         rating: 44.0,
+///         uncertainty: 3.0,
+///     },
+///     TrueSkillRating {
+///         rating: 44.0,
+///         uncertainty: 3.0,
+///     },
+/// ];
+///
+/// let team_three = vec![
+///     TrueSkillRating {
+///         rating: 50.0,
+///         uncertainty: 3.0,
+///     },
+///     TrueSkillRating {
+///         rating: 50.0,
+///         uncertainty: 3.0,
+///     },
+/// ];
+///
+/// let exp = expected_score_multi_team(
+///     &[&team_one, &team_two, &team_three],
+///     &TrueSkillConfig::new(),
+/// );
+///
+/// assert!((exp.iter().sum::<f64>() - 1.0).abs() < f64::EPSILON);
+///
+/// // Team one has a 6% chance of winning, Team two a 33% and Team three a 61% chance.
+/// assert!((exp[0] * 100.0 - 6.0).round().abs() < f64::EPSILON);
+/// assert!((exp[1] * 100.0 - 33.0).round().abs() < f64::EPSILON);
+/// assert!((exp[2] * 100.0 - 61.0).round().abs() < f64::EPSILON);
+/// ```
+pub fn expected_score_multi_team(
+    teams: &[&[TrueSkillRating]],
+    config: &TrueSkillConfig,
+) -> Vec<f64> {
+    let player_count = teams.iter().map(|t| t.len()).sum::<usize>() as f64;
+
+    let mut win_probabilities = Vec::with_capacity(teams.len());
+    let mut total_probability = 0.0;
+
+    for (i, team_one) in teams.iter().enumerate() {
+        // We are calculating the probability of team_one winning against all other teams.
+        // We do this for every team, sum up the probabilities
+        // and then divide by the total probability to get the probability of winning for each team.
+        let mut current_team_probabilities = Vec::with_capacity(teams.len() - 1);
+        let team_one_ratings = team_one.iter().map(|p| p.rating).sum::<f64>();
+        let team_one_uncertainties = team_one.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
+
+        for (j, team_two) in teams.iter().enumerate() {
+            if i == j {
+                continue;
+            }
+
+            let team_two_ratings = team_two.iter().map(|p| p.rating).sum::<f64>();
+            let team_two_uncertainties =
+                team_two.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
+
+            let delta = team_one_ratings - team_two_ratings;
+            let denom = (team_two_uncertainties
+                + player_count.mul_add(config.beta.powi(2), team_one_uncertainties))
+            .sqrt();
+
+            let result = cdf(delta / denom, 0.0, 1.0);
+
+            current_team_probabilities.push(result);
+            total_probability += result;
+        }
+
+        win_probabilities.push(current_team_probabilities);
+    }
+
+    let mut expected_scores = Vec::new();
+
+    for probability in win_probabilities {
+        expected_scores.push(probability.iter().sum::<f64>() / total_probability);
+    }
+
+    expected_scores
 }
 
 #[must_use]
@@ -981,6 +1188,244 @@ fn inverse_cdf(x: f64, mu: f64, sigma: f64) -> f64 {
 /// The probability density function.
 fn pdf(x: f64, mu: f64, sigma: f64) -> f64 {
     ((2.0 * PI).sqrt() * sigma.abs()).recip() * (-(((x - mu) / sigma.abs()).powi(2) / 2.0)).exp()
+}
+
+// Same here, this Matrix could have been imported, but we implement it ourselves,
+// since we only have to use some basic things here.
+#[derive(Clone, Debug)]
+struct Matrix {
+    data: Vec<f64>,
+    rows: usize,
+    cols: usize,
+}
+
+impl Matrix {
+    fn set(&mut self, row: usize, col: usize, val: f64) {
+        self.data[row * self.cols + col] = val;
+    }
+
+    fn get(&self, row: usize, col: usize) -> f64 {
+        self.data[row * self.cols + col]
+    }
+
+    fn new(rows: usize, cols: usize) -> Self {
+        Self {
+            data: vec![0.0; rows * cols],
+            rows,
+            cols,
+        }
+    }
+
+    fn new_from_data(data: &[f64], rows: usize, cols: usize) -> Self {
+        Self {
+            data: data.to_vec(),
+            rows,
+            cols,
+        }
+    }
+
+    fn new_diagonal(data: &[f64]) -> Self {
+        let mut matrix = Self::new(data.len(), data.len());
+
+        for (i, val) in data.iter().enumerate() {
+            matrix.set(i, i, *val);
+        }
+
+        matrix
+    }
+
+    fn create_rotated_a_matrix(teams: &[&[TrueSkillRating]]) -> Self {
+        let total_players = teams.iter().map(|team| team.len()).sum::<usize>();
+
+        let mut player_assignments: Vec<f64> = vec![];
+
+        let mut total_previous_players = 0;
+
+        let team_assignments_list_count = teams.len();
+
+        for current_column in 0..team_assignments_list_count - 1 {
+            let current_team = teams[current_column];
+
+            player_assignments.append(&mut vec![0.0; total_previous_players]);
+
+            for _current_player in current_team {
+                player_assignments.push(1.0); // TODO: Replace 1.0 by partial play weighting
+                total_previous_players += 1;
+            }
+
+            let mut rows_remaining = total_players - total_previous_players;
+            let next_team = teams[current_column + 1];
+
+            for _next_player in next_team {
+                player_assignments.push(-1.0 * 1.0); // TODO: Replace 1.0 by partial play weighting
+                rows_remaining -= 1;
+            }
+
+            player_assignments.append(&mut vec![0.0; rows_remaining]);
+        }
+
+        Self::new_from_data(
+            &player_assignments,
+            team_assignments_list_count - 1,
+            total_players as usize,
+        )
+    }
+
+    fn transpose(&self) -> Self {
+        let mut matrix = Self::new(self.cols, self.rows);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                matrix.set(j, i, self.get(i, j));
+            }
+        }
+
+        matrix
+    }
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+    fn determinant(&self) -> f64 {
+        assert_eq!(self.rows, self.cols, "Matrix must be square");
+
+        if self.rows == 1 {
+            return self.get(0, 0);
+        }
+
+        let mut sum = 0.0;
+
+        for i in 0..self.rows {
+            sum += self.get(0, i) * self.minor(0, i).determinant() * (-1.0_f64).powi(i as i32);
+        }
+
+        sum
+    }
+
+    fn minor(&self, row: usize, col: usize) -> Self {
+        let mut matrix = Self::new(self.rows - 1, self.cols - 1);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                if i != row && j != col {
+                    matrix.set(
+                        if i > row { i - 1 } else { i },
+                        if j > col { j - 1 } else { j },
+                        self.get(i, j),
+                    );
+                }
+            }
+        }
+
+        matrix
+    }
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+    fn adjugate(&self) -> Self {
+        let mut matrix = Self::new(self.rows, self.cols);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                matrix.set(
+                    i,
+                    j,
+                    self.minor(j, i).determinant() * (-1.0_f64).powi((i + j) as i32),
+                );
+            }
+        }
+
+        matrix
+    }
+
+    fn inverse(&self) -> Self {
+        let det = self.determinant();
+
+        // Avoiding 1/0
+        assert!((det != 0.0), "Matrix is not invertible");
+
+        self.adjugate() * det.recip()
+    }
+}
+
+impl std::ops::Mul for Matrix {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        if self.cols == rhs.rows {
+            let mut matrix = Self::new(self.rows, rhs.cols);
+
+            for i in 0..self.rows {
+                for j in 0..rhs.cols {
+                    let mut sum = 0.0;
+
+                    for k in 0..self.cols {
+                        sum += self.get(i, k) * rhs.get(k, j);
+                    }
+
+                    matrix.set(i, j, sum);
+                }
+            }
+
+            matrix
+        } else if self.rows == rhs.cols {
+            let mut matrix = Self::new(self.cols, rhs.rows);
+
+            for i in 0..self.cols {
+                for j in 0..rhs.rows {
+                    let mut sum = 0.0;
+
+                    for k in 0..self.rows {
+                        sum += self.get(k, i) * rhs.get(j, k);
+                    }
+
+                    matrix.set(i, j, sum);
+                }
+            }
+
+            matrix
+        } else {
+            panic!("Cannot multiply matrices with incompatible dimensions");
+        }
+    }
+}
+
+impl std::ops::Mul<f64> for Matrix {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        let mut matrix = Self::new(self.rows, self.cols);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                matrix.set(i, j, self.get(i, j) * rhs);
+            }
+        }
+
+        matrix
+    }
+}
+
+impl std::ops::Add for Matrix {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        assert_eq!(
+            self.rows, rhs.rows,
+            "Cannot add matrices with different row counts"
+        );
+        assert_eq!(
+            self.cols, rhs.cols,
+            "Cannot add matrices with different column counts"
+        );
+
+        let mut matrix = Self::new(self.rows, self.cols);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                matrix.set(i, j, self.get(i, j) + rhs.get(i, j));
+            }
+        }
+
+        matrix
+    }
 }
 
 #[cfg(test)]
@@ -1393,6 +1838,114 @@ mod tests {
         assert!((exp2 * 100.0 - 20.0).round().abs() < f64::EPSILON);
 
         assert!((exp1.mul_add(100.0, exp2 * 100.0).round() - 100.0).abs() < f64::EPSILON);
+
+        // Testing if the other functions give the same result.
+        let team_one = [TrueSkillRating::from((44.0, 3.0))];
+        let team_two = [TrueSkillRating::from((38.0, 3.0))];
+
+        let (e0, e1) = expected_score_two_teams(&team_one, &team_two, &TrueSkillConfig::new());
+        let e = expected_score_multi_team(&[&team_one, &team_two], &TrueSkillConfig::new());
+
+        assert!((e0 - e[0]).abs() < f64::EPSILON);
+        assert!((e1 - e[1]).abs() < f64::EPSILON);
+        assert!((exp1 - e[0]).abs() < f64::EPSILON);
+        assert!((exp2 - e[1]).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_match_quality_multi_team() {
+        let team_one = vec![TrueSkillRating::new(); 2];
+        let team_two = vec![TrueSkillRating::from((30.0, 3.0)); 2];
+        let team_three = vec![TrueSkillRating::from((40.0, 2.0)); 2];
+
+        let exp = match_quality_multi_team(
+            &[&team_one, &team_two, &team_three],
+            &TrueSkillConfig::new(),
+        );
+
+        // Double checked this with the most popular python implementation.
+        assert!((exp - 0.017_538_349_223_941_27).abs() < f64::EPSILON);
+
+        let exp = match_quality_multi_team(&[], &TrueSkillConfig::default());
+
+        assert!(exp < f64::EPSILON);
+
+        let exp = match_quality_multi_team(&[&team_one, &[]], &TrueSkillConfig::default());
+
+        assert!(exp < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_multi_team_expected() {
+        let team_one = vec![
+            TrueSkillRating {
+                rating: 38.0,
+                uncertainty: 3.0,
+            },
+            TrueSkillRating {
+                rating: 38.0,
+                uncertainty: 3.0,
+            },
+        ];
+
+        let team_two = vec![
+            TrueSkillRating {
+                rating: 44.0,
+                uncertainty: 3.0,
+            },
+            TrueSkillRating {
+                rating: 44.0,
+                uncertainty: 3.0,
+            },
+        ];
+
+        let team_three = vec![
+            TrueSkillRating {
+                rating: 50.0,
+                uncertainty: 3.0,
+            },
+            TrueSkillRating {
+                rating: 50.0,
+                uncertainty: 3.0,
+            },
+        ];
+
+        let exp = expected_score_multi_team(
+            &[&team_one, &team_two, &team_three],
+            &TrueSkillConfig::new(),
+        );
+
+        assert!((exp.iter().sum::<f64>() - 1.0).abs() < f64::EPSILON);
+
+        assert_eq!(
+            exp,
+            vec![
+                0.058_904_655_169_257_615,
+                0.333_333_333_333_333_3,
+                0.607_762_011_497_409
+            ]
+        );
+
+        let team_one = vec![TrueSkillRating::new(); 10];
+        let team_two = vec![TrueSkillRating::new(); 10];
+        let team_three = vec![TrueSkillRating::new(); 10];
+        let team_four = vec![TrueSkillRating::new(); 10];
+
+        let exp = expected_score_multi_team(
+            &[&team_one, &team_two, &team_three, &team_four],
+            &TrueSkillConfig::new(),
+        );
+
+        assert!((exp.iter().sum::<f64>() - 1.0).abs() < f64::EPSILON);
+        assert_eq!(
+            exp,
+            vec![
+                0.249_999_999_999_999_97,
+                0.249_999_999_999_999_97,
+                0.249_999_999_999_999_97,
+                0.249_999_999_999_999_97
+            ]
+        );
     }
 
     #[test]
@@ -1490,6 +2043,26 @@ mod tests {
     }
 
     #[test]
+    fn test_matrix_panics() {
+        use std::panic::catch_unwind;
+
+        let result = catch_unwind(|| Matrix::new(2, 3).determinant());
+        assert!(result.is_err());
+
+        let result = catch_unwind(|| Matrix::new(2, 2).inverse());
+        assert!(result.is_err());
+
+        let result = catch_unwind(|| Matrix::new(2, 2) * Matrix::new(3, 3));
+        assert!(result.is_err());
+
+        let result = catch_unwind(|| Matrix::new(3, 2) + Matrix::new(2, 2));
+        assert!(result.is_err());
+
+        let result = catch_unwind(|| Matrix::new(2, 2) + Matrix::new(2, 3));
+        assert!(result.is_err());
+    }
+
+    #[test]
     #[allow(clippy::clone_on_copy)]
     fn test_misc_stuff() {
         let player_one = TrueSkillRating::new();
@@ -1500,6 +2073,8 @@ mod tests {
 
         assert!(!format!("{:?}", player_one).is_empty());
         assert!(!format!("{:?}", config).is_empty());
+
+        assert!(!format!("{:?}", Matrix::new(2, 3)).is_empty());
 
         assert_eq!(player_one, TrueSkillRating::from((25.0, 25.0 / 3.0)));
     }
