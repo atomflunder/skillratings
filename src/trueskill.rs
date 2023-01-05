@@ -1148,242 +1148,6 @@ pub fn get_rank(player: &TrueSkillRating) -> f64 {
     player.uncertainty.mul_add(-3.0, player.rating)
 }
 
-#[derive(Clone, Debug)]
-struct Matrix {
-    data: Vec<f64>,
-    rows: usize,
-    cols: usize,
-}
-
-impl Matrix {
-    fn set(&mut self, row: usize, col: usize, val: f64) {
-        self.data[row * self.cols + col] = val;
-    }
-
-    fn get(&self, row: usize, col: usize) -> f64 {
-        self.data[row * self.cols + col]
-    }
-
-    fn new(rows: usize, cols: usize) -> Self {
-        Self {
-            data: vec![0.0; rows * cols],
-            rows,
-            cols,
-        }
-    }
-
-    fn new_from_data(data: &[f64], rows: usize, cols: usize) -> Self {
-        Self {
-            data: data.to_vec(),
-            rows,
-            cols,
-        }
-    }
-
-    fn new_diagonal(data: &[f64]) -> Self {
-        let mut matrix = Self::new(data.len(), data.len());
-
-        for (i, val) in data.iter().enumerate() {
-            matrix.set(i, i, *val);
-        }
-
-        matrix
-    }
-
-    fn create_rotated_a_matrix(teams: &[&[TrueSkillRating]]) -> Self {
-        let total_players = teams.iter().map(|team| team.len()).sum::<usize>();
-
-        let mut player_assignments: Vec<f64> = vec![];
-
-        let mut total_previous_players = 0;
-
-        let team_assignments_list_count = teams.len();
-
-        for current_column in 0..team_assignments_list_count - 1 {
-            let current_team = teams[current_column];
-
-            player_assignments.append(&mut vec![0.0; total_previous_players]);
-
-            for _current_player in current_team {
-                player_assignments.push(1.0); // TODO: Replace 1.0 by weight
-                total_previous_players += 1;
-            }
-
-            let mut rows_remaining = total_players - total_previous_players;
-            let next_team = teams[current_column + 1];
-
-            for _next_player in next_team {
-                player_assignments.push(-1.0 * 1.0); // TODO: Replace 1.0 by weight
-                rows_remaining -= 1;
-            }
-
-            player_assignments.append(&mut vec![0.0; rows_remaining]);
-        }
-
-        Self::new_from_data(
-            &player_assignments,
-            team_assignments_list_count - 1,
-            total_players as usize,
-        )
-    }
-
-    fn transpose(&self) -> Self {
-        let mut matrix = Self::new(self.cols, self.rows);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                matrix.set(j, i, self.get(i, j));
-            }
-        }
-
-        matrix
-    }
-
-    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-    fn determinant(&self) -> f64 {
-        assert_eq!(self.rows, self.cols);
-
-        if self.rows == 1 {
-            return self.get(0, 0);
-        }
-
-        let mut sum = 0.0;
-
-        for i in 0..self.rows {
-            sum += self.get(0, i) * self.minor(0, i).determinant() * (-1.0_f64).powi(i as i32);
-        }
-
-        sum
-    }
-
-    fn minor(&self, row: usize, col: usize) -> Self {
-        let mut matrix = Self::new(self.rows - 1, self.cols - 1);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                if i != row && j != col {
-                    matrix.set(
-                        if i > row { i - 1 } else { i },
-                        if j > col { j - 1 } else { j },
-                        self.get(i, j),
-                    );
-                }
-            }
-        }
-
-        matrix
-    }
-
-    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-    fn adjugate(&self) -> Self {
-        let mut matrix = Self::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                matrix.set(
-                    i,
-                    j,
-                    self.minor(j, i).determinant() * (-1.0_f64).powi((i + j) as i32),
-                );
-            }
-        }
-
-        matrix
-    }
-
-    fn inverse(&self) -> Self {
-        let det = self.determinant();
-
-        // Avoiding 1/0
-        assert!((det != 0.0), "Matrix is not invertible");
-
-        self.adjugate() * det.recip()
-    }
-}
-
-impl std::ops::Mul for Matrix {
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        if self.cols == rhs.rows {
-            let mut matrix = Self::new(self.rows, rhs.cols);
-
-            for i in 0..self.rows {
-                for j in 0..rhs.cols {
-                    let mut sum = 0.0;
-
-                    for k in 0..self.cols {
-                        sum += self.get(i, k) * rhs.get(k, j);
-                    }
-
-                    matrix.set(i, j, sum);
-                }
-            }
-
-            matrix
-        } else if self.rows == rhs.cols {
-            let mut matrix = Self::new(self.cols, rhs.rows);
-
-            for i in 0..self.cols {
-                for j in 0..rhs.rows {
-                    let mut sum = 0.0;
-
-                    for k in 0..self.rows {
-                        sum += self.get(k, i) * rhs.get(j, k);
-                    }
-
-                    matrix.set(i, j, sum);
-                }
-            }
-
-            matrix
-        } else {
-            panic!("Cannot multiply matrices with incompatible dimensions");
-        }
-    }
-}
-
-impl std::ops::Mul<f64> for Matrix {
-    type Output = Self;
-
-    fn mul(self, rhs: f64) -> Self::Output {
-        let mut matrix = Self::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                matrix.set(i, j, self.get(i, j) * rhs);
-            }
-        }
-
-        matrix
-    }
-}
-
-impl std::ops::Add for Matrix {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        assert_eq!(
-            self.rows, rhs.rows,
-            "Cannot add matrices with different row counts"
-        );
-        assert_eq!(
-            self.cols, rhs.cols,
-            "Cannot add matrices with different column counts"
-        );
-
-        let mut matrix = Self::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                matrix.set(i, j, self.get(i, j) + rhs.get(i, j));
-            }
-        }
-
-        matrix
-    }
-}
-
 fn draw_margin(draw_probability: f64, beta: f64, total_players: f64) -> f64 {
     inverse_cdf(0.5 * (draw_probability + 1.0), 0.0, 1.0) * total_players.sqrt() * beta
 }
@@ -1575,6 +1339,244 @@ fn inverse_cdf(x: f64, mu: f64, sigma: f64) -> f64 {
 /// The probability density function.
 fn pdf(x: f64, mu: f64, sigma: f64) -> f64 {
     ((2.0 * PI).sqrt() * sigma.abs()).recip() * (-(((x - mu) / sigma.abs()).powi(2) / 2.0)).exp()
+}
+
+// Same here, this Matrix could have been imported, but we implement it ourselves,
+// since we only have to use some basic things here.
+#[derive(Clone, Debug)]
+struct Matrix {
+    data: Vec<f64>,
+    rows: usize,
+    cols: usize,
+}
+
+impl Matrix {
+    fn set(&mut self, row: usize, col: usize, val: f64) {
+        self.data[row * self.cols + col] = val;
+    }
+
+    fn get(&self, row: usize, col: usize) -> f64 {
+        self.data[row * self.cols + col]
+    }
+
+    fn new(rows: usize, cols: usize) -> Self {
+        Self {
+            data: vec![0.0; rows * cols],
+            rows,
+            cols,
+        }
+    }
+
+    fn new_from_data(data: &[f64], rows: usize, cols: usize) -> Self {
+        Self {
+            data: data.to_vec(),
+            rows,
+            cols,
+        }
+    }
+
+    fn new_diagonal(data: &[f64]) -> Self {
+        let mut matrix = Self::new(data.len(), data.len());
+
+        for (i, val) in data.iter().enumerate() {
+            matrix.set(i, i, *val);
+        }
+
+        matrix
+    }
+
+    fn create_rotated_a_matrix(teams: &[&[TrueSkillRating]]) -> Self {
+        let total_players = teams.iter().map(|team| team.len()).sum::<usize>();
+
+        let mut player_assignments: Vec<f64> = vec![];
+
+        let mut total_previous_players = 0;
+
+        let team_assignments_list_count = teams.len();
+
+        for current_column in 0..team_assignments_list_count - 1 {
+            let current_team = teams[current_column];
+
+            player_assignments.append(&mut vec![0.0; total_previous_players]);
+
+            for _current_player in current_team {
+                player_assignments.push(1.0); // TODO: Replace 1.0 by partial play weighting
+                total_previous_players += 1;
+            }
+
+            let mut rows_remaining = total_players - total_previous_players;
+            let next_team = teams[current_column + 1];
+
+            for _next_player in next_team {
+                player_assignments.push(-1.0 * 1.0); // TODO: Replace 1.0 by partial play weighting
+                rows_remaining -= 1;
+            }
+
+            player_assignments.append(&mut vec![0.0; rows_remaining]);
+        }
+
+        Self::new_from_data(
+            &player_assignments,
+            team_assignments_list_count - 1,
+            total_players as usize,
+        )
+    }
+
+    fn transpose(&self) -> Self {
+        let mut matrix = Self::new(self.cols, self.rows);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                matrix.set(j, i, self.get(i, j));
+            }
+        }
+
+        matrix
+    }
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+    fn determinant(&self) -> f64 {
+        assert_eq!(self.rows, self.cols, "Matrix must be square");
+
+        if self.rows == 1 {
+            return self.get(0, 0);
+        }
+
+        let mut sum = 0.0;
+
+        for i in 0..self.rows {
+            sum += self.get(0, i) * self.minor(0, i).determinant() * (-1.0_f64).powi(i as i32);
+        }
+
+        sum
+    }
+
+    fn minor(&self, row: usize, col: usize) -> Self {
+        let mut matrix = Self::new(self.rows - 1, self.cols - 1);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                if i != row && j != col {
+                    matrix.set(
+                        if i > row { i - 1 } else { i },
+                        if j > col { j - 1 } else { j },
+                        self.get(i, j),
+                    );
+                }
+            }
+        }
+
+        matrix
+    }
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+    fn adjugate(&self) -> Self {
+        let mut matrix = Self::new(self.rows, self.cols);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                matrix.set(
+                    i,
+                    j,
+                    self.minor(j, i).determinant() * (-1.0_f64).powi((i + j) as i32),
+                );
+            }
+        }
+
+        matrix
+    }
+
+    fn inverse(&self) -> Self {
+        let det = self.determinant();
+
+        // Avoiding 1/0
+        assert!((det != 0.0), "Matrix is not invertible");
+
+        self.adjugate() * det.recip()
+    }
+}
+
+impl std::ops::Mul for Matrix {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        if self.cols == rhs.rows {
+            let mut matrix = Self::new(self.rows, rhs.cols);
+
+            for i in 0..self.rows {
+                for j in 0..rhs.cols {
+                    let mut sum = 0.0;
+
+                    for k in 0..self.cols {
+                        sum += self.get(i, k) * rhs.get(k, j);
+                    }
+
+                    matrix.set(i, j, sum);
+                }
+            }
+
+            matrix
+        } else if self.rows == rhs.cols {
+            let mut matrix = Self::new(self.cols, rhs.rows);
+
+            for i in 0..self.cols {
+                for j in 0..rhs.rows {
+                    let mut sum = 0.0;
+
+                    for k in 0..self.rows {
+                        sum += self.get(k, i) * rhs.get(j, k);
+                    }
+
+                    matrix.set(i, j, sum);
+                }
+            }
+
+            matrix
+        } else {
+            panic!("Cannot multiply matrices with incompatible dimensions");
+        }
+    }
+}
+
+impl std::ops::Mul<f64> for Matrix {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        let mut matrix = Self::new(self.rows, self.cols);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                matrix.set(i, j, self.get(i, j) * rhs);
+            }
+        }
+
+        matrix
+    }
+}
+
+impl std::ops::Add for Matrix {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        assert_eq!(
+            self.rows, rhs.rows,
+            "Cannot add matrices with different row counts"
+        );
+        assert_eq!(
+            self.cols, rhs.cols,
+            "Cannot add matrices with different column counts"
+        );
+
+        let mut matrix = Self::new(self.rows, self.cols);
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                matrix.set(i, j, self.get(i, j) + rhs.get(i, j));
+            }
+        }
+
+        matrix
+    }
 }
 
 #[cfg(test)]
@@ -2014,6 +2016,14 @@ mod tests {
 
         // Double checked this with the most popular python implementation.
         assert!((exp - 0.017_538_349_223_941_27).abs() < f64::EPSILON);
+
+        let exp = match_quality_multi_team(&[], &TrueSkillConfig::default());
+
+        assert!(exp < f64::EPSILON);
+
+        let exp = match_quality_multi_team(&[&team_one, &[]], &TrueSkillConfig::default());
+
+        assert!(exp < f64::EPSILON);
     }
 
     #[test]
@@ -2184,6 +2194,26 @@ mod tests {
     }
 
     #[test]
+    fn test_matrix_panics() {
+        use std::panic::catch_unwind;
+
+        let result = catch_unwind(|| Matrix::new(2, 3).determinant());
+        assert!(result.is_err());
+
+        let result = catch_unwind(|| Matrix::new(2, 2).inverse());
+        assert!(result.is_err());
+
+        let result = catch_unwind(|| Matrix::new(2, 2) * Matrix::new(3, 3));
+        assert!(result.is_err());
+
+        let result = catch_unwind(|| Matrix::new(3, 2) + Matrix::new(2, 2));
+        assert!(result.is_err());
+
+        let result = catch_unwind(|| Matrix::new(2, 2) + Matrix::new(2, 3));
+        assert!(result.is_err());
+    }
+
+    #[test]
     #[allow(clippy::clone_on_copy)]
     fn test_misc_stuff() {
         let player_one = TrueSkillRating::new();
@@ -2194,6 +2224,8 @@ mod tests {
 
         assert!(!format!("{player_one:?}").is_empty());
         assert!(!format!("{config:?}").is_empty());
+
+        assert!(!format!("{:?}", Matrix::new(2, 3)).is_empty());
 
         assert_eq!(player_one, TrueSkillRating::from((25.0, 25.0 / 3.0)));
     }
