@@ -62,10 +62,10 @@
 //!
 //! # More Information
 //! - [Wikipedia Article](https://en.wikipedia.org/wiki/TrueSkill)
-//! - [TrueSkill Ranking System](https://www.microsoft.com/en-us/research/project/trueskill-ranking-system/)
 //! - [Original Paper (PDF)](https://proceedings.neurips.cc/paper/2006/file/f44ee263952e65b3610b8ba51229d1f9-Paper.pdf)
 //! - [The math behind TrueSkill (PDF)](http://www.moserware.com/assets/computing-your-skill/The%20Math%20Behind%20TrueSkill.pdf)
 //! - [Moserware: Computing Your Skill](http://www.moserware.com/2010/03/computing-your-skill.html)
+//! - [TrueSkill Calculator](https://trueskill-calculator.vercel.app/)
 
 use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 
