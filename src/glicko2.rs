@@ -1,5 +1,5 @@
 //! The Glicko-2 algorithm, an improvement on Glicko and widely used in online games,
-//! like Counter Strike: Global Offensive, Team Fortress 2, Splatoon 2 and most online chess platforms.
+//! like Counter Strike: Global Offensive, Team Fortress 2, Splatoon 2 or Lichess.
 //!
 //! If you are looking for the regular Glicko rating system, please see [`Glicko`](crate::glicko).
 //!

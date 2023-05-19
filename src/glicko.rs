@@ -1,5 +1,5 @@
 //! The Glicko algorithm, developed by Mark Glickman as an improvement on Elo.  
-//! It is still being used in some games in favour Glicko-2, such as Pokémon Showdown and Quake Live.
+//! It is still being used in some games in favour Glicko-2, such as Pokémon Showdown, Chess.com and Quake Live.
 //!
 //! If you are looking for the updated Glicko-2 rating system, please see [`Glicko-2`](crate::glicko2).
 //!
