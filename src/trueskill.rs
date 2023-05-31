@@ -73,6 +73,7 @@ use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 use serde::{Deserialize, Serialize};
 
 use crate::{weng_lin::WengLinRating, Outcomes};
+use crate::{Rating, TeamRatingSystem};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -101,6 +102,18 @@ impl TrueSkillRating {
 impl Default for TrueSkillRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Rating for TrueSkillRating {
+    fn score(&self) -> f64 {
+        self.rating
+    }
+    fn new(score: Option<f64>) -> Self {
+        Self {
+            rating: score.unwrap_or(25.0),
+            uncertainty: 25.0 / 3.0,
+        }
     }
 }
 
@@ -160,6 +173,33 @@ impl TrueSkillConfig {
 impl Default for TrueSkillConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`TrueSkillRating`]
+pub struct TrueSkill {
+    config: TrueSkillConfig,
+}
+
+impl TeamRatingSystem for TrueSkill {
+    type RATING = TrueSkillRating;
+    type CONFIG = TrueSkillConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rating(
+        &self,
+        team_one: &[TrueSkillRating],
+        team_two: &[TrueSkillRating],
+        outcome: &Outcomes,
+    ) -> (Vec<TrueSkillRating>, Vec<TrueSkillRating>) {
+        trueskill_two_teams(team_one, team_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, team_one: &[Self::RATING], team_two: &[Self::RATING]) -> (f64, f64) {
+        expected_score_two_teams(team_one, team_two, &self.config)
     }
 }
 

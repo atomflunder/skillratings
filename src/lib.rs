@@ -284,6 +284,8 @@
 //! ```
 
 #[cfg(feature = "serde")]
+use serde::de::DeserializeOwned;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 pub mod dwz;
@@ -371,6 +373,36 @@ impl From<MultiTeamOutcome> for usize {
     fn from(v: MultiTeamOutcome) -> Self {
         v.0
     }
+}
+
+/// Measure of player's skill
+pub trait Rating {
+    /// A single value for player's skill
+    fn score(&self) -> f64;
+    /// Initialise a `Rating` with provided score, if `None` use default
+    fn new(score: Option<f64>) -> Self;
+}
+
+/// Rating system for two teams
+pub trait TeamRatingSystem {
+    #[cfg(feature = "serde")]
+    type RATING: Rating + Copy + std::fmt::Debug + DeserializeOwned + Serialize;
+    #[cfg(not(feature = "serde"))]
+    /// Rating type rating system
+    type RATING: Rating + Copy + std::fmt::Debug;
+    /// Config type for rating system
+    type CONFIG;
+    /// Initialise rating system with provided config
+    fn new(config: Self::CONFIG) -> Self;
+    /// Calculate ratings for two teams based on provided ratings and outcome
+    fn rating(
+        &self,
+        team_one: &[Self::RATING],
+        team_two: &[Self::RATING],
+        outcome: &Outcomes,
+    ) -> (Vec<Self::RATING>, Vec<Self::RATING>);
+    /// Calculate expected outcome of two teams. Returns probability of team winning from 0.0 to 1.0
+    fn expected_score(&self, team_one: &[Self::RATING], team_two: &[Self::RATING]) -> (f64, f64);
 }
 
 #[cfg(test)]
