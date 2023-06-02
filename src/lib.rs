@@ -375,16 +375,80 @@ impl From<MultiTeamOutcome> for usize {
     }
 }
 
-/// Measure of player's skill
+/// Measure of player's skill.
 pub trait Rating {
     /// A single value for player's skill
-    fn score(&self) -> f64;
-    /// Initialise a `Rating` with provided score, if `None` use default
-    fn new(score: Option<f64>) -> Self;
+    fn rating(&self) -> f64;
+    /// A value for the uncertainty of a players rating.
+    /// If the algorithm does not include an uncertainty value, this will return `0.0` instead.
+    fn uncertainty(&self) -> f64;
+    /// Initialise a `Rating` with provided score and uncertainty, if `None` use default.
+    /// If the algorithm does not include an uncertainty value it will get dismissed.
+    fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self;
 }
 
-/// Rating system for two teams
+/// Rating system for 1v1 matches.
+pub trait RatingSystem {
+    #[cfg(feature = "serde")]
+    type RATING: Rating + Copy + std::fmt::Debug + DeserializeOwned + Serialize;
+    #[cfg(not(feature = "serde"))]
+    /// Rating type rating system.
+    type RATING: Rating + Copy + std::fmt::Debug;
+    /// Config type for rating system.
+    type CONFIG;
+    /// Initialise rating system with provided config.
+    fn new(config: Self::CONFIG) -> Self;
+    /// Calculate ratings for two players based on provided ratings and outcome.
+    fn rate(
+        &self,
+        player_one: &Self::RATING,
+        player_two: &Self::RATING,
+        outcome: &Outcomes,
+    ) -> (Self::RATING, Self::RATING);
+    /// Calculate expected outcome of two players. Returns probability of player winning from 0.0 to 1.0.
+    fn expected_score(&self, player_one: &Self::RATING, player_two: &Self::RATING) -> (f64, f64);
+}
+
+/// Rating system for rating periods.
+pub trait RatingPeriodSystem {
+    #[cfg(feature = "serde")]
+    type RATING: Rating + Copy + std::fmt::Debug + DeserializeOwned + Serialize;
+    #[cfg(not(feature = "serde"))]
+    /// Rating type rating system.
+    type RATING: Rating + Copy + std::fmt::Debug;
+    /// Config type for rating system.
+    type CONFIG;
+    /// Initialise rating system with provided config.
+    fn new(config: Self::CONFIG) -> Self;
+    /// Calculate ratings for two players based on provided ratings and outcome.
+    fn rate(&self, player: &Self::RATING, results: &[(Self::RATING, Outcomes)]) -> Self::RATING;
+    // TODO: Add expected_score functions for rating periods?
+}
+
+/// Rating system for two teams.
 pub trait TeamRatingSystem {
+    #[cfg(feature = "serde")]
+    type RATING: Rating + Copy + std::fmt::Debug + DeserializeOwned + Serialize;
+    #[cfg(not(feature = "serde"))]
+    /// Rating type rating system.
+    type RATING: Rating + Copy + std::fmt::Debug;
+    /// Config type for rating system.
+    type CONFIG;
+    /// Initialise rating system with provided config.
+    fn new(config: Self::CONFIG) -> Self;
+    /// Calculate ratings for two teams based on provided ratings and outcome.
+    fn rate(
+        &self,
+        team_one: &[Self::RATING],
+        team_two: &[Self::RATING],
+        outcome: &Outcomes,
+    ) -> (Vec<Self::RATING>, Vec<Self::RATING>);
+    /// Calculate expected outcome of two teams. Returns probability of team winning from 0.0 to 1.0.
+    fn expected_score(&self, team_one: &[Self::RATING], team_two: &[Self::RATING]) -> (f64, f64);
+}
+
+/// Rating system for more than two teams.
+pub trait MultiTeamRatingSystem {
     #[cfg(feature = "serde")]
     type RATING: Rating + Copy + std::fmt::Debug + DeserializeOwned + Serialize;
     #[cfg(not(feature = "serde"))]
@@ -392,17 +456,15 @@ pub trait TeamRatingSystem {
     type RATING: Rating + Copy + std::fmt::Debug;
     /// Config type for rating system
     type CONFIG;
-    /// Initialise rating system with provided config
+    /// Initialise rating system with provided config.
     fn new(config: Self::CONFIG) -> Self;
-    /// Calculate ratings for two teams based on provided ratings and outcome
-    fn rating(
+    /// Calculate ratings for multiple teams based on provided ratings and outcome.
+    fn rate(
         &self,
-        team_one: &[Self::RATING],
-        team_two: &[Self::RATING],
-        outcome: &Outcomes,
+        teams_and_ranks: &[(&[Self::RATING], MultiTeamOutcome)],
     ) -> (Vec<Self::RATING>, Vec<Self::RATING>);
-    /// Calculate expected outcome of two teams. Returns probability of team winning from 0.0 to 1.0
-    fn expected_score(&self, team_one: &[Self::RATING], team_two: &[Self::RATING]) -> (f64, f64);
+    /// Calculate expected outcome of multiple teams. Returns probability of team winning from 0.0 to 1.0.
+    fn expected_score(&self, teams: &[&[Self::RATING]]) -> Vec<f64>;
 }
 
 #[cfg(test)]

@@ -73,7 +73,7 @@ use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 use serde::{Deserialize, Serialize};
 
 use crate::{weng_lin::WengLinRating, Outcomes};
-use crate::{Rating, TeamRatingSystem};
+use crate::{Rating, RatingPeriodSystem, RatingSystem, TeamRatingSystem};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -106,13 +106,16 @@ impl Default for TrueSkillRating {
 }
 
 impl Rating for TrueSkillRating {
-    fn score(&self) -> f64 {
+    fn rating(&self) -> f64 {
         self.rating
     }
-    fn new(score: Option<f64>) -> Self {
+    fn uncertainty(&self) -> f64 {
+        self.uncertainty
+    }
+    fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self {
         Self {
-            rating: score.unwrap_or(25.0),
-            uncertainty: 25.0 / 3.0,
+            rating: rating.unwrap_or(25.0),
+            uncertainty: uncertainty.unwrap_or(25.0 / 3.0),
         }
     }
 }
@@ -181,6 +184,49 @@ pub struct TrueSkill {
     config: TrueSkillConfig,
 }
 
+impl RatingSystem for TrueSkill {
+    type RATING = TrueSkillRating;
+    type CONFIG = TrueSkillConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &TrueSkillRating,
+        player_two: &TrueSkillRating,
+        outcome: &Outcomes,
+    ) -> (TrueSkillRating, TrueSkillRating) {
+        trueskill(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(
+        &self,
+        player_one: &TrueSkillRating,
+        player_two: &TrueSkillRating,
+    ) -> (f64, f64) {
+        expected_score(player_one, player_two, &self.config)
+    }
+}
+
+impl RatingPeriodSystem for TrueSkill {
+    type RATING = TrueSkillRating;
+    type CONFIG = TrueSkillConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player: &TrueSkillRating,
+        results: &[(TrueSkillRating, Outcomes)],
+    ) -> TrueSkillRating {
+        trueskill_rating_period(player, results, &self.config)
+    }
+}
+
 impl TeamRatingSystem for TrueSkill {
     type RATING = TrueSkillRating;
     type CONFIG = TrueSkillConfig;
@@ -189,7 +235,7 @@ impl TeamRatingSystem for TrueSkill {
         Self { config }
     }
 
-    fn rating(
+    fn rate(
         &self,
         team_one: &[TrueSkillRating],
         team_two: &[TrueSkillRating],
