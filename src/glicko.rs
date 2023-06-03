@@ -53,6 +53,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     glicko2::Glicko2Rating, glicko_boost::GlickoBoostRating, sticko::StickoRating, Outcomes,
+    Rating, RatingPeriodSystem, RatingSystem,
 };
 use std::f64::consts::PI;
 
@@ -85,6 +86,21 @@ impl GlickoRating {
 impl Default for GlickoRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Rating for GlickoRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> f64 {
+        self.deviation
+    }
+    fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(1500.0),
+            deviation: uncertainty.unwrap_or(350.0),
+        }
     }
 }
 
@@ -146,6 +162,46 @@ impl GlickoConfig {
 impl Default for GlickoConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`GlickoRating`]
+pub struct Glicko {
+    config: GlickoConfig,
+}
+
+impl RatingSystem for Glicko {
+    type RATING = GlickoRating;
+    type CONFIG = GlickoConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &GlickoRating,
+        player_two: &GlickoRating,
+        outcome: &Outcomes,
+    ) -> (GlickoRating, GlickoRating) {
+        glicko(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, player_one: &GlickoRating, player_two: &GlickoRating) -> (f64, f64) {
+        expected_score(player_one, player_two)
+    }
+}
+
+impl RatingPeriodSystem for Glicko {
+    type RATING = GlickoRating;
+    type CONFIG = GlickoConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(&self, player: &GlickoRating, results: &[(GlickoRating, Outcomes)]) -> GlickoRating {
+        glicko_rating_period(player, results, &self.config)
     }
 }
 

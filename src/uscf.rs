@@ -64,7 +64,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{elo::EloRating, Outcomes};
+use crate::{elo::EloRating, Outcomes, Rating, RatingPeriodSystem, RatingSystem};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -106,6 +106,21 @@ impl USCFRating {
 impl Default for USCFRating {
     fn default() -> Self {
         Self::new(26)
+    }
+}
+
+impl Rating for USCFRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> f64 {
+        0.0
+    }
+    fn new(rating: Option<f64>, _uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(1300.0),
+            games: 0,
+        }
     }
 }
 
@@ -159,6 +174,46 @@ impl USCFConfig {
 impl Default for USCFConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`USCFRating`]
+pub struct USCF {
+    config: USCFConfig,
+}
+
+impl RatingSystem for USCF {
+    type RATING = USCFRating;
+    type CONFIG = USCFConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &USCFRating,
+        player_two: &USCFRating,
+        outcome: &Outcomes,
+    ) -> (USCFRating, USCFRating) {
+        uscf(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, player_one: &USCFRating, player_two: &USCFRating) -> (f64, f64) {
+        expected_score(player_one, player_two)
+    }
+}
+
+impl RatingPeriodSystem for USCF {
+    type RATING = USCFRating;
+    type CONFIG = USCFConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(&self, player: &USCFRating, results: &[(USCFRating, Outcomes)]) -> USCFRating {
+        uscf_rating_period(player, results, &self.config)
     }
 }
 

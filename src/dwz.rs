@@ -51,7 +51,7 @@ use std::{collections::HashMap, error::Error, fmt::Display};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{elo::EloRating, Outcomes};
+use crate::{elo::EloRating, Outcomes, Rating, RatingPeriodSystem, RatingSystem};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -86,6 +86,22 @@ impl DWZRating {
 impl Default for DWZRating {
     fn default() -> Self {
         Self::new(26)
+    }
+}
+
+impl Rating for DWZRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> f64 {
+        0.0
+    }
+    fn new(rating: Option<f64>, _uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(1000.0),
+            index: 1,
+            age: 26,
+        }
     }
 }
 
@@ -143,6 +159,44 @@ impl Display for GetFirstDWZError {
 }
 
 impl Error for GetFirstDWZError {}
+
+/// Struct to calculate ratings and expected score for [`DWZRating`]
+pub struct DWZ {}
+
+impl RatingSystem for DWZ {
+    type RATING = DWZRating;
+    type CONFIG = ();
+
+    fn new(_config: Self::CONFIG) -> Self {
+        Self {}
+    }
+
+    fn rate(
+        &self,
+        player_one: &DWZRating,
+        player_two: &DWZRating,
+        outcome: &Outcomes,
+    ) -> (DWZRating, DWZRating) {
+        dwz(player_one, player_two, outcome)
+    }
+
+    fn expected_score(&self, player_one: &DWZRating, player_two: &DWZRating) -> (f64, f64) {
+        expected_score(player_one, player_two)
+    }
+}
+
+impl RatingPeriodSystem for DWZ {
+    type RATING = DWZRating;
+    type CONFIG = ();
+
+    fn new(_config: Self::CONFIG) -> Self {
+        Self {}
+    }
+
+    fn rate(&self, player: &DWZRating, results: &[(DWZRating, Outcomes)]) -> DWZRating {
+        dwz_rating_period(player, results)
+    }
+}
 
 #[must_use]
 /// Calculates new [`DWZRating`] of two players based on their old rating, index, age and outcome of the game.
