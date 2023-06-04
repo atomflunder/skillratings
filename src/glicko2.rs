@@ -55,7 +55,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    glicko::GlickoRating, glicko_boost::GlickoBoostRating, sticko::StickoRating, Outcomes,
+    glicko::GlickoRating, glicko_boost::GlickoBoostRating, sticko::StickoRating, Outcomes, Rating,
+    RatingPeriodSystem, RatingSystem,
 };
 use std::f64::consts::PI;
 
@@ -92,6 +93,22 @@ impl Glicko2Rating {
 impl Default for Glicko2Rating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Rating for Glicko2Rating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        Some(self.deviation)
+    }
+    fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(1500.0),
+            deviation: uncertainty.unwrap_or(350.0),
+            volatility: 0.06,
+        }
     }
 }
 
@@ -164,6 +181,46 @@ impl Glicko2Config {
 impl Default for Glicko2Config {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`Glicko2Rating`]
+pub struct Glicko2 {
+    config: Glicko2Config,
+}
+
+impl RatingSystem for Glicko2 {
+    type RATING = Glicko2Rating;
+    type CONFIG = Glicko2Config;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &Glicko2Rating,
+        player_two: &Glicko2Rating,
+        outcome: &Outcomes,
+    ) -> (Glicko2Rating, Glicko2Rating) {
+        glicko2(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, player_one: &Glicko2Rating, player_two: &Glicko2Rating) -> (f64, f64) {
+        expected_score(player_one, player_two)
+    }
+}
+
+impl RatingPeriodSystem for Glicko2 {
+    type RATING = Glicko2Rating;
+    type CONFIG = Glicko2Config;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(&self, player: &Glicko2Rating, results: &[(Glicko2Rating, Outcomes)]) -> Glicko2Rating {
+        glicko2_rating_period(player, results, &self.config)
     }
 }
 

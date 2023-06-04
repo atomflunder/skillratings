@@ -46,7 +46,10 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{dwz::DWZRating, fifa::FifaRating, ingo::IngoRating, uscf::USCFRating, Outcomes};
+use crate::{
+    dwz::DWZRating, fifa::FifaRating, ingo::IngoRating, uscf::USCFRating, Outcomes, Rating,
+    RatingPeriodSystem, RatingSystem,
+};
 
 /// The Elo rating of a player.
 ///
@@ -69,6 +72,20 @@ impl EloRating {
 impl Default for EloRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Rating for EloRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        None
+    }
+    fn new(rating: Option<f64>, _uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(1000.0),
+        }
     }
 }
 
@@ -134,6 +151,46 @@ impl EloConfig {
 impl Default for EloConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`EloRating`]
+pub struct Elo {
+    config: EloConfig,
+}
+
+impl RatingSystem for Elo {
+    type RATING = EloRating;
+    type CONFIG = EloConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &EloRating,
+        player_two: &EloRating,
+        outcome: &Outcomes,
+    ) -> (EloRating, EloRating) {
+        elo(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, player_one: &EloRating, player_two: &EloRating) -> (f64, f64) {
+        expected_score(player_one, player_two)
+    }
+}
+
+impl RatingPeriodSystem for Elo {
+    type RATING = EloRating;
+    type CONFIG = EloConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(&self, player: &EloRating, results: &[(EloRating, Outcomes)]) -> EloRating {
+        elo_rating_period(player, results, &self.config)
     }
 }
 

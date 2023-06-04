@@ -52,7 +52,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{elo::EloRating, Outcomes};
+use crate::{elo::EloRating, Outcomes, Rating, RatingPeriodSystem, RatingSystem};
 
 /// The Fifa rating of a team.
 ///
@@ -75,6 +75,20 @@ impl FifaRating {
 impl Default for FifaRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Rating for FifaRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        None
+    }
+    fn new(rating: Option<f64>, _uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(1000.0),
+        }
     }
 }
 
@@ -151,6 +165,50 @@ impl FifaConfig {
 impl Default for FifaConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`FifaRating`]
+pub struct Fifa {
+    config: FifaConfig,
+}
+
+impl RatingSystem for Fifa {
+    type RATING = FifaRating;
+    type CONFIG = FifaConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &FifaRating,
+        player_two: &FifaRating,
+        outcome: &Outcomes,
+    ) -> (FifaRating, FifaRating) {
+        fifa(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, player_one: &FifaRating, player_two: &FifaRating) -> (f64, f64) {
+        expected_score(player_one, player_two)
+    }
+}
+
+impl RatingPeriodSystem for Fifa {
+    type RATING = FifaRating;
+    type CONFIG = FifaConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(&self, player: &FifaRating, results: &[(FifaRating, Outcomes)]) -> FifaRating {
+        // Need to add a config to the results.
+        let new_results: Vec<(FifaRating, Outcomes, FifaConfig)> =
+            results.iter().map(|r| (r.0, r.1, self.config)).collect();
+
+        fifa_rating_period(player, &new_results[..])
     }
 }
 

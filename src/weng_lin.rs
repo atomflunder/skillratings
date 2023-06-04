@@ -60,7 +60,10 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{trueskill::TrueSkillRating, MultiTeamOutcome, Outcomes};
+use crate::{
+    trueskill::TrueSkillRating, MultiTeamOutcome, MultiTeamRatingSystem, Outcomes, Rating,
+    RatingPeriodSystem, RatingSystem, TeamRatingSystem,
+};
 use std::cmp::Ordering;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -92,6 +95,21 @@ impl WengLinRating {
 impl Default for WengLinRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Rating for WengLinRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        Some(self.uncertainty)
+    }
+    fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(25.0),
+            uncertainty: uncertainty.unwrap_or(25.0 / 3.0),
+        }
     }
 }
 
@@ -145,6 +163,88 @@ impl WengLinConfig {
 impl Default for WengLinConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`WengLinRating`]
+pub struct WengLin {
+    config: WengLinConfig,
+}
+
+impl RatingSystem for WengLin {
+    type RATING = WengLinRating;
+    type CONFIG = WengLinConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &WengLinRating,
+        player_two: &WengLinRating,
+        outcome: &Outcomes,
+    ) -> (WengLinRating, WengLinRating) {
+        weng_lin(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, player_one: &WengLinRating, player_two: &WengLinRating) -> (f64, f64) {
+        expected_score(player_one, player_two, &self.config)
+    }
+}
+
+impl RatingPeriodSystem for WengLin {
+    type RATING = WengLinRating;
+    type CONFIG = WengLinConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(&self, player: &WengLinRating, results: &[(WengLinRating, Outcomes)]) -> WengLinRating {
+        weng_lin_rating_period(player, results, &self.config)
+    }
+}
+
+impl TeamRatingSystem for WengLin {
+    type RATING = WengLinRating;
+    type CONFIG = WengLinConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        team_one: &[WengLinRating],
+        team_two: &[WengLinRating],
+        outcome: &Outcomes,
+    ) -> (Vec<WengLinRating>, Vec<WengLinRating>) {
+        weng_lin_two_teams(team_one, team_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, team_one: &[Self::RATING], team_two: &[Self::RATING]) -> (f64, f64) {
+        expected_score_two_teams(team_one, team_two, &self.config)
+    }
+}
+
+impl MultiTeamRatingSystem for WengLin {
+    type RATING = WengLinRating;
+    type CONFIG = WengLinConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        teams_and_ranks: &[(&[Self::RATING], MultiTeamOutcome)],
+    ) -> Vec<Vec<WengLinRating>> {
+        weng_lin_multi_team(teams_and_ranks, &self.config)
+    }
+
+    fn expected_score(&self, teams: &[&[Self::RATING]]) -> Vec<f64> {
+        expected_score_multi_team(teams, &self.config)
     }
 }
 
@@ -620,7 +720,7 @@ pub fn weng_lin_multi_team(
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
-/// Similar to [`expected_score_teams`].
+/// Similar to [`expected_score_two_teams`] and [`expected_score_multi_team`].
 ///
 /// # Examples
 /// ```

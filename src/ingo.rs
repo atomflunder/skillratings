@@ -45,7 +45,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{elo::EloRating, Outcomes};
+use crate::{elo::EloRating, Outcomes, Rating, RatingPeriodSystem, RatingSystem};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -81,6 +81,21 @@ impl Default for IngoRating {
     }
 }
 
+impl Rating for IngoRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        None
+    }
+    fn new(rating: Option<f64>, _uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(230.0),
+            age: 26,
+        }
+    }
+}
+
 impl From<(f64, usize)> for IngoRating {
     fn from((r, a): (f64, usize)) -> Self {
         Self { rating: r, age: a }
@@ -100,6 +115,45 @@ impl From<EloRating> for IngoRating {
             rating: 355.0 - (e.rating / 8.0),
             ..Default::default()
         }
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`IngoRating`]
+pub struct Ingo {}
+
+impl RatingSystem for Ingo {
+    type RATING = IngoRating;
+    // No need for a config here.
+    type CONFIG = ();
+
+    fn new(_config: Self::CONFIG) -> Self {
+        Self {}
+    }
+
+    fn rate(
+        &self,
+        player_one: &IngoRating,
+        player_two: &IngoRating,
+        outcome: &Outcomes,
+    ) -> (IngoRating, IngoRating) {
+        ingo(player_one, player_two, outcome)
+    }
+
+    fn expected_score(&self, player_one: &IngoRating, player_two: &IngoRating) -> (f64, f64) {
+        expected_score(player_one, player_two)
+    }
+}
+
+impl RatingPeriodSystem for Ingo {
+    type RATING = IngoRating;
+    type CONFIG = ();
+
+    fn new(_config: Self::CONFIG) -> Self {
+        Self {}
+    }
+
+    fn rate(&self, player: &IngoRating, results: &[(IngoRating, Outcomes)]) -> IngoRating {
+        ingo_rating_period(player, results)
     }
 }
 
