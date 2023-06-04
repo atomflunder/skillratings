@@ -90,8 +90,8 @@ impl Rating for EGFRating {
     fn rating(&self) -> f64 {
         self.rating
     }
-    fn uncertainty(&self) -> f64 {
-        0.0
+    fn uncertainty(&self) -> Option<f64> {
+        None
     }
     fn new(rating: Option<f64>, _uncertainty: Option<f64>) -> Self {
         Self {

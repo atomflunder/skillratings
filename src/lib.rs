@@ -380,8 +380,8 @@ pub trait Rating {
     /// A single value for player's skill
     fn rating(&self) -> f64;
     /// A value for the uncertainty of a players rating.
-    /// If the algorithm does not include an uncertainty value, this will return `0.0` instead.
-    fn uncertainty(&self) -> f64;
+    /// If the algorithm does not include an uncertainty value, this will return `None`.
+    fn uncertainty(&self) -> Option<f64>;
     /// Initialise a `Rating` with provided score and uncertainty, if `None` use default.
     /// If the algorithm does not include an uncertainty value it will get dismissed.
     fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self;

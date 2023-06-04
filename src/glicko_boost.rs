@@ -113,8 +113,8 @@ impl Rating for GlickoBoostRating {
     fn rating(&self) -> f64 {
         self.rating
     }
-    fn uncertainty(&self) -> f64 {
-        self.deviation
+    fn uncertainty(&self) -> Option<f64> {
+        Some(self.deviation)
     }
     fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self {
         Self {

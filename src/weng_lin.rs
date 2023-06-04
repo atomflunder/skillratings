@@ -102,8 +102,8 @@ impl Rating for WengLinRating {
     fn rating(&self) -> f64 {
         self.rating
     }
-    fn uncertainty(&self) -> f64 {
-        self.uncertainty
+    fn uncertainty(&self) -> Option<f64> {
+        Some(self.uncertainty)
     }
     fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self {
         Self {
