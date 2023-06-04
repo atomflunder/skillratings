@@ -477,8 +477,39 @@ mod tests {
 
         assert_eq!(player_one, player_one.clone());
 
-        assert!(!format!("{:?}", player_one).is_empty());
+        assert!(!format!("{player_one:?}").is_empty());
 
         assert_eq!(IngoRating::from((222.0, 26)), IngoRating::from(222.0));
+    }
+
+    #[test]
+    fn test_traits() {
+        let player_one: IngoRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: IngoRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_system: Ingo = RatingSystem::new(());
+
+        assert!((player_one.rating() - 240.0).abs() < f64::EPSILON);
+        assert_eq!(player_one.uncertainty(), None);
+
+        let (new_player_one, new_player_two) =
+            RatingSystem::rate(&rating_system, &player_one, &player_two, &Outcomes::WIN);
+
+        let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
+
+        assert!((new_player_one.rating - 237.619_047_619_047_62).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 242.380_952_380_952_38).abs() < f64::EPSILON);
+        assert!((exp1 - 0.5).abs() < f64::EPSILON);
+        assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let player_one: IngoRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: IngoRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_period: Ingo = RatingPeriodSystem::new(());
+
+        let new_player_one =
+            RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
+
+        assert!((new_player_one.rating - 237.619_047_619_047_62).abs() < f64::EPSILON);
     }
 }

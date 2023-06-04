@@ -524,9 +524,40 @@ mod tests {
         assert_eq!(player_one, player_one.clone());
         assert!((config.importance - config.clone().importance).abs() < f64::EPSILON);
 
-        assert!(!format!("{:?}", player_one).is_empty());
-        assert!(!format!("{:?}", config).is_empty());
+        assert!(!format!("{player_one:?}").is_empty());
+        assert!(!format!("{config:?}").is_empty());
 
         assert_eq!(player_one, FifaRating::from(1000.));
+    }
+
+    #[test]
+    fn test_traits() {
+        let player_one: FifaRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: FifaRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_system: Fifa = RatingSystem::new(FifaConfig::new());
+
+        assert!((player_one.rating() - 240.0).abs() < f64::EPSILON);
+        assert_eq!(player_one.uncertainty(), None);
+
+        let (new_player_one, new_player_two) =
+            RatingSystem::rate(&rating_system, &player_one, &player_two, &Outcomes::WIN);
+
+        let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
+
+        assert!((new_player_one.rating - 245.0).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 235.0).abs() < f64::EPSILON);
+        assert!((exp1 - 0.5).abs() < f64::EPSILON);
+        assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let player_one: FifaRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: FifaRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_period: Fifa = RatingPeriodSystem::new(FifaConfig::new());
+
+        let new_player_one =
+            RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
+
+        assert!((new_player_one.rating - 245.0).abs() < f64::EPSILON);
     }
 }

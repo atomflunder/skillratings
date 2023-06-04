@@ -1422,9 +1422,77 @@ mod tests {
         assert_eq!(player_one, player_one.clone());
         assert!((config.beta - config.clone().beta).abs() < f64::EPSILON);
 
-        assert!(!format!("{:?}", player_one).is_empty());
-        assert!(!format!("{:?}", config).is_empty());
+        assert!(!format!("{player_one:?}").is_empty());
+        assert!(!format!("{config:?}").is_empty());
 
         assert_eq!(player_one, WengLinRating::from((25.0, 25.0 / 3.0)));
+    }
+
+    #[test]
+    fn test_traits() {
+        let player_one: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+        let player_two: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+
+        let rating_system: WengLin = RatingSystem::new(WengLinConfig::new());
+
+        assert!((player_one.rating() - 24.0).abs() < f64::EPSILON);
+        assert_eq!(player_one.uncertainty(), Some(2.0));
+
+        let (new_player_one, new_player_two) =
+            RatingSystem::rate(&rating_system, &player_one, &player_two, &Outcomes::WIN);
+
+        let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
+
+        assert!((new_player_one.rating - 24.305_987_072_319_287).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 23.694_012_927_680_713).abs() < f64::EPSILON);
+
+        assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
+
+        let player_one: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+        let player_two: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+
+        let rating_period: WengLin = RatingPeriodSystem::new(WengLinConfig::new());
+
+        let new_player_one =
+            RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
+
+        assert!((new_player_one.rating - 24.305_987_072_319_287).abs() < f64::EPSILON);
+
+        let player_one: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+        let player_two: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+
+        let team_rating: WengLin = TeamRatingSystem::new(WengLinConfig::new());
+
+        let (new_team_one, new_team_two) =
+            TeamRatingSystem::rate(&team_rating, &[player_one], &[player_two], &Outcomes::WIN);
+
+        assert!((new_team_one[0].rating - 24.305_987_072_319_287).abs() < f64::EPSILON);
+        assert!((new_team_two[0].rating - 23.694_012_927_680_713).abs() < f64::EPSILON);
+
+        let (exp1, exp2) =
+            TeamRatingSystem::expected_score(&rating_system, &[player_one], &[player_two]);
+
+        assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
+
+        let player_one: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+        let player_two: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+
+        let multi_team_rating: WengLin = MultiTeamRatingSystem::new(WengLinConfig::new());
+
+        let new_teams = MultiTeamRatingSystem::rate(
+            &multi_team_rating,
+            &[
+                (&[player_one], MultiTeamOutcome::new(1)),
+                (&[player_two], MultiTeamOutcome::new(2)),
+            ],
+        );
+
+        assert!((new_teams[0][0].rating - 24.305_987_072_319_287).abs() < f64::EPSILON);
+        assert!((new_teams[1][0].rating - 23.694_012_927_680_713).abs() < f64::EPSILON);
+
+        let exp =
+            MultiTeamRatingSystem::expected_score(&rating_system, &[&[player_one], &[player_two]]);
+
+        assert!((exp[0] + exp[1] - 1.0).abs() < f64::EPSILON);
     }
 }
