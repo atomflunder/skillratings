@@ -551,8 +551,7 @@ pub fn decay_deviation(player: &Glicko2Rating) -> Glicko2Rating {
 /// ```
 pub fn confidence_interval(player: &Glicko2Rating) -> (f64, f64) {
     (
-        // Seems like there is no mul_sub function.
-        player.rating - 1.96 * player.deviation,
+        1.96f64.mul_add(-player.deviation, player.rating),
         1.96f64.mul_add(player.deviation, player.rating),
     )
 }
@@ -603,9 +602,9 @@ fn new_volatility(
     let mut b = if delta_squared > deviation_squared + v {
         (delta_squared - deviation_squared - v).ln()
     } else {
-        let mut k = 1.0;
+        let mut k: f64 = 1.0;
         while f_value(
-            a - k * tau,
+            k.mul_add(-tau, a),
             delta_squared,
             deviation_squared,
             v,
@@ -615,7 +614,7 @@ fn new_volatility(
         {
             k += 1.0;
         }
-        a - k * tau
+        k.mul_add(-tau, a)
     };
 
     let mut fa = f_value(a, delta_squared, deviation_squared, v, old_volatility, tau);
@@ -839,8 +838,8 @@ mod tests {
 
         let (exp_one, exp_two) = expected_score(&player_one, &player_two);
 
-        assert!((exp_one * 100.0 - 50.0).abs() < f64::EPSILON);
-        assert!((exp_two * 100.0 - 50.0).abs() < f64::EPSILON);
+        assert!(exp_one.mul_add(100.0, -50.0).abs() < f64::EPSILON);
+        assert!(exp_two.mul_add(100.0, -50.0).abs() < f64::EPSILON);
 
         let player_three = Glicko2Rating {
             rating: 2000.0,

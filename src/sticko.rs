@@ -633,7 +633,7 @@ pub fn decay_deviation(player: &StickoRating, config: &StickoConfig) -> StickoRa
 /// ```
 pub fn confidence_interval(player: &StickoRating) -> (f64, f64) {
     (
-        player.rating - 1.96 * player.deviation,
+        1.96f64.mul_add(-player.deviation, player.rating),
         1.96f64.mul_add(player.deviation, player.rating),
     )
 }

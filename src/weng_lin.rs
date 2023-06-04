@@ -976,8 +976,8 @@ fn new_uncertainty_teams(
     uncertainty_tolerance: f64,
     large_delta: f64,
 ) -> f64 {
-    let new_player_uncertainty_sq = (1.0
-        - ((player_uncertainty_sq / team_uncertainty_sq) * large_delta))
+    let new_player_uncertainty_sq = (player_uncertainty_sq / team_uncertainty_sq)
+        .mul_add(-large_delta, 1.0)
         .max(uncertainty_tolerance);
     (player_uncertainty_sq * new_player_uncertainty_sq).sqrt()
 }

@@ -497,8 +497,7 @@ pub fn decay_deviation(player: &GlickoRating, config: &GlickoConfig) -> GlickoRa
 /// ```
 pub fn confidence_interval(player: &GlickoRating) -> (f64, f64) {
     (
-        // Seems like there is no mul_sub function.
-        player.rating - 1.96 * player.deviation,
+        1.96f64.mul_add(-player.deviation, player.rating),
         1.96f64.mul_add(player.deviation, player.rating),
     )
 }

@@ -98,7 +98,7 @@ impl From<f64> for EloRating {
 impl From<IngoRating> for EloRating {
     fn from(i: IngoRating) -> Self {
         Self {
-            rating: 2840.0 - 8.0 * i.rating,
+            rating: 8.0f64.mul_add(-i.rating, 2840.0),
         }
     }
 }

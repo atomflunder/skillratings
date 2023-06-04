@@ -492,11 +492,11 @@ mod tests {
         let outcome = Outcomes::WIN;
 
         assert_eq!(outcome, outcome.clone());
-        assert!(!format!("{:?}", outcome).is_empty());
+        assert!(!format!("{outcome:?}").is_empty());
 
         let multi_team_outcome = MultiTeamOutcome::new(1);
         assert_eq!(multi_team_outcome, multi_team_outcome.clone());
-        assert!(!format!("{:?}", multi_team_outcome).is_empty());
+        assert!(!format!("{multi_team_outcome:?}").is_empty());
         assert!(MultiTeamOutcome::new(1) < MultiTeamOutcome::new(2));
     }
 }

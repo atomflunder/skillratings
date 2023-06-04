@@ -695,7 +695,7 @@ pub fn decay_deviation(
 /// ```
 pub fn confidence_interval(player: &GlickoBoostRating) -> (f64, f64) {
     (
-        player.rating - 1.96 * player.deviation,
+        1.96f64.mul_add(-player.deviation, player.rating),
         1.96f64.mul_add(player.deviation, player.rating),
     )
 }

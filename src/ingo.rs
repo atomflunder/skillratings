@@ -333,7 +333,7 @@ pub fn expected_score(player_one: &IngoRating, player_two: &IngoRating) -> (f64,
 }
 
 fn performance(average_rating: f64, score: f64) -> f64 {
-    average_rating - (100.0 * score - 50.0)
+    average_rating - 100.0f64.mul_add(score, -50.0)
 }
 
 /// Similar to the DWZ algorithm, we use the age of the player to get the development coefficient.
