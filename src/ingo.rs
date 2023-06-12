@@ -45,7 +45,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{elo::EloRating, Outcomes};
+use crate::{elo::EloRating, Outcomes, Rating, RatingPeriodSystem, RatingSystem};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -81,6 +81,21 @@ impl Default for IngoRating {
     }
 }
 
+impl Rating for IngoRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        None
+    }
+    fn new(rating: Option<f64>, _uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(230.0),
+            age: 26,
+        }
+    }
+}
+
 impl From<(f64, usize)> for IngoRating {
     fn from((r, a): (f64, usize)) -> Self {
         Self { rating: r, age: a }
@@ -100,6 +115,45 @@ impl From<EloRating> for IngoRating {
             rating: 355.0 - (e.rating / 8.0),
             ..Default::default()
         }
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`IngoRating`]
+pub struct Ingo {}
+
+impl RatingSystem for Ingo {
+    type RATING = IngoRating;
+    // No need for a config here.
+    type CONFIG = ();
+
+    fn new(_config: Self::CONFIG) -> Self {
+        Self {}
+    }
+
+    fn rate(
+        &self,
+        player_one: &IngoRating,
+        player_two: &IngoRating,
+        outcome: &Outcomes,
+    ) -> (IngoRating, IngoRating) {
+        ingo(player_one, player_two, outcome)
+    }
+
+    fn expected_score(&self, player_one: &IngoRating, player_two: &IngoRating) -> (f64, f64) {
+        expected_score(player_one, player_two)
+    }
+}
+
+impl RatingPeriodSystem for Ingo {
+    type RATING = IngoRating;
+    type CONFIG = ();
+
+    fn new(_config: Self::CONFIG) -> Self {
+        Self {}
+    }
+
+    fn rate(&self, player: &IngoRating, results: &[(IngoRating, Outcomes)]) -> IngoRating {
+        ingo_rating_period(player, results)
     }
 }
 
@@ -279,7 +333,7 @@ pub fn expected_score(player_one: &IngoRating, player_two: &IngoRating) -> (f64,
 }
 
 fn performance(average_rating: f64, score: f64) -> f64 {
-    average_rating - (100.0 * score - 50.0)
+    average_rating - 100.0f64.mul_add(score, -50.0)
 }
 
 /// Similar to the DWZ algorithm, we use the age of the player to get the development coefficient.
@@ -423,8 +477,39 @@ mod tests {
 
         assert_eq!(player_one, player_one.clone());
 
-        assert!(!format!("{:?}", player_one).is_empty());
+        assert!(!format!("{player_one:?}").is_empty());
 
         assert_eq!(IngoRating::from((222.0, 26)), IngoRating::from(222.0));
+    }
+
+    #[test]
+    fn test_traits() {
+        let player_one: IngoRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: IngoRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_system: Ingo = RatingSystem::new(());
+
+        assert!((player_one.rating() - 240.0).abs() < f64::EPSILON);
+        assert_eq!(player_one.uncertainty(), None);
+
+        let (new_player_one, new_player_two) =
+            RatingSystem::rate(&rating_system, &player_one, &player_two, &Outcomes::WIN);
+
+        let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
+
+        assert!((new_player_one.rating - 237.619_047_619_047_62).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 242.380_952_380_952_38).abs() < f64::EPSILON);
+        assert!((exp1 - 0.5).abs() < f64::EPSILON);
+        assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let player_one: IngoRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: IngoRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_period: Ingo = RatingPeriodSystem::new(());
+
+        let new_player_one =
+            RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
+
+        assert!((new_player_one.rating - 237.619_047_619_047_62).abs() < f64::EPSILON);
     }
 }

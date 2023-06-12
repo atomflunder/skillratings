@@ -72,7 +72,10 @@ use std::f64::consts::PI;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{glicko::GlickoRating, glicko2::Glicko2Rating, sticko::StickoRating, Outcomes};
+use crate::{
+    glicko::GlickoRating, glicko2::Glicko2Rating, sticko::StickoRating, Outcomes, Rating,
+    RatingPeriodSystem, RatingSystem,
+};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -103,6 +106,21 @@ impl GlickoBoostRating {
 impl Default for GlickoBoostRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Rating for GlickoBoostRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        Some(self.deviation)
+    }
+    fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(1500.0),
+            deviation: uncertainty.unwrap_or(350.0),
+        }
     }
 }
 
@@ -199,6 +217,59 @@ impl GlickoBoostConfig {
 impl Default for GlickoBoostConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`GlickoBoost`]
+pub struct GlickoBoost {
+    config: GlickoBoostConfig,
+}
+
+impl RatingSystem for GlickoBoost {
+    type RATING = GlickoBoostRating;
+    type CONFIG = GlickoBoostConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &GlickoBoostRating,
+        player_two: &GlickoBoostRating,
+        outcome: &Outcomes,
+    ) -> (GlickoBoostRating, GlickoBoostRating) {
+        glicko_boost(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(
+        &self,
+        player_one: &GlickoBoostRating,
+        player_two: &GlickoBoostRating,
+    ) -> (f64, f64) {
+        expected_score(player_one, player_two, &self.config)
+    }
+}
+
+impl RatingPeriodSystem for GlickoBoost {
+    type RATING = GlickoBoostRating;
+    type CONFIG = GlickoBoostConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player: &GlickoBoostRating,
+        results: &[(GlickoBoostRating, Outcomes)],
+    ) -> GlickoBoostRating {
+        // Need to add a colour indicator to the results, we use white everytime.
+        // The advantage of playing white is set to 0 by default, anyways.
+        let new_results: Vec<(GlickoBoostRating, Outcomes, bool)> =
+            results.iter().map(|r| (r.0, r.1, true)).collect();
+
+        glicko_boost_rating_period(player, &new_results[..], &self.config)
     }
 }
 
@@ -624,7 +695,7 @@ pub fn decay_deviation(
 /// ```
 pub fn confidence_interval(player: &GlickoBoostRating) -> (f64, f64) {
     (
-        player.rating - 1.96 * player.deviation,
+        1.96f64.mul_add(-player.deviation, player.rating),
         1.96f64.mul_add(player.deviation, player.rating),
     )
 }
@@ -1024,9 +1095,41 @@ mod tests {
         assert_eq!(player_one, player_one.clone());
         assert!((config.eta - config.clone().eta).abs() < f64::EPSILON);
 
-        assert!(!format!("{:?}", player_one).is_empty());
-        assert!(!format!("{:?}", config).is_empty());
+        assert!(!format!("{player_one:?}").is_empty());
+        assert!(!format!("{config:?}").is_empty());
 
         assert_eq!(player_one, GlickoBoostRating::from((1500.0, 350.0)));
+    }
+
+    #[test]
+    fn test_traits() {
+        let player_one: GlickoBoostRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: GlickoBoostRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_system: GlickoBoost = RatingSystem::new(GlickoBoostConfig::new());
+
+        assert!((player_one.rating() - 240.0).abs() < f64::EPSILON);
+        assert_eq!(player_one.uncertainty(), Some(90.0));
+
+        let (new_player_one, new_player_two) =
+            RatingSystem::rate(&rating_system, &player_one, &player_two, &Outcomes::WIN);
+
+        let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
+
+        assert!((new_player_one.rating - 259.366_898_204_792_6).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 220.633_101_795_207_38).abs() < f64::EPSILON);
+
+        assert!((exp1 - 0.539_945_539_565_174_9).abs() < f64::EPSILON);
+        assert!((exp2 - 0.460_054_460_434_825_1).abs() < f64::EPSILON);
+
+        let player_one: GlickoBoostRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: GlickoBoostRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_period: GlickoBoost = RatingPeriodSystem::new(GlickoBoostConfig::new());
+
+        let new_player_one =
+            RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
+
+        assert!((new_player_one.rating - 259.366_898_204_792_6).abs() < f64::EPSILON);
     }
 }

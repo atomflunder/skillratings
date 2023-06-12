@@ -62,10 +62,10 @@
 //!
 //! # More Information
 //! - [Wikipedia Article](https://en.wikipedia.org/wiki/TrueSkill)
-//! - [TrueSkill Ranking System](https://www.microsoft.com/en-us/research/project/trueskill-ranking-system/)
 //! - [Original Paper (PDF)](https://proceedings.neurips.cc/paper/2006/file/f44ee263952e65b3610b8ba51229d1f9-Paper.pdf)
 //! - [The math behind TrueSkill (PDF)](http://www.moserware.com/assets/computing-your-skill/The%20Math%20Behind%20TrueSkill.pdf)
 //! - [Moserware: Computing Your Skill](http://www.moserware.com/2010/03/computing-your-skill.html)
+//! - [TrueSkill Calculator](https://trueskill-calculator.vercel.app/)
 
 use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 
@@ -73,6 +73,7 @@ use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 use serde::{Deserialize, Serialize};
 
 use crate::{weng_lin::WengLinRating, Outcomes};
+use crate::{Rating, RatingPeriodSystem, RatingSystem, TeamRatingSystem};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -101,6 +102,21 @@ impl TrueSkillRating {
 impl Default for TrueSkillRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Rating for TrueSkillRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        Some(self.uncertainty)
+    }
+    fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(25.0),
+            uncertainty: uncertainty.unwrap_or(25.0 / 3.0),
+        }
     }
 }
 
@@ -160,6 +176,76 @@ impl TrueSkillConfig {
 impl Default for TrueSkillConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`TrueSkillRating`]
+pub struct TrueSkill {
+    config: TrueSkillConfig,
+}
+
+impl RatingSystem for TrueSkill {
+    type RATING = TrueSkillRating;
+    type CONFIG = TrueSkillConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &TrueSkillRating,
+        player_two: &TrueSkillRating,
+        outcome: &Outcomes,
+    ) -> (TrueSkillRating, TrueSkillRating) {
+        trueskill(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(
+        &self,
+        player_one: &TrueSkillRating,
+        player_two: &TrueSkillRating,
+    ) -> (f64, f64) {
+        expected_score(player_one, player_two, &self.config)
+    }
+}
+
+impl RatingPeriodSystem for TrueSkill {
+    type RATING = TrueSkillRating;
+    type CONFIG = TrueSkillConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player: &TrueSkillRating,
+        results: &[(TrueSkillRating, Outcomes)],
+    ) -> TrueSkillRating {
+        trueskill_rating_period(player, results, &self.config)
+    }
+}
+
+impl TeamRatingSystem for TrueSkill {
+    type RATING = TrueSkillRating;
+    type CONFIG = TrueSkillConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        team_one: &[TrueSkillRating],
+        team_two: &[TrueSkillRating],
+        outcome: &Outcomes,
+    ) -> (Vec<TrueSkillRating>, Vec<TrueSkillRating>) {
+        trueskill_two_teams(team_one, team_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, team_one: &[Self::RATING], team_two: &[Self::RATING]) -> (f64, f64) {
+        expected_score_two_teams(team_one, team_two, &self.config)
     }
 }
 
@@ -994,7 +1080,7 @@ pub fn expected_score_multi_team(
 /// assert!((older_rank.round() - 37.0).abs() < f64::EPSILON);
 /// ```
 pub fn get_rank(player: &TrueSkillRating) -> f64 {
-    player.rating - (player.uncertainty * 3.0)
+    player.uncertainty.mul_add(-3.0, player.rating)
 }
 
 fn draw_margin(draw_probability: f64, beta: f64, total_players: f64) -> f64 {
@@ -1073,7 +1159,7 @@ fn w_draw(difference: f64, draw_margin: f64, c: f64) -> f64 {
 
     v.mul_add(
         v,
-        ((draw_c - diff_c_abs) * p1 - (-draw_c - diff_c_abs) * p2) / norm,
+        (draw_c - diff_c_abs).mul_add(p1, -(-draw_c - diff_c_abs) * p2) / norm,
     )
 }
 
@@ -1094,7 +1180,7 @@ fn new_uncertainty(uncertainty: f64, c: f64, w: f64, default_dynamics: f64) -> f
     let variance = uncertainty.mul_add(uncertainty, default_dynamics.powi(2));
     let dev_multiplier = variance / c.powi(2);
 
-    (variance * (1.0 - w * dev_multiplier)).sqrt()
+    (variance * w.mul_add(-dev_multiplier, 1.0)).sqrt()
 }
 
 // The following functions could have been imported from some math crate,
@@ -1131,7 +1217,7 @@ fn erfc(x: f64) -> f64 {
                 ),
                 1.000_023_68,
             ),
-            -z * z - 1.265_512_23,
+            (-z).mul_add(z, -1.265_512_23),
         )
         .exp();
 
@@ -1164,7 +1250,7 @@ fn inverse_erfc(y: f64) -> f64 {
 
     for _ in 0..2 {
         let err = erfc(x) - y;
-        x += err / (1.128_379_167_095_512_57 * (-(x.powi(2))).exp() - x * err);
+        x += err / 1.128_379_167_095_512_57f64.mul_add((-(x.powi(2))).exp(), -x * err);
     }
 
     if zero_point {
@@ -1182,7 +1268,7 @@ fn cdf(x: f64, mu: f64, sigma: f64) -> f64 {
 
 /// The inverse of the cumulative distribution function.
 fn inverse_cdf(x: f64, mu: f64, sigma: f64) -> f64 {
-    mu - sigma * SQRT_2 * inverse_erfc(2.0 * x)
+    (sigma * SQRT_2).mul_add(-inverse_erfc(2.0 * x), mu)
 }
 
 /// The probability density function.
@@ -1680,7 +1766,7 @@ mod tests {
         assert!((team_two[0].rating - 23.356_662_026_148_804).abs() < f64::EPSILON);
         assert!((team_two[1].rating - 29.075_310_476_318_872).abs() < f64::EPSILON);
 
-        assert!((team_one[0].uncertainty - 6.555_663_733_192_404).abs() < f64::EPSILON);
+        assert!((team_one[0].uncertainty - 6.555_663_733_192_403).abs() < f64::EPSILON);
         assert!((team_one[1].uncertainty - 5.417_723_612_401_869).abs() < f64::EPSILON);
         assert!((team_two[0].uncertainty - 3.832_975_356_683_128).abs() < f64::EPSILON);
         assert!((team_two[1].uncertainty - 2.930_957_525_591_959_5).abs() < f64::EPSILON);
@@ -1819,8 +1905,8 @@ mod tests {
 
         let (exp1, exp2) = expected_score(&player_one, &player_two, &TrueSkillConfig::new());
 
-        assert!((exp1 * 100.0 - 50.0).round().abs() < f64::EPSILON);
-        assert!((exp2 * 100.0 - 50.0).round().abs() < f64::EPSILON);
+        assert!(exp1.mul_add(100.0, -50.0).round().abs() < f64::EPSILON);
+        assert!(exp2.mul_add(100.0, -50.0).round().abs() < f64::EPSILON);
 
         let better_player = TrueSkillRating {
             rating: 44.0,
@@ -1834,8 +1920,8 @@ mod tests {
         let (exp1, exp2) =
             expected_score(&better_player, &worse_player, &TrueSkillConfig::default());
 
-        assert!((exp1 * 100.0 - 80.0).round().abs() < f64::EPSILON);
-        assert!((exp2 * 100.0 - 20.0).round().abs() < f64::EPSILON);
+        assert!(exp1.mul_add(100.0, -80.0).round().abs() < f64::EPSILON);
+        assert!(exp2.mul_add(100.0, -20.0).round().abs() < f64::EPSILON);
 
         assert!((exp1.mul_add(100.0, exp2 * 100.0).round() - 100.0).abs() < f64::EPSILON);
 
@@ -2071,11 +2157,57 @@ mod tests {
         assert_eq!(player_one, player_one.clone());
         assert!((config.beta - config.clone().beta).abs() < f64::EPSILON);
 
-        assert!(!format!("{:?}", player_one).is_empty());
-        assert!(!format!("{:?}", config).is_empty());
+        assert!(!format!("{player_one:?}").is_empty());
+        assert!(!format!("{config:?}").is_empty());
 
         assert!(!format!("{:?}", Matrix::new(2, 3)).is_empty());
 
         assert_eq!(player_one, TrueSkillRating::from((25.0, 25.0 / 3.0)));
+    }
+
+    #[test]
+    fn test_traits() {
+        let player_one: TrueSkillRating = Rating::new(Some(24.0), Some(2.0));
+        let player_two: TrueSkillRating = Rating::new(Some(24.0), Some(2.0));
+
+        let rating_system: TrueSkill = RatingSystem::new(TrueSkillConfig::new());
+
+        assert!((player_one.rating() - 24.0).abs() < f64::EPSILON);
+        assert_eq!(player_one.uncertainty(), Some(2.0));
+
+        let (new_player_one, new_player_two) =
+            RatingSystem::rate(&rating_system, &player_one, &player_two, &Outcomes::WIN);
+
+        let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
+
+        assert!((new_player_one.rating - 24.534_185_520_312_818).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 23.465_814_479_687_182).abs() < f64::EPSILON);
+        assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
+
+        let player_one: TrueSkillRating = Rating::new(Some(24.0), Some(2.0));
+        let player_two: TrueSkillRating = Rating::new(Some(24.0), Some(2.0));
+
+        let rating_period: TrueSkill = RatingPeriodSystem::new(TrueSkillConfig::new());
+
+        let new_player_one =
+            RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
+
+        assert!((new_player_one.rating - 24.534_185_520_312_818).abs() < f64::EPSILON);
+
+        let player_one: TrueSkillRating = Rating::new(Some(24.0), Some(2.0));
+        let player_two: TrueSkillRating = Rating::new(Some(24.0), Some(2.0));
+
+        let team_rating: TrueSkill = TeamRatingSystem::new(TrueSkillConfig::new());
+
+        let (new_team_one, new_team_two) =
+            TeamRatingSystem::rate(&team_rating, &[player_one], &[player_two], &Outcomes::WIN);
+
+        assert!((new_team_one[0].rating - 24.534_185_520_312_818).abs() < f64::EPSILON);
+        assert!((new_team_two[0].rating - 23.465_814_479_687_182).abs() < f64::EPSILON);
+
+        let (exp1, exp2) =
+            TeamRatingSystem::expected_score(&rating_system, &[player_one], &[player_two]);
+
+        assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
     }
 }

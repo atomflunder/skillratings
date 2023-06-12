@@ -60,7 +60,10 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{trueskill::TrueSkillRating, MultiTeamOutcome, Outcomes};
+use crate::{
+    trueskill::TrueSkillRating, MultiTeamOutcome, MultiTeamRatingSystem, Outcomes, Rating,
+    RatingPeriodSystem, RatingSystem, TeamRatingSystem,
+};
 use std::cmp::Ordering;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -92,6 +95,21 @@ impl WengLinRating {
 impl Default for WengLinRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Rating for WengLinRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        Some(self.uncertainty)
+    }
+    fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(25.0),
+            uncertainty: uncertainty.unwrap_or(25.0 / 3.0),
+        }
     }
 }
 
@@ -145,6 +163,88 @@ impl WengLinConfig {
 impl Default for WengLinConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`WengLinRating`]
+pub struct WengLin {
+    config: WengLinConfig,
+}
+
+impl RatingSystem for WengLin {
+    type RATING = WengLinRating;
+    type CONFIG = WengLinConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &WengLinRating,
+        player_two: &WengLinRating,
+        outcome: &Outcomes,
+    ) -> (WengLinRating, WengLinRating) {
+        weng_lin(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, player_one: &WengLinRating, player_two: &WengLinRating) -> (f64, f64) {
+        expected_score(player_one, player_two, &self.config)
+    }
+}
+
+impl RatingPeriodSystem for WengLin {
+    type RATING = WengLinRating;
+    type CONFIG = WengLinConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(&self, player: &WengLinRating, results: &[(WengLinRating, Outcomes)]) -> WengLinRating {
+        weng_lin_rating_period(player, results, &self.config)
+    }
+}
+
+impl TeamRatingSystem for WengLin {
+    type RATING = WengLinRating;
+    type CONFIG = WengLinConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        team_one: &[WengLinRating],
+        team_two: &[WengLinRating],
+        outcome: &Outcomes,
+    ) -> (Vec<WengLinRating>, Vec<WengLinRating>) {
+        weng_lin_two_teams(team_one, team_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, team_one: &[Self::RATING], team_two: &[Self::RATING]) -> (f64, f64) {
+        expected_score_two_teams(team_one, team_two, &self.config)
+    }
+}
+
+impl MultiTeamRatingSystem for WengLin {
+    type RATING = WengLinRating;
+    type CONFIG = WengLinConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        teams_and_ranks: &[(&[Self::RATING], MultiTeamOutcome)],
+    ) -> Vec<Vec<WengLinRating>> {
+        weng_lin_multi_team(teams_and_ranks, &self.config)
+    }
+
+    fn expected_score(&self, teams: &[&[Self::RATING]]) -> Vec<f64> {
+        expected_score_multi_team(teams, &self.config)
     }
 }
 
@@ -620,7 +720,7 @@ pub fn weng_lin_multi_team(
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
-/// Similar to [`expected_score_teams`].
+/// Similar to [`expected_score_two_teams`] and [`expected_score_multi_team`].
 ///
 /// # Examples
 /// ```
@@ -876,8 +976,8 @@ fn new_uncertainty_teams(
     uncertainty_tolerance: f64,
     large_delta: f64,
 ) -> f64 {
-    let new_player_uncertainty_sq = (1.0
-        - ((player_uncertainty_sq / team_uncertainty_sq) * large_delta))
+    let new_player_uncertainty_sq = (player_uncertainty_sq / team_uncertainty_sq)
+        .mul_add(-large_delta, 1.0)
         .max(uncertainty_tolerance);
     (player_uncertainty_sq * new_player_uncertainty_sq).sqrt()
 }
@@ -1322,9 +1422,77 @@ mod tests {
         assert_eq!(player_one, player_one.clone());
         assert!((config.beta - config.clone().beta).abs() < f64::EPSILON);
 
-        assert!(!format!("{:?}", player_one).is_empty());
-        assert!(!format!("{:?}", config).is_empty());
+        assert!(!format!("{player_one:?}").is_empty());
+        assert!(!format!("{config:?}").is_empty());
 
         assert_eq!(player_one, WengLinRating::from((25.0, 25.0 / 3.0)));
+    }
+
+    #[test]
+    fn test_traits() {
+        let player_one: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+        let player_two: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+
+        let rating_system: WengLin = RatingSystem::new(WengLinConfig::new());
+
+        assert!((player_one.rating() - 24.0).abs() < f64::EPSILON);
+        assert_eq!(player_one.uncertainty(), Some(2.0));
+
+        let (new_player_one, new_player_two) =
+            RatingSystem::rate(&rating_system, &player_one, &player_two, &Outcomes::WIN);
+
+        let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
+
+        assert!((new_player_one.rating - 24.305_987_072_319_287).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 23.694_012_927_680_713).abs() < f64::EPSILON);
+
+        assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
+
+        let player_one: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+        let player_two: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+
+        let rating_period: WengLin = RatingPeriodSystem::new(WengLinConfig::new());
+
+        let new_player_one =
+            RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
+
+        assert!((new_player_one.rating - 24.305_987_072_319_287).abs() < f64::EPSILON);
+
+        let player_one: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+        let player_two: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+
+        let team_rating: WengLin = TeamRatingSystem::new(WengLinConfig::new());
+
+        let (new_team_one, new_team_two) =
+            TeamRatingSystem::rate(&team_rating, &[player_one], &[player_two], &Outcomes::WIN);
+
+        assert!((new_team_one[0].rating - 24.305_987_072_319_287).abs() < f64::EPSILON);
+        assert!((new_team_two[0].rating - 23.694_012_927_680_713).abs() < f64::EPSILON);
+
+        let (exp1, exp2) =
+            TeamRatingSystem::expected_score(&rating_system, &[player_one], &[player_two]);
+
+        assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
+
+        let player_one: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+        let player_two: WengLinRating = Rating::new(Some(24.0), Some(2.0));
+
+        let multi_team_rating: WengLin = MultiTeamRatingSystem::new(WengLinConfig::new());
+
+        let new_teams = MultiTeamRatingSystem::rate(
+            &multi_team_rating,
+            &[
+                (&[player_one], MultiTeamOutcome::new(1)),
+                (&[player_two], MultiTeamOutcome::new(2)),
+            ],
+        );
+
+        assert!((new_teams[0][0].rating - 24.305_987_072_319_287).abs() < f64::EPSILON);
+        assert!((new_teams[1][0].rating - 23.694_012_927_680_713).abs() < f64::EPSILON);
+
+        let exp =
+            MultiTeamRatingSystem::expected_score(&rating_system, &[&[player_one], &[player_two]]);
+
+        assert!((exp[0] + exp[1] - 1.0).abs() < f64::EPSILON);
     }
 }

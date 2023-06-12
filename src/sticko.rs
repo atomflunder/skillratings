@@ -70,6 +70,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     glicko::GlickoRating, glicko2::Glicko2Rating, glicko_boost::GlickoBoostRating, Outcomes,
+    Rating, RatingPeriodSystem, RatingSystem,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -101,6 +102,21 @@ impl StickoRating {
 impl Default for StickoRating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Rating for StickoRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        Some(self.deviation)
+    }
+    fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(1500.0),
+            deviation: uncertainty.unwrap_or(350.0),
+        }
     }
 }
 
@@ -201,6 +217,51 @@ impl StickoConfig {
 impl Default for StickoConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`StickoRating`]
+pub struct Sticko {
+    config: StickoConfig,
+}
+
+impl RatingSystem for Sticko {
+    type RATING = StickoRating;
+    type CONFIG = StickoConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &StickoRating,
+        player_two: &StickoRating,
+        outcome: &Outcomes,
+    ) -> (StickoRating, StickoRating) {
+        sticko(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, player_one: &StickoRating, player_two: &StickoRating) -> (f64, f64) {
+        expected_score(player_one, player_two, &self.config)
+    }
+}
+
+impl RatingPeriodSystem for Sticko {
+    type RATING = StickoRating;
+    type CONFIG = StickoConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(&self, player: &StickoRating, results: &[(StickoRating, Outcomes)]) -> StickoRating {
+        // Need to add a colour indicator to the results, we use white everytime.
+        // The advantage of playing white is set to 0 by default, anyways.
+        let new_results: Vec<(StickoRating, Outcomes, bool)> =
+            results.iter().map(|r| (r.0, r.1, true)).collect();
+
+        sticko_rating_period(player, &new_results[..], &self.config)
     }
 }
 
@@ -572,7 +633,7 @@ pub fn decay_deviation(player: &StickoRating, config: &StickoConfig) -> StickoRa
 /// ```
 pub fn confidence_interval(player: &StickoRating) -> (f64, f64) {
     (
-        player.rating - 1.96 * player.deviation,
+        1.96f64.mul_add(-player.deviation, player.rating),
         1.96f64.mul_add(player.deviation, player.rating),
     )
 }
@@ -891,9 +952,40 @@ mod tests {
         assert_eq!(player_one, player_one.clone());
         assert!((config.c - config.clone().c).abs() < f64::EPSILON);
 
-        assert!(!format!("{:?}", player_one).is_empty());
-        assert!(!format!("{:?}", config).is_empty());
+        assert!(!format!("{player_one:?}").is_empty());
+        assert!(!format!("{config:?}").is_empty());
 
         assert_eq!(player_one, StickoRating::from((1500.0, 350.0)));
+    }
+
+    #[test]
+    fn test_traits() {
+        let player_one: StickoRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: StickoRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_system: Sticko = RatingSystem::new(StickoConfig::new());
+
+        assert!((player_one.rating() - 240.0).abs() < f64::EPSILON);
+        assert_eq!(player_one.uncertainty(), Some(90.0));
+
+        let (new_player_one, new_player_two) =
+            RatingSystem::rate(&rating_system, &player_one, &player_two, &Outcomes::WIN);
+
+        let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
+
+        assert!((new_player_one.rating - 261.352_796_989_360_1).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 218.647_203_010_639_9).abs() < f64::EPSILON);
+        assert!((exp1 - 0.5).abs() < f64::EPSILON);
+        assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let player_one: StickoRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: StickoRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_period: Sticko = RatingPeriodSystem::new(StickoConfig::new());
+
+        let new_player_one =
+            RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
+
+        assert!((new_player_one.rating - 261.352_796_989_360_1).abs() < f64::EPSILON);
     }
 }

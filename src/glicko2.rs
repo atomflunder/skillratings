@@ -1,5 +1,5 @@
 //! The Glicko-2 algorithm, an improvement on Glicko and widely used in online games,
-//! like Counter Strike: Global Offensive, Team Fortress 2, Splatoon 2 and most online chess platforms.
+//! like Counter Strike: Global Offensive, Team Fortress 2, Splatoon 2 or Lichess.
 //!
 //! If you are looking for the regular Glicko rating system, please see [`Glicko`](crate::glicko).
 //!
@@ -55,7 +55,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    glicko::GlickoRating, glicko_boost::GlickoBoostRating, sticko::StickoRating, Outcomes,
+    glicko::GlickoRating, glicko_boost::GlickoBoostRating, sticko::StickoRating, Outcomes, Rating,
+    RatingPeriodSystem, RatingSystem,
 };
 use std::f64::consts::PI;
 
@@ -92,6 +93,22 @@ impl Glicko2Rating {
 impl Default for Glicko2Rating {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Rating for Glicko2Rating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        Some(self.deviation)
+    }
+    fn new(rating: Option<f64>, uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(1500.0),
+            deviation: uncertainty.unwrap_or(350.0),
+            volatility: 0.06,
+        }
     }
 }
 
@@ -164,6 +181,46 @@ impl Glicko2Config {
 impl Default for Glicko2Config {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`Glicko2Rating`]
+pub struct Glicko2 {
+    config: Glicko2Config,
+}
+
+impl RatingSystem for Glicko2 {
+    type RATING = Glicko2Rating;
+    type CONFIG = Glicko2Config;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &Glicko2Rating,
+        player_two: &Glicko2Rating,
+        outcome: &Outcomes,
+    ) -> (Glicko2Rating, Glicko2Rating) {
+        glicko2(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, player_one: &Glicko2Rating, player_two: &Glicko2Rating) -> (f64, f64) {
+        expected_score(player_one, player_two)
+    }
+}
+
+impl RatingPeriodSystem for Glicko2 {
+    type RATING = Glicko2Rating;
+    type CONFIG = Glicko2Config;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(&self, player: &Glicko2Rating, results: &[(Glicko2Rating, Outcomes)]) -> Glicko2Rating {
+        glicko2_rating_period(player, results, &self.config)
     }
 }
 
@@ -494,8 +551,7 @@ pub fn decay_deviation(player: &Glicko2Rating) -> Glicko2Rating {
 /// ```
 pub fn confidence_interval(player: &Glicko2Rating) -> (f64, f64) {
     (
-        // Seems like there is no mul_sub function.
-        player.rating - 1.96 * player.deviation,
+        1.96f64.mul_add(-player.deviation, player.rating),
         1.96f64.mul_add(player.deviation, player.rating),
     )
 }
@@ -546,9 +602,9 @@ fn new_volatility(
     let mut b = if delta_squared > deviation_squared + v {
         (delta_squared - deviation_squared - v).ln()
     } else {
-        let mut k = 1.0;
+        let mut k: f64 = 1.0;
         while f_value(
-            a - k * tau,
+            k.mul_add(-tau, a),
             delta_squared,
             deviation_squared,
             v,
@@ -558,7 +614,7 @@ fn new_volatility(
         {
             k += 1.0;
         }
-        a - k * tau
+        k.mul_add(-tau, a)
     };
 
     let mut fa = f_value(a, delta_squared, deviation_squared, v, old_volatility, tau);
@@ -782,8 +838,8 @@ mod tests {
 
         let (exp_one, exp_two) = expected_score(&player_one, &player_two);
 
-        assert!((exp_one * 100.0 - 50.0).abs() < f64::EPSILON);
-        assert!((exp_two * 100.0 - 50.0).abs() < f64::EPSILON);
+        assert!(exp_one.mul_add(100.0, -50.0).abs() < f64::EPSILON);
+        assert!(exp_two.mul_add(100.0, -50.0).abs() < f64::EPSILON);
 
         let player_three = Glicko2Rating {
             rating: 2000.0,
@@ -966,9 +1022,40 @@ mod tests {
         assert_eq!(player_one, player_one.clone());
         assert!((config.tau - config.clone().tau).abs() < f64::EPSILON);
 
-        assert!(!format!("{:?}", player_one).is_empty());
-        assert!(!format!("{:?}", config).is_empty());
+        assert!(!format!("{player_one:?}").is_empty());
+        assert!(!format!("{config:?}").is_empty());
 
         assert_eq!(player_one, Glicko2Rating::from((1500.0, 350.0, 0.06)));
+    }
+
+    #[test]
+    fn test_traits() {
+        let player_one: Glicko2Rating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: Glicko2Rating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_system: Glicko2 = RatingSystem::new(Glicko2Config::new());
+
+        assert!((player_one.rating() - 240.0).abs() < f64::EPSILON);
+        assert_eq!(player_one.uncertainty(), Some(90.0));
+
+        let (new_player_one, new_player_two) =
+            RatingSystem::rate(&rating_system, &player_one, &player_two, &Outcomes::WIN);
+
+        let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
+
+        assert!((new_player_one.rating - 261.373_963_260_869_7).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 218.626_036_739_130_34).abs() < f64::EPSILON);
+        assert!((exp1 - 0.5).abs() < f64::EPSILON);
+        assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let player_one: Glicko2Rating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: Glicko2Rating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_period: Glicko2 = RatingPeriodSystem::new(Glicko2Config::new());
+
+        let new_player_one =
+            RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
+
+        assert!((new_player_one.rating - 261.373_963_260_869_7).abs() < f64::EPSILON);
     }
 }

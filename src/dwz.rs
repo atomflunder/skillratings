@@ -51,7 +51,7 @@ use std::{collections::HashMap, error::Error, fmt::Display};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{elo::EloRating, Outcomes};
+use crate::{elo::EloRating, Outcomes, Rating, RatingPeriodSystem, RatingSystem};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -86,6 +86,22 @@ impl DWZRating {
 impl Default for DWZRating {
     fn default() -> Self {
         Self::new(26)
+    }
+}
+
+impl Rating for DWZRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        None
+    }
+    fn new(rating: Option<f64>, _uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(1000.0),
+            index: 1,
+            age: 26,
+        }
     }
 }
 
@@ -143,6 +159,44 @@ impl Display for GetFirstDWZError {
 }
 
 impl Error for GetFirstDWZError {}
+
+/// Struct to calculate ratings and expected score for [`DWZRating`]
+pub struct DWZ {}
+
+impl RatingSystem for DWZ {
+    type RATING = DWZRating;
+    type CONFIG = ();
+
+    fn new(_config: Self::CONFIG) -> Self {
+        Self {}
+    }
+
+    fn rate(
+        &self,
+        player_one: &DWZRating,
+        player_two: &DWZRating,
+        outcome: &Outcomes,
+    ) -> (DWZRating, DWZRating) {
+        dwz(player_one, player_two, outcome)
+    }
+
+    fn expected_score(&self, player_one: &DWZRating, player_two: &DWZRating) -> (f64, f64) {
+        expected_score(player_one, player_two)
+    }
+}
+
+impl RatingPeriodSystem for DWZ {
+    type RATING = DWZRating;
+    type CONFIG = ();
+
+    fn new(_config: Self::CONFIG) -> Self {
+        Self {}
+    }
+
+    fn rate(&self, player: &DWZRating, results: &[(DWZRating, Outcomes)]) -> DWZRating {
+        dwz_rating_period(player, results)
+    }
+}
 
 #[must_use]
 /// Calculates new [`DWZRating`] of two players based on their old rating, index, age and outcome of the game.
@@ -903,7 +957,7 @@ mod tests {
         assert_eq!(player_one, player_two);
 
         assert_eq!(player_one, player_one.clone());
-        assert!(!format!("{:?}", player_one).is_empty());
+        assert!(!format!("{player_one:?}").is_empty());
 
         assert_eq!(
             DWZRating::from((1400.0, 20)),
@@ -920,5 +974,36 @@ mod tests {
             GetFirstDWZError::NotEnoughGames,
             GetFirstDWZError::NotEnoughGames.clone()
         );
+    }
+
+    #[test]
+    fn test_traits() {
+        let player_one: DWZRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: DWZRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_system: DWZ = RatingSystem::new(());
+
+        assert!((player_one.rating() - 240.0).abs() < f64::EPSILON);
+        assert_eq!(player_one.uncertainty(), None);
+
+        let (new_player_one, new_player_two) =
+            RatingSystem::rate(&rating_system, &player_one, &player_two, &Outcomes::WIN);
+
+        let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
+
+        assert!((new_player_one.rating - 306.666_666_666_666_7).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 237.350_993_377_483_43).abs() < f64::EPSILON);
+        assert!((exp1 - 0.5).abs() < f64::EPSILON);
+        assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let player_one: DWZRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: DWZRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_period: DWZ = RatingPeriodSystem::new(());
+
+        let new_player_one =
+            RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
+
+        assert!((new_player_one.rating - 306.666_666_666_666_7).abs() < f64::EPSILON);
     }
 }

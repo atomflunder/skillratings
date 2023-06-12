@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.25.0 - 2023-06-04
+
+- Add Rating, RatingSystem, RatingPeriodSystem, TeamRatingSystem, and MultiTeamRatingSystem traits
+
 ## v0.24.0 - 2023-01-01
 
 - Renamed `match_quality_teams` to `match_quality_two_teams` for consistency

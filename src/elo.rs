@@ -46,7 +46,10 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{dwz::DWZRating, fifa::FifaRating, ingo::IngoRating, uscf::USCFRating, Outcomes};
+use crate::{
+    dwz::DWZRating, fifa::FifaRating, ingo::IngoRating, uscf::USCFRating, Outcomes, Rating,
+    RatingPeriodSystem, RatingSystem,
+};
 
 /// The Elo rating of a player.
 ///
@@ -72,6 +75,20 @@ impl Default for EloRating {
     }
 }
 
+impl Rating for EloRating {
+    fn rating(&self) -> f64 {
+        self.rating
+    }
+    fn uncertainty(&self) -> Option<f64> {
+        None
+    }
+    fn new(rating: Option<f64>, _uncertainty: Option<f64>) -> Self {
+        Self {
+            rating: rating.unwrap_or(1000.0),
+        }
+    }
+}
+
 impl From<f64> for EloRating {
     fn from(r: f64) -> Self {
         Self { rating: r }
@@ -81,7 +98,7 @@ impl From<f64> for EloRating {
 impl From<IngoRating> for EloRating {
     fn from(i: IngoRating) -> Self {
         Self {
-            rating: 2840.0 - 8.0 * i.rating,
+            rating: 8.0f64.mul_add(-i.rating, 2840.0),
         }
     }
 }
@@ -134,6 +151,46 @@ impl EloConfig {
 impl Default for EloConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Struct to calculate ratings and expected score for [`EloRating`]
+pub struct Elo {
+    config: EloConfig,
+}
+
+impl RatingSystem for Elo {
+    type RATING = EloRating;
+    type CONFIG = EloConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        player_one: &EloRating,
+        player_two: &EloRating,
+        outcome: &Outcomes,
+    ) -> (EloRating, EloRating) {
+        elo(player_one, player_two, outcome, &self.config)
+    }
+
+    fn expected_score(&self, player_one: &EloRating, player_two: &EloRating) -> (f64, f64) {
+        expected_score(player_one, player_two)
+    }
+}
+
+impl RatingPeriodSystem for Elo {
+    type RATING = EloRating;
+    type CONFIG = EloConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(&self, player: &EloRating, results: &[(EloRating, Outcomes)]) -> EloRating {
+        elo_rating_period(player, results, &self.config)
     }
 }
 
@@ -367,9 +424,40 @@ mod tests {
         assert_eq!(player_one, player_one.clone());
         assert!((config.k - config.clone().k).abs() < f64::EPSILON);
 
-        assert!(!format!("{:?}", player_one).is_empty());
-        assert!(!format!("{:?}", config).is_empty());
+        assert!(!format!("{player_one:?}").is_empty());
+        assert!(!format!("{config:?}").is_empty());
 
         assert_eq!(player_one, EloRating::from(1000.0));
+    }
+
+    #[test]
+    fn test_traits() {
+        let player_one: EloRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: EloRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_system: Elo = RatingSystem::new(EloConfig::new());
+
+        assert!((player_one.rating() - 240.0).abs() < f64::EPSILON);
+        assert_eq!(player_one.uncertainty(), None);
+
+        let (new_player_one, new_player_two) =
+            RatingSystem::rate(&rating_system, &player_one, &player_two, &Outcomes::WIN);
+
+        let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
+
+        assert!((new_player_one.rating - 256.0).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 224.0).abs() < f64::EPSILON);
+        assert!((exp1 - 0.5).abs() < f64::EPSILON);
+        assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let player_one: EloRating = Rating::new(Some(240.0), Some(90.0));
+        let player_two: EloRating = Rating::new(Some(240.0), Some(90.0));
+
+        let rating_period: Elo = RatingPeriodSystem::new(EloConfig::new());
+
+        let new_player_one =
+            RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
+
+        assert!((new_player_one.rating - 256.0).abs() < f64::EPSILON);
     }
 }
