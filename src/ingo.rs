@@ -23,6 +23,7 @@
 //!
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
+//! // The default rating is 230. Unlike with other algorithms, with Ingo a lower rating is more desirable.
 //! let (some_rating, some_age) = (150.4, 23);
 //! let player_two = IngoRating {
 //!     rating: some_rating,

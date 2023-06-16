@@ -30,7 +30,7 @@
 //!     Outcomes,
 //! };
 //!
-//! // Initialise a new player rating.
+//! // Initialise a new player rating with a rating of 1500 and a deviation of 350.
 //! let player_one = GlickoBoostRating::new();
 //!
 //! // Or you can initialise it with your own values of course.
@@ -45,6 +45,8 @@
 //! let outcome = Outcomes::WIN;
 //!
 //! // The config allows you to specify certain values in the Glicko-Boost calculation.
+//! // For more information on how to customise the config,
+//! // please check out the GlickoBoostConfig struct.
 //! let config = GlickoBoostConfig {
 //!     // The eta value describes the advantage of player_one.
 //!     // 30.0 is roughly accurate for playing White in Chess.

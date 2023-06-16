@@ -19,7 +19,7 @@
 //!     Outcomes,
 //! };
 //!
-//! // Initialise a new player rating.
+//! // Initialise a new player rating with a rating of 1500 and a deviation of 350.
 //! let player_one = GlickoRating::new();
 //!
 //! // Or you can initialise it with your own values of course.

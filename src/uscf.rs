@@ -34,6 +34,8 @@
 //!
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
+//! // The default rating is 1300 if you are 26 or older.
+//! // For younger players it is the players age * 50.
 //! let (some_rating, some_games) = (1325.0, 44);
 //! let player_two = USCFRating {
 //!     rating: some_rating,

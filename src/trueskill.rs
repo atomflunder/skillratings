@@ -32,7 +32,7 @@
 //!     Outcomes,
 //! };
 //!
-//! // Initialise a new player rating.
+//! // Initialise a new player rating with a rating of 25, and an uncertainty of 25/3 ≈ 8.33.
 //! let player_one = TrueSkillRating::new();
 //!
 //! // Or you can initialise it with your own values of course.
@@ -51,6 +51,8 @@
 //! // This means that in our game, draws will be very rare to occur.
 //! // Change this value to reflect the outcomes of your game.
 //! // For example in chess, it might be a good idea to increase this value.
+//! // For more information on how to customise the config,
+//! // please check out the TrueSkillConfig struct.
 //! let config = TrueSkillConfig {
 //!     draw_probability: 0.05,
 //!     ..Default::default()

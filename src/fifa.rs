@@ -17,7 +17,7 @@
 //!     Outcomes,
 //! };
 //!
-//! // Initialise a new team rating.
+//! // Initialise a new team rating with a rating of 1000.
 //! let team_one = FifaRating::new();
 //!
 //! // Or you can initialise it with your own values of course.
@@ -33,6 +33,8 @@
 //! // The config allows you to specify certain values in the Fifa calculation.
 //! // Here we set the importance factor to 50.0, and the knockout factor to false.
 //! // Which corresponds to a World Cup Group Stage match.
+//! // For more information on how to customise the config,
+//! // please check out the FifaConfig struct.
 //! let config = FifaConfig {
 //!     importance: 50.0,
 //!     knockout: false,

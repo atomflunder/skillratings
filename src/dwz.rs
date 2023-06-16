@@ -24,6 +24,7 @@
 //!
 //! // Or you can initialise it with your own values of course.
 //! // Imagine these numbers being pulled from a database.
+//! // The default rating is 1000, and the index denotes the amount of tournaments played.
 //! let (some_rating, some_index, some_age) = (1325.0, 51, 27);
 //! let player_two = DWZRating {
 //!     rating: some_rating,

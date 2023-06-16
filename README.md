@@ -77,7 +77,7 @@ use skillratings::{
 };
 
 // Initialise a new player rating.
-// The default values are: 1500.0, 350.0, and 0.06.
+// The default values are: 1500, 350, and 0.06.
 let player_one = Glicko2Rating::new();
 
 // Or you can initialise it with your own values of course.
@@ -114,6 +114,7 @@ use skillratings::{
 };
 
 // We initialise Team One as a Vec of multiple TrueSkillRatings.
+// The default values for the rating are: 25, 25/3 ≈ 8.33.
 let team_one = vec![
     TrueSkillRating {
         rating: 33.3,
@@ -163,6 +164,7 @@ use skillratings::{
 
 // Initialise the teams as Vecs of WengLinRatings.
 // Note that teams do not necessarily have to be the same size.
+// The default values for the rating are: 25, 25/3 ≈ 8.33.
 let team_one = vec![
     WengLinRating {
         rating: 25.1,
@@ -224,7 +226,7 @@ This example is using *Glicko* (*not Glicko-2!*) to demonstrate.
 use skillratings::glicko::{expected_score, GlickoRating};
 
 // Initialise a new player rating.
-// The default values are: 1500.0, and 350.0.
+// The default values are: 1500, and 350.
 let player_one = GlickoRating::new();
 
 // Initialising a new rating with custom numbers.
@@ -257,6 +259,7 @@ use skillratings::{
 };
 
 // We initialise a new Elo Rating here.
+// The default rating value is 1000.
 let player = EloRating { rating: 1402.1 };
 
 // We need a list of results to pass to the elo_rating_period function.

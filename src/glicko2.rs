@@ -17,7 +17,7 @@
 //!     Outcomes,
 //! };
 //!
-//! // Initialise a new player rating.
+//! // Initialise a new player rating with a rating of 1500, a deviation of 350 and a volatility of 0.06.
 //! let player_one = Glicko2Rating::new();
 //!
 //! // Or you can initialise it with your own values of course.
@@ -36,6 +36,8 @@
 //! // Here we set the Tau value to 0.9, instead of the default 0.5.
 //! // This will increase the change in volatility over time.
 //! // According to Mark Glickman, values between 0.3 and 1.2 are reasonable.
+//! // For more information on how to customise the config,
+//! // please check out the Glicko2Config struct.
 //! let config = Glicko2Config {
 //!     tau: 0.9,
 //!     ..Default::default()

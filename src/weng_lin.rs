@@ -22,7 +22,7 @@
 //!     Outcomes,
 //! };
 //!
-//! // Initialise a new player rating.
+//! // Initialise a new player rating with a rating of 25, and an uncertainty of 25/3 ≈ 8.33.
 //! let player_one = WengLinRating::new();
 //!
 //! // Or you can initialise it with your own values of course.
@@ -42,6 +42,8 @@
 //! // to achieve a ~67% win-rate over another player.
 //! // Lower this value if your game is heavily reliant on pure skill,
 //! // or increase it if randomness plays a big factor in the outcome of the game.
+//! // For more information on how to customise the config,
+//! // please check out the WengLinConfig struct.
 //! let config = WengLinConfig {
 //!     beta: 25.0 / 12.0,
 //!     ..Default::default()
