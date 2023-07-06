@@ -73,7 +73,10 @@ use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
 use serde::{Deserialize, Serialize};
 
 use crate::{weng_lin::WengLinRating, Outcomes};
-use crate::{Rating, RatingPeriodSystem, RatingSystem, TeamRatingSystem};
+use crate::{
+    MultiTeamOutcome, MultiTeamRatingSystem, Rating, RatingPeriodSystem, RatingSystem,
+    TeamRatingSystem,
+};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -246,6 +249,26 @@ impl TeamRatingSystem for TrueSkill {
 
     fn expected_score(&self, team_one: &[Self::RATING], team_two: &[Self::RATING]) -> (f64, f64) {
         expected_score_two_teams(team_one, team_two, &self.config)
+    }
+}
+
+impl MultiTeamRatingSystem for TrueSkill {
+    type RATING = TrueSkillRating;
+    type CONFIG = TrueSkillConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        teams_and_ranks: &[(&[Self::RATING], MultiTeamOutcome)],
+    ) -> Vec<Vec<Self::RATING>> {
+        trueskill_multi_team(teams_and_ranks, &self.config)
+    }
+
+    fn expected_score(&self, teams: &[&[Self::RATING]]) -> Vec<f64> {
+        expected_score_multi_team(teams, &self.config)
     }
 }
 
@@ -607,6 +630,19 @@ pub fn trueskill_two_teams(
     }
 
     (new_team_one, new_team_two)
+}
+
+#[must_use]
+/// Not yet implemented.
+/// Please see https://github.com/atomflunder/skillratings/issues/8
+/// and https://github.com/atomflunder/skillratings/pull/9 for more information.
+///
+/// # Panics
+pub fn trueskill_multi_team(
+    teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)],
+    config: &TrueSkillConfig,
+) -> Vec<Vec<TrueSkillRating>> {
+    todo!()
 }
 
 #[must_use]
@@ -1353,7 +1389,7 @@ impl Matrix {
         Self::new_from_data(
             &player_assignments,
             team_assignments_list_count - 1,
-            total_players as usize,
+            total_players,
         )
     }
 
