@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.25.1 - 2023-10-05
+
+- Overhaul documentation
+
 ## v0.25.0 - 2023-06-04
 
 - Add Rating, RatingSystem, RatingPeriodSystem, TeamRatingSystem, and MultiTeamRatingSystem traits

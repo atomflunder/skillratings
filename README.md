@@ -27,11 +27,26 @@ Currently supported algorithms:
 Most of these are known from their usage in chess and various other games.  
 Click on the documentation for the modules linked above for more information about the specific rating algorithms, and their advantages and disadvantages.
 
+## Table of Contents
+
+- [Installation](#installation)
+    - [Serde Support](#serde-support)
+- [Usage and Examples](#usage-and-examples)
+    - [Player vs. Player](#player-vs-player)
+    - [Team vs. Team](#team-vs-team)
+    - [Free-For-Alls and Multiple Teams](#free-for-alls-and-multiple-teams)
+    - [Expected Outcome](#expected-outcome)
+    - [Rating Period](#rating-period)
+    - [Switching between different rating systems](#switching-between-different-rating-systems)
+- [Contributing](#contributing)
+- [License](#license)
+
+
 ## Installation
 
 If you are on Rust 1.62 or higher use `cargo add` to install the latest version:
 
-```
+```bash
 cargo add skillratings
 ```
 
@@ -48,7 +63,7 @@ Serde support is gated behind the `serde` feature. You can enable it like so:
 
 Using `cargo add`:
 
-```
+```bash
 cargo add skillratings --features serde
 ```
 
@@ -276,6 +291,50 @@ let new_player = elo_rating_period(&player, &results, &EloConfig::new());
 
 // The rating of the player decreased by around ~40 points.
 assert_eq!(new_player.rating.round(), 1362.0);
+```
+
+### Switching between different rating systems
+
+If you want to switch between different rating systems, for example to compare results or do scientific analyisis, 
+we provide the `Rating`, `RatingSystem` (1v1), `RatingPeriodSystem` (1v1 Tournaments), `TeamRatingSystem` (Team vs. Team) 
+and `MultiTeamRatingSystem` (FFA) traits to make switching as easy as possible.
+
+In the following example, we are using the `RatingSystem` (1v1) Trait with Glicko-2:
+
+```rust
+use skillratings::{
+    glicko2::{Glicko2, Glicko2Config},
+    Outcomes, Rating, RatingSystem,
+};
+
+// Initialise a new player rating with a rating value and uncertainty value.
+// Not every rating system has an uncertainty value, so it may be discarded.
+let player_one = Rating::new(Some(1200.0), Some(120.0));
+// If you want the default values for the rating system, use None instead.
+let player_two = Rating::new(None, None);
+
+// The config needs to be specific to the rating system.
+// When you swap rating systems, make sure to update the config.
+let config = Glicko2Config::new();
+
+// You may also need to use a type annotation here for the compiler.
+let rating_system: Glicko2 = RatingSystem::new(config);
+
+// The outcome of the match is from the perspective of player one.
+let outcome = Outcomes::WIN;
+
+// All rating systems share a `rate` function for performing the actual calculations,
+// plus an `expected_score` function for calculating the expected performances.
+// Some rating systems might have additional functions,
+// which are only available when you use them directly.
+let expected_score = rating_system.expected_score(&player_one, &player_two);
+let (new_one, new_two) = rating_system.rate(&player_one, &player_two, &outcome);
+
+// After that, you can access the players rating and uncertainty with the functions below.
+assert_eq!(new_one.rating().round(), 1241.0);
+// Note that because not every rating system has an uncertainty value,
+// the uncertainty function returns an Option<f64>.
+assert_eq!(new_one.uncertainty().unwrap().round(), 118.0);
 ```
 
 ## Contributing
