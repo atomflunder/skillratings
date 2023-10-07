@@ -671,10 +671,7 @@ mod tests {
             volatility: 0.06,
         };
 
-        let config = Glicko2Config {
-            //convergence_tolerance: 0.000_000_000_000_001,
-            ..Default::default()
-        };
+        let config = Glicko2Config::default();
 
         let (player1new, player2new) = glicko2(&player1, &player2, &Outcomes::WIN, &config);
 
