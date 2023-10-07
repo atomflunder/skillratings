@@ -304,9 +304,12 @@
 //!
 //! ### Switching between different rating systems
 //!
-//! If you want to switch between different rating systems, for example to compare results or do scientific analyisis,
-//! we provide the `Rating`, `RatingSystem` (1v1), `RatingPeriodSystem` (1v1 Tournaments), `TeamRatingSystem` (Team vs. Team)
-//! and `MultiTeamRatingSystem` (FFA) traits to make switching as easy as possible.
+//! If you want to switch between different rating systems, for example to compare results or to do scientific analyisis,
+//! we provide Traits to make switching as easy and fast as possible.  
+//! All you have to do is provide the right Config for your rating system.
+//!
+//! _**Disclaimer:**_ For more accurate and fine-tuned calculations it is recommended that you use the rating system modules directly.  
+//! The Traits are primarily meant to be used for comparisions between systems.
 //!
 //! In the following example, we are using the `RatingSystem` (1v1) Trait with Glicko-2:
 //!
@@ -318,28 +321,30 @@
 //!
 //! // Initialise a new player rating with a rating value and uncertainty value.
 //! // Not every rating system has an uncertainty value, so it may be discarded.
+//! // Some rating systems might consider other values too (volatility, age, matches played etc.).
+//! // If that is the case, we will use the default values for those.
 //! let player_one = Rating::new(Some(1200.0), Some(120.0));
-//! // If you want the default values for the rating system, use None instead.
+//! // Some rating systems might use widely different scales for measuring a player's skill.
+//! // So if you always want the default values for every rating system, use None instead.
 //! let player_two = Rating::new(None, None);
 //!
 //! // The config needs to be specific to the rating system.
 //! // When you swap rating systems, make sure to update the config.
 //! let config = Glicko2Config::new();
 //!
+//! // We want to rate 1v1 matches here so we are using the `RatingSystem` trait.
 //! // You may also need to use a type annotation here for the compiler.
 //! let rating_system: Glicko2 = RatingSystem::new(config);
 //!
 //! // The outcome of the match is from the perspective of player one.
 //! let outcome = Outcomes::WIN;
 //!
-//! // All rating systems share a `rate` function for performing the actual calculations,
-//! // plus an `expected_score` function for calculating the expected performances.
-//! // Some rating systems might have additional functions,
-//! // which are only available when you use them directly.
+//! // Calculate the expected score of the match.
 //! let expected_score = rating_system.expected_score(&player_one, &player_two);
+//! // Calculate the new ratings.
 //! let (new_one, new_two) = rating_system.rate(&player_one, &player_two, &outcome);
 //!
-//! // After that, you can access the players rating and uncertainty with the functions below.
+//! // After that, access new ratings and uncertainties with the functions below.
 //! assert_eq!(new_one.rating().round(), 1241.0);
 //! // Note that because not every rating system has an uncertainty value,
 //! // the uncertainty function returns an Option<f64>.
@@ -453,6 +458,9 @@ impl From<MultiTeamOutcome> for usize {
 }
 
 /// Measure of player's skill.
+///
+/// 📌 _**Important note:**_ Please keep in mind that some rating systems use widely different scales for measuring ratings.  
+/// Please check out the documentation for each rating system for more information, or use `None` to always use default values.
 pub trait Rating {
     /// A single value for player's skill
     fn rating(&self) -> f64;
@@ -465,6 +473,9 @@ pub trait Rating {
 }
 
 /// Rating system for 1v1 matches.
+///
+/// 📌 _**Important note:**_ The Rating System Traits only implement the `rate` and `expected_score` functions.  
+/// Some rating systems might also implement additional functions (confidence interval, match quality, etc.) which you can only access by using those directly.
 pub trait RatingSystem {
     #[cfg(feature = "serde")]
     type RATING: Rating + Copy + std::fmt::Debug + DeserializeOwned + Serialize;
@@ -487,6 +498,9 @@ pub trait RatingSystem {
 }
 
 /// Rating system for rating periods.
+///
+/// 📌 _**Important note:**_ The Rating System Traits only implement the `rate` and `expected_score` functions.  
+/// Some rating systems might also implement additional functions (confidence interval, match quality, etc.) which you can only access by using those directly.
 pub trait RatingPeriodSystem {
     #[cfg(feature = "serde")]
     type RATING: Rating + Copy + std::fmt::Debug + DeserializeOwned + Serialize;
@@ -503,6 +517,9 @@ pub trait RatingPeriodSystem {
 }
 
 /// Rating system for two teams.
+///
+/// 📌 _**Important note:**_ The Rating System Traits only implement the `rate` and `expected_score` functions.  
+/// Some rating systems might also implement additional functions (confidence interval, match quality, etc.) which you can only access by using those directly.
 pub trait TeamRatingSystem {
     #[cfg(feature = "serde")]
     type RATING: Rating + Copy + std::fmt::Debug + DeserializeOwned + Serialize;
@@ -525,6 +542,9 @@ pub trait TeamRatingSystem {
 }
 
 /// Rating system for more than two teams.
+///
+/// 📌 _**Important note:**_ The Rating System Traits only implement the `rate` and `expected_score` functions.  
+/// Some rating systems might also implement additional functions (confidence interval, match quality, etc.) which you can only access by using those directly.
 pub trait MultiTeamRatingSystem {
     #[cfg(feature = "serde")]
     type RATING: Rating + Copy + std::fmt::Debug + DeserializeOwned + Serialize;
