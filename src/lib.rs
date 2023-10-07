@@ -474,7 +474,7 @@ pub trait Rating {
 
 /// Rating system for 1v1 matches.
 ///
-/// 📌 _**Important note:**_ The Rating System Traits only implement the `rate` and `expected_score` functions.  
+/// 📌 _**Important note:**_ The RatingSystem Trait only implements the `rate` and `expected_score` functions.  
 /// Some rating systems might also implement additional functions (confidence interval, match quality, etc.) which you can only access by using those directly.
 pub trait RatingSystem {
     #[cfg(feature = "serde")]
@@ -499,8 +499,8 @@ pub trait RatingSystem {
 
 /// Rating system for rating periods.
 ///
-/// 📌 _**Important note:**_ The Rating System Traits only implement the `rate` and `expected_score` functions.  
-/// Some rating systems might also implement additional functions (confidence interval, match quality, etc.) which you can only access by using those directly.
+/// 📌 _**Important note:**_ The RatingPeriodSystem Trait only implements the `rate` function.  
+/// Some rating systems might also implement additional functions which you can only access by using those directly.
 pub trait RatingPeriodSystem {
     #[cfg(feature = "serde")]
     type RATING: Rating + Copy + std::fmt::Debug + DeserializeOwned + Serialize;
@@ -518,8 +518,8 @@ pub trait RatingPeriodSystem {
 
 /// Rating system for two teams.
 ///
-/// 📌 _**Important note:**_ The Rating System Traits only implement the `rate` and `expected_score` functions.  
-/// Some rating systems might also implement additional functions (confidence interval, match quality, etc.) which you can only access by using those directly.
+/// 📌 _**Important note:**_ The TeamRatingSystem Trait only implements the `rate` and `expected_score` functions.  
+/// Some rating systems might also implement additional functions which you can only access by using those directly.
 pub trait TeamRatingSystem {
     #[cfg(feature = "serde")]
     type RATING: Rating + Copy + std::fmt::Debug + DeserializeOwned + Serialize;
@@ -543,8 +543,8 @@ pub trait TeamRatingSystem {
 
 /// Rating system for more than two teams.
 ///
-/// 📌 _**Important note:**_ The Rating System Traits only implement the `rate` and `expected_score` functions.  
-/// Some rating systems might also implement additional functions (confidence interval, match quality, etc.) which you can only access by using those directly.
+/// 📌 _**Important note:**_ The MultiTeamRatinngSystem Trait only implements the `rate` and `expected_score` functions.  
+/// Some rating systems might also implement additional functions which you can only access by using those directly.
 pub trait MultiTeamRatingSystem {
     #[cfg(feature = "serde")]
     type RATING: Rating + Copy + std::fmt::Debug + DeserializeOwned + Serialize;
