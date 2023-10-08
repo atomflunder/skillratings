@@ -265,6 +265,13 @@ impl RatingPeriodSystem for Sticko {
 
         sticko_rating_period(player, &new_results[..], &self.config)
     }
+
+    fn expected_score(&self, player: &Self::RATING, opponents: &[Self::RATING]) -> Vec<f64> {
+        let new_opponents: Vec<(StickoRating, bool)> =
+            opponents.iter().map(|o| (*o, true)).collect();
+
+        expected_score_rating_period(player, &new_opponents, &self.config)
+    }
 }
 
 #[must_use]
@@ -579,6 +586,79 @@ pub fn expected_score(
     let exp_two = 1.0 - exp_one;
 
     (exp_one, exp_two)
+}
+
+#[must_use]
+/// Calculates the expected outcome of a player in a rating period or tournament.
+///
+/// Takes in a players as [`StickoRating`] and a list of opponents as a slice of [`StickoRating`]
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near 0.5 mean a draw is likely to occur.
+///
+/// ---
+///
+/// 📌 _**Important note:**_ The parameters intentionally work different from other expected_score_rating_period functions here.  
+/// An additional config is used, because of the set advantage parameter that describes inherit imbalances, like playing White in Chess
+/// or a Football team playing at home.
+///
+/// Because of those advantages, we also need a boolean which specifies if the player was playing as the first / advantaged player (e.g. White in Chess).
+/// If set to `true` the player was playing with the advantage, if set to `false` the player was with the disadvantage.  
+///
+/// If the config is set to not have any advantages, the boolean will not matter.
+///
+/// ---
+///
+///
+/// # Examples
+/// ```
+/// use skillratings::sticko::{expected_score_rating_period, StickoConfig, StickoRating};
+///
+/// let player = StickoRating {
+///     rating: 1900.0,
+///     deviation: 120.0,
+/// };
+///
+/// let opponent1 = StickoRating {
+///     rating: 1930.0,
+///     deviation: 120.0,
+/// };
+///
+/// let opponent2 = StickoRating {
+///     rating: 1730.0,
+///     deviation: 120.0,
+/// };
+///
+/// let results = [
+///     // Playing as White in Chess.
+///     (opponent1, true),
+///     // Playing as Black in Chess.
+///     (opponent2, false),
+/// ];
+///
+/// let config = StickoConfig::new();
+///
+/// let exp = expected_score_rating_period(&player, &results, &config);
+///
+/// assert_eq!((exp[0] * 100.0).round(), 46.0);
+/// assert_eq!((exp[1] * 100.0).round(), 70.0);
+/// ```
+pub fn expected_score_rating_period(
+    player: &StickoRating,
+    opponents: &[(StickoRating, bool)],
+    config: &StickoConfig,
+) -> Vec<f64> {
+    opponents
+        .iter()
+        .map(|o| {
+            let q = 10_f64.ln() / 400.0;
+            let g = g_value(q, player.deviation.hypot(o.0.deviation));
+
+            let gamma = if o.1 { config.gamma } else { -config.gamma };
+
+            (1.0 + 10_f64.powf(-g * (player.rating + gamma - o.0.rating) / 400.0)).recip()
+        })
+        .collect()
 }
 
 #[must_use]
@@ -979,6 +1059,11 @@ mod tests {
         assert!((new_player_two.rating - 218.647_203_010_639_9).abs() < f64::EPSILON);
         assert!((exp1 - 0.5).abs() < f64::EPSILON);
         assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let rating_period_system: Sticko = RatingPeriodSystem::new(StickoConfig::new());
+        let exp_rp =
+            RatingPeriodSystem::expected_score(&rating_period_system, &player_one, &[player_two]);
+        assert!((exp1 - exp_rp[0]).abs() < f64::EPSILON);
 
         let player_one: StickoRating = Rating::new(Some(240.0), Some(90.0));
         let player_two: StickoRating = Rating::new(Some(240.0), Some(90.0));

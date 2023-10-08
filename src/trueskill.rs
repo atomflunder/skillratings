@@ -227,6 +227,10 @@ impl RatingPeriodSystem for TrueSkill {
     ) -> TrueSkillRating {
         trueskill_rating_period(player, results, &self.config)
     }
+
+    fn expected_score(&self, player: &Self::RATING, opponents: &[Self::RATING]) -> Vec<f64> {
+        expected_score_rating_period(player, opponents, &self.config)
+    }
 }
 
 impl TeamRatingSystem for TrueSkill {
@@ -726,7 +730,8 @@ pub fn match_quality_two_teams(
 #[must_use]
 /// Calculates the expected outcome of two players based on TrueSkill.
 ///
-/// Takes in two players as [`TrueSkillRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// Takes in two players as [`TrueSkillRating`]s and a [`TrueSkillConfig`]
+/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -781,7 +786,8 @@ pub fn expected_score(
 #[must_use]
 /// Calculates the expected outcome of two teams based on TrueSkill.
 ///
-/// Takes in two teams as a Slice of [`TrueSkillRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// Takes in two teams as a Slice of [`TrueSkillRating`]s and a [`TrueSkillConfig`]
+/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -846,6 +852,63 @@ pub fn expected_score_two_teams(
     let exp_two = 1.0 - exp_one;
 
     (exp_one, exp_two)
+}
+
+#[must_use]
+/// Calculates the expected outcome of a player in a rating period or tournament.
+///
+/// Takes in a players as [`TrueSkillRating`], a list of opponents as a slice of [`TrueSkillRating`] and a [`TrueSkillConfig`]
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near 0.5 mean a draw is likely to occur.
+///
+/// # Examples
+/// ```
+/// use skillratings::trueskill::{expected_score_rating_period, TrueSkillConfig, TrueSkillRating};
+///
+/// let player = TrueSkillRating {
+///     rating: 19.0,
+///     uncertainty: 4.0,
+/// };
+///
+/// let opponent1 = TrueSkillRating {
+///     rating: 19.3,
+///     uncertainty: 4.0,
+/// };
+///
+/// let opponent2 = TrueSkillRating {
+///     rating: 17.3,
+///     uncertainty: 4.0,
+/// };
+///
+/// let config = TrueSkillConfig::new();
+///
+/// let exp = expected_score_rating_period(&player, &[opponent1, opponent2], &config);
+///
+/// assert_eq!((exp[0] * 100.0).round(), 49.0);
+/// assert_eq!((exp[1] * 100.0).round(), 58.0);
+/// ```
+pub fn expected_score_rating_period(
+    player: &TrueSkillRating,
+    opponents: &[TrueSkillRating],
+    config: &TrueSkillConfig,
+) -> Vec<f64> {
+    opponents
+        .iter()
+        .map(|o| {
+            let delta = player.rating - o.rating;
+
+            let denom = o
+                .uncertainty
+                .mul_add(
+                    o.uncertainty,
+                    2.0f64.mul_add(config.beta.powi(2), player.uncertainty.powi(2)),
+                )
+                .sqrt();
+
+            cdf(delta / denom, 0.0, 1.0)
+        })
+        .collect()
 }
 
 #[must_use]
@@ -1610,6 +1673,11 @@ mod tests {
         assert!((new_player_one.rating - 24.534_185_520_312_818).abs() < f64::EPSILON);
         assert!((new_player_two.rating - 23.465_814_479_687_182).abs() < f64::EPSILON);
         assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
+
+        let rating_period_system: TrueSkill = RatingPeriodSystem::new(TrueSkillConfig::new());
+        let exp_rp =
+            RatingPeriodSystem::expected_score(&rating_period_system, &player_one, &[player_two]);
+        assert!((exp1 - exp_rp[0]).abs() < f64::EPSILON);
 
         let player_one: TrueSkillRating = Rating::new(Some(24.0), Some(2.0));
         let player_two: TrueSkillRating = Rating::new(Some(24.0), Some(2.0));

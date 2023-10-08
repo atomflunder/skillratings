@@ -203,6 +203,10 @@ impl RatingPeriodSystem for Glicko {
     fn rate(&self, player: &GlickoRating, results: &[(GlickoRating, Outcomes)]) -> GlickoRating {
         glicko_rating_period(player, results, &self.config)
     }
+
+    fn expected_score(&self, player: &Self::RATING, opponents: &[Self::RATING]) -> Vec<f64> {
+        expected_score_rating_period(player, opponents)
+    }
 }
 
 #[must_use]
@@ -441,6 +445,50 @@ pub fn expected_score(player_one: &GlickoRating, player_two: &GlickoRating) -> (
     let exp_two = 1.0 - exp_one;
 
     (exp_one, exp_two)
+}
+
+#[must_use]
+/// Calculates the expected outcome of a player in a rating period or tournament.
+///
+/// Takes in a players as [`GlickoRating`] and a list of opponents as a slice of [`GlickoRating`]
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near 0.5 mean a draw is likely to occur.
+///
+/// # Examples
+/// ```
+/// use skillratings::glicko::{expected_score_rating_period, GlickoRating};
+///
+/// let player = GlickoRating {
+///     rating: 1900.0,
+///     deviation: 120.0,
+/// };
+///
+/// let opponent1 = GlickoRating {
+///     rating: 1930.0,
+///     deviation: 120.0,
+/// };
+///
+/// let opponent2 = GlickoRating {
+///     rating: 1730.0,
+///     deviation: 120.0,
+/// };
+///
+/// let exp = expected_score_rating_period(&player, &[opponent1, opponent2]);
+///
+/// assert_eq!((exp[0] * 100.0).round(), 46.0);
+/// assert_eq!((exp[1] * 100.0).round(), 70.0);
+/// ```
+pub fn expected_score_rating_period(player: &GlickoRating, opponents: &[GlickoRating]) -> Vec<f64> {
+    opponents
+        .iter()
+        .map(|o| {
+            let q = 10_f64.ln() / 400.0;
+            let g = g_value(q, player.deviation.hypot(o.deviation));
+
+            (1.0 + 10_f64.powf(-g * (player.rating - o.rating) / 400.0)).recip()
+        })
+        .collect()
 }
 
 #[must_use]
@@ -764,6 +812,11 @@ mod tests {
         assert!((new_player_two.rating - 209.366_325_042_268_1).abs() < f64::EPSILON);
         assert!((exp1 - 0.5).abs() < f64::EPSILON);
         assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let rating_period_system: Glicko = RatingPeriodSystem::new(GlickoConfig::new());
+        let exp_rp =
+            RatingPeriodSystem::expected_score(&rating_period_system, &player_one, &[player_two]);
+        assert!((exp1 - exp_rp[0]).abs() < f64::EPSILON);
 
         let player_one: GlickoRating = Rating::new(Some(240.0), Some(90.0));
         let player_two: GlickoRating = Rating::new(Some(240.0), Some(90.0));

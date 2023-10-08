@@ -206,6 +206,10 @@ impl RatingPeriodSystem for WengLin {
     fn rate(&self, player: &WengLinRating, results: &[(WengLinRating, Outcomes)]) -> WengLinRating {
         weng_lin_rating_period(player, results, &self.config)
     }
+
+    fn expected_score(&self, player: &Self::RATING, opponents: &[Self::RATING]) -> Vec<f64> {
+        expected_score_rating_period(player, opponents, &self.config)
+    }
 }
 
 impl TeamRatingSystem for WengLin {
@@ -918,6 +922,51 @@ pub fn expected_score_multi_team(teams: &[&[WengLinRating]], config: &WengLinCon
     exps
 }
 
+#[must_use]
+/// Calculates the expected outcome of a player in a rating period or tournament.
+///
+/// Takes in a players as [`WengLinRating`], a list of opponents as a slice of [`WengLinRating`] and a [`WengLinConfig`]
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near 0.5 mean a draw is likely to occur.
+///
+/// # Examples
+/// ```
+/// use skillratings::weng_lin::{expected_score_rating_period, WengLinConfig, WengLinRating};
+///
+/// let player = WengLinRating {
+///     rating: 19.0,
+///     uncertainty: 4.0,
+/// };
+///
+/// let opponent1 = WengLinRating {
+///     rating: 19.3,
+///     uncertainty: 4.0,
+/// };
+///
+/// let opponent2 = WengLinRating {
+///     rating: 17.3,
+///     uncertainty: 4.0,
+/// };
+///
+/// let config = WengLinConfig::new();
+///
+/// let exp = expected_score_rating_period(&player, &[opponent1, opponent2], &config);
+///
+/// assert_eq!((exp[0] * 100.0).round(), 49.0);
+/// assert_eq!((exp[1] * 100.0).round(), 55.0);
+/// ```
+pub fn expected_score_rating_period(
+    player: &WengLinRating,
+    opponents: &[WengLinRating],
+    config: &WengLinConfig,
+) -> Vec<f64> {
+    opponents
+        .iter()
+        .map(|o| expected_score(player, o, config).0)
+        .collect()
+}
+
 fn p_value(rating_one: f64, rating_two: f64, c_value: f64) -> (f64, f64) {
     let e1 = (rating_one / c_value).exp();
     let e2 = (rating_two / c_value).exp();
@@ -1449,6 +1498,11 @@ mod tests {
         assert!((new_player_two.rating - 23.694_012_927_680_713).abs() < f64::EPSILON);
 
         assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
+
+        let rating_period_system: WengLin = RatingPeriodSystem::new(WengLinConfig::new());
+        let exp_rp =
+            RatingPeriodSystem::expected_score(&rating_period_system, &player_one, &[player_two]);
+        assert!((exp1 - exp_rp[0]).abs() < f64::EPSILON);
 
         let player_one: WengLinRating = Rating::new(Some(24.0), Some(2.0));
         let player_two: WengLinRating = Rating::new(Some(24.0), Some(2.0));

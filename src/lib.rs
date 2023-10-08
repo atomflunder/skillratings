@@ -63,7 +63,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.25"
+//! skillratings = "0.26"
 //! ```
 //!
 //! ### Serde support
@@ -80,7 +80,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = {version = "0.25", features = ["serde"]}
+//! skillratings = {version = "0.26", features = ["serde"]}
 //! ```
 //!
 //! ## Usage and Examples
@@ -332,7 +332,8 @@
 //! // When you swap rating systems, make sure to update the config.
 //! let config = Glicko2Config::new();
 //!
-//! // We want to rate 1v1 matches here so we are using the `RatingSystem` trait.
+//! // For 1v1 matches we are using the `RatingSystem` trait with the provided config.
+//! // If no config is available for the rating system, pass in empty brackets.
 //! // You may also need to use a type annotation here for the compiler.
 //! let rating_system: Glicko2 = RatingSystem::new(config);
 //!
@@ -461,6 +462,9 @@ impl From<MultiTeamOutcome> for usize {
 ///
 /// 📌 _**Important note:**_ Please keep in mind that some rating systems use widely different scales for measuring ratings.  
 /// Please check out the documentation for each rating system for more information, or use `None` to always use default values.
+///
+/// Some rating systems might consider other values too (volatility, age, matches played etc.).
+/// If that is the case, we will use the default values for those.
 pub trait Rating {
     /// A single value for player's skill
     fn rating(&self) -> f64;
@@ -499,7 +503,7 @@ pub trait RatingSystem {
 
 /// Rating system for rating periods.
 ///
-/// 📌 _**Important note:**_ The RatingPeriodSystem Trait only implements the `rate` function.  
+/// 📌 _**Important note:**_ The RatingPeriodSystem Trait only implements the `rate` and `expected_score` functions.  
 /// Some rating systems might also implement additional functions which you can only access by using those directly.
 pub trait RatingPeriodSystem {
     #[cfg(feature = "serde")]
@@ -511,9 +515,10 @@ pub trait RatingPeriodSystem {
     type CONFIG;
     /// Initialise rating system with provided config. If the rating system does not require a config, leave empty brackets.
     fn new(config: Self::CONFIG) -> Self;
-    /// Calculate ratings for two players based on provided ratings and outcome.
+    /// Calculate ratings for a player based on provided list of opponents and outcomes.
     fn rate(&self, player: &Self::RATING, results: &[(Self::RATING, Outcomes)]) -> Self::RATING;
-    // TODO: Add expected_score functions for rating periods?
+    /// Calculate expected scores for a player and a list of opponents. Returns probabilities of the player winning from 0.0 to 1.0.
+    fn expected_score(&self, player: &Self::RATING, opponents: &[Self::RATING]) -> Vec<f64>;
 }
 
 /// Rating system for two teams.
@@ -543,7 +548,7 @@ pub trait TeamRatingSystem {
 
 /// Rating system for more than two teams.
 ///
-/// 📌 _**Important note:**_ The MultiTeamRatinngSystem Trait only implements the `rate` and `expected_score` functions.  
+/// 📌 _**Important note:**_ The MultiTeamRatingSystem Trait only implements the `rate` and `expected_score` functions.  
 /// Some rating systems might also implement additional functions which you can only access by using those directly.
 pub trait MultiTeamRatingSystem {
     #[cfg(feature = "serde")]

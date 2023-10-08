@@ -192,6 +192,10 @@ impl RatingPeriodSystem for Elo {
     fn rate(&self, player: &EloRating, results: &[(EloRating, Outcomes)]) -> EloRating {
         elo_rating_period(player, results, &self.config)
     }
+
+    fn expected_score(&self, player: &Self::RATING, opponents: &[Self::RATING]) -> Vec<f64> {
+        expected_score_rating_period(player, opponents)
+    }
 }
 
 /// Calculates the [`EloRating`]s of two players based on their old ratings and the outcome of the game.
@@ -330,6 +334,36 @@ pub fn expected_score(player_one: &EloRating, player_two: &EloRating) -> (f64, f
     (exp_one, exp_two)
 }
 
+/// Calculates the expected outcome of a player in a rating period or tournament.
+///
+/// Takes in a players as [`EloRating`] and a list of opponents as a slice of [`EloRating`]
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near 0.5 mean a draw is likely to occur.
+///
+/// # Examples
+/// ```
+/// use skillratings::elo::{expected_score_rating_period, EloRating};
+///
+/// let player = EloRating { rating: 1900.0 };
+///
+/// let opponent1 = EloRating { rating: 1930.0 };
+///
+/// let opponent2 = EloRating { rating: 1730.0 };
+///
+/// let exp = expected_score_rating_period(&player, &[opponent1, opponent2]);
+///
+/// assert_eq!((exp[0] * 100.0).round(), 46.0);
+/// assert_eq!((exp[1] * 100.0).round(), 73.0);
+/// ```
+#[must_use]
+pub fn expected_score_rating_period(player: &EloRating, opponents: &[EloRating]) -> Vec<f64> {
+    opponents
+        .iter()
+        .map(|o| (1.0 + 10_f64.powf((o.rating - player.rating) / 400.0)).recip())
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -449,6 +483,11 @@ mod tests {
         assert!((new_player_two.rating - 224.0).abs() < f64::EPSILON);
         assert!((exp1 - 0.5).abs() < f64::EPSILON);
         assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let rating_period_system: Elo = RatingPeriodSystem::new(EloConfig::new());
+        let exp_rp =
+            RatingPeriodSystem::expected_score(&rating_period_system, &player_one, &[player_two]);
+        assert!((exp1 - exp_rp[0]).abs() < f64::EPSILON);
 
         let player_one: EloRating = Rating::new(Some(240.0), Some(90.0));
         let player_two: EloRating = Rating::new(Some(240.0), Some(90.0));

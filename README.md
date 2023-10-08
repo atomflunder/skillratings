@@ -54,7 +54,7 @@ Alternatively, you can add the following to your `Cargo.toml` file manually:
 
 ```toml
 [dependencies]
-skillratings = "0.25"
+skillratings = "0.26"
 ```
 
 ### Serde support
@@ -71,7 +71,7 @@ By editing `Cargo.toml` manually:
 
 ```toml
 [dependencies]
-skillratings = {version = "0.25", features = ["serde"]}
+skillratings = {version = "0.26", features = ["serde"]}
 ```
 
 ## Usage and Examples

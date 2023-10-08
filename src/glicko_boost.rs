@@ -273,6 +273,13 @@ impl RatingPeriodSystem for GlickoBoost {
 
         glicko_boost_rating_period(player, &new_results[..], &self.config)
     }
+
+    fn expected_score(&self, player: &Self::RATING, opponents: &[Self::RATING]) -> Vec<f64> {
+        let new_opponents: Vec<(GlickoBoostRating, bool)> =
+            opponents.iter().map(|o| (*o, true)).collect();
+
+        expected_score_rating_period(player, &new_opponents, &self.config)
+    }
 }
 
 #[must_use]
@@ -618,6 +625,89 @@ pub fn expected_score(
     let exp_two = 1.0 - exp_one;
 
     (exp_one, exp_two)
+}
+
+#[must_use]
+/// Calculates the expected outcome of a player in a rating period or tournament.
+///
+/// Takes in a player as an [`GlickoBoostRating`] and their results as a Slice of tuples containing the opponent as a [`GlickoBoostRating`],
+/// and a [`bool`] specifying if the player was playing as player one, and a [`GlickoBoostConfig`].
+///
+/// ---
+///
+/// 📌 _**Important note:**_ The parameters intentionally work different from other expected_score_rating_period functions here.  
+/// An additional config is used, because of the set advantage parameter that describes inherit imbalances, like playing White in Chess
+/// or a Football team playing at home.
+///
+/// Because of those advantages, we also need a boolean which specifies if the player was playing as the first / advantaged player (e.g. White in Chess).
+/// If set to `true` the player was playing with the advantage, if set to `false` the player was with the disadvantage.  
+///
+/// If the config is set to not have any advantages, the boolean will not matter.
+///
+/// ---
+///
+/// The outcome of the match is in the perspective of the player.
+/// This means [`Outcomes::WIN`] is a win for the player and [`Outcomes::LOSS`] is a win for the opponent.
+///
+/// If the player's results are empty, the player's rating deviation will automatically be decayed using [`decay_deviation`].
+///
+/// # Examples
+/// ```
+/// use skillratings::{
+///     glicko_boost::{expected_score_rating_period, GlickoBoostConfig, GlickoBoostRating},
+///     Outcomes,
+/// };
+///
+/// let player = GlickoBoostRating {
+///     rating: 1500.0,
+///     deviation: 200.0,
+/// };
+///
+/// let opponent1 = GlickoBoostRating {
+///     rating: 1400.0,
+///     deviation: 30.0,
+/// };
+///
+/// let opponent2 = GlickoBoostRating {
+///     rating: 1550.0,
+///     deviation: 100.0,
+/// };
+///
+/// let opponent3 = GlickoBoostRating {
+///     rating: 1700.0,
+///     deviation: 300.0,
+/// };
+///
+/// let results = vec![
+///     // The player was playing as white.
+///     (opponent1, true),
+///     // The player was playing as black.
+///     (opponent2, false),
+///     (opponent3, true),
+/// ];
+///
+/// let config = GlickoBoostConfig::new();
+///
+/// let exp = expected_score_rating_period(&player, &results, &config);
+///
+/// assert_eq!((exp[0] * 100.0).round(), 65.0);
+/// assert_eq!((exp[1] * 100.0).round(), 48.0);
+/// assert_eq!((exp[2] * 100.0).round(), 34.0);
+/// ```
+pub fn expected_score_rating_period(
+    player: &GlickoBoostRating,
+    opponents: &[(GlickoBoostRating, bool)],
+    config: &GlickoBoostConfig,
+) -> Vec<f64> {
+    opponents
+        .iter()
+        .map(|o| {
+            let q = 10_f64.ln() / 400.0;
+            let g = g_value(q, player.deviation.hypot(o.0.deviation));
+
+            (1.0 + 10_f64.powf(-g * (player.rating + config.eta - o.0.rating) / 400.0)).recip()
+        })
+        .collect()
 }
 
 #[must_use]
@@ -1123,6 +1213,11 @@ mod tests {
 
         assert!((exp1 - 0.539_945_539_565_174_9).abs() < f64::EPSILON);
         assert!((exp2 - 0.460_054_460_434_825_1).abs() < f64::EPSILON);
+
+        let rating_period_system: GlickoBoost = RatingPeriodSystem::new(GlickoBoostConfig::new());
+        let exp_rp =
+            RatingPeriodSystem::expected_score(&rating_period_system, &player_one, &[player_two]);
+        assert!((exp1 - exp_rp[0]).abs() < f64::EPSILON);
 
         let player_one: GlickoBoostRating = Rating::new(Some(240.0), Some(90.0));
         let player_two: GlickoBoostRating = Rating::new(Some(240.0), Some(90.0));

@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.26.0 - 2023-10-08
+
+- Add expected_score_rating_period functions for all rating systems
+
 ## v0.25.1 - 2023-10-05
 
 - Overhaul documentation

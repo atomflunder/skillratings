@@ -156,6 +156,10 @@ impl RatingPeriodSystem for Ingo {
     fn rate(&self, player: &IngoRating, results: &[(IngoRating, Outcomes)]) -> IngoRating {
         ingo_rating_period(player, results)
     }
+
+    fn expected_score(&self, player: &Self::RATING, opponents: &[Self::RATING]) -> Vec<f64> {
+        expected_score_rating_period(player, opponents)
+    }
 }
 
 #[must_use]
@@ -333,6 +337,45 @@ pub fn expected_score(player_one: &IngoRating, player_two: &IngoRating) -> (f64,
     (exp_one, exp_two)
 }
 
+#[must_use]
+/// Calculates the expected outcome of a player in a rating period or tournament.
+///
+/// Takes in a players as [`IngoRating`] and a list of opponents as a slice of [`IngoRating`]
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near 0.5 mean a draw is likely to occur.
+///
+/// # Examples
+/// ```
+/// use skillratings::ingo::{expected_score_rating_period, IngoRating};
+///
+/// let player = IngoRating {
+///     rating: 190.0,
+///     age: 40,
+/// };
+///
+/// let opponent1 = IngoRating {
+///     rating: 193.0,
+///     age: 40,
+/// };
+///
+/// let opponent2 = IngoRating {
+///     rating: 173.0,
+///     age: 40,
+/// };
+///
+/// let exp = expected_score_rating_period(&player, &[opponent1, opponent2]);
+///
+/// assert_eq!((exp[0] * 100.0).round(), 53.0);
+/// assert_eq!((exp[1] * 100.0).round(), 33.0);
+/// ```
+pub fn expected_score_rating_period(player: &IngoRating, opponents: &[IngoRating]) -> Vec<f64> {
+    opponents
+        .iter()
+        .map(|o| 0.5 + (o.rating - player.rating) / 100.0)
+        .collect()
+}
+
 fn performance(average_rating: f64, score: f64) -> f64 {
     average_rating - 100.0f64.mul_add(score, -50.0)
 }
@@ -502,6 +545,11 @@ mod tests {
         assert!((new_player_two.rating - 242.380_952_380_952_38).abs() < f64::EPSILON);
         assert!((exp1 - 0.5).abs() < f64::EPSILON);
         assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let rating_period_system: Ingo = RatingPeriodSystem::new(());
+        let exp_rp =
+            RatingPeriodSystem::expected_score(&rating_period_system, &player_one, &[player_two]);
+        assert!((exp1 - exp_rp[0]).abs() < f64::EPSILON);
 
         let player_one: IngoRating = Rating::new(Some(240.0), Some(90.0));
         let player_two: IngoRating = Rating::new(Some(240.0), Some(90.0));

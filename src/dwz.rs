@@ -197,6 +197,10 @@ impl RatingPeriodSystem for DWZ {
     fn rate(&self, player: &DWZRating, results: &[(DWZRating, Outcomes)]) -> DWZRating {
         dwz_rating_period(player, results)
     }
+
+    fn expected_score(&self, player: &Self::RATING, opponents: &[Self::RATING]) -> Vec<f64> {
+        expected_score_rating_period(player, opponents)
+    }
 }
 
 #[must_use]
@@ -392,6 +396,48 @@ pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f
     let exp_two = 1.0 - exp_one;
 
     (exp_one, exp_two)
+}
+
+#[must_use]
+/// Calculates the expected outcome of a player in a rating period or tournament.
+///
+/// Takes in a players as [`DWZRating`] and a list of opponents as a slice of [`DWZRating`]
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near 0.5 mean a draw is likely to occur.
+///
+/// # Examples
+/// ```
+/// use skillratings::dwz::{expected_score_rating_period, DWZRating};
+///
+/// let player = DWZRating {
+///     rating: 1900.0,
+///     index: 42,
+///     age: 42,
+/// };
+///
+/// let opponent1 = DWZRating {
+///     rating: 1930.0,
+///     index: 103,
+///     age: 39,
+/// };
+///
+/// let opponent2 = DWZRating {
+///     rating: 1730.0,
+///     index: 92,
+///     age: 14,
+/// };
+///
+/// let exp = expected_score_rating_period(&player, &[opponent1, opponent2]);
+///
+/// assert_eq!((exp[0] * 100.0).round(), 46.0);
+/// assert_eq!((exp[1] * 100.0).round(), 73.0);
+/// ```
+pub fn expected_score_rating_period(player: &DWZRating, opponents: &[DWZRating]) -> Vec<f64> {
+    opponents
+        .iter()
+        .map(|o| (1.0 + 10.0_f64.powf(-(400.0_f64.recip()) * (player.rating - o.rating))).recip())
+        .collect()
 }
 
 /// Gets a proper first [`DWZRating`].
@@ -996,6 +1042,11 @@ mod tests {
         assert!((new_player_two.rating - 237.350_993_377_483_43).abs() < f64::EPSILON);
         assert!((exp1 - 0.5).abs() < f64::EPSILON);
         assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let rating_period_system: DWZ = RatingPeriodSystem::new(());
+        let exp_rp =
+            RatingPeriodSystem::expected_score(&rating_period_system, &player_one, &[player_two]);
+        assert!((exp1 - exp_rp[0]).abs() < f64::EPSILON);
 
         let player_one: DWZRating = Rating::new(Some(240.0), Some(90.0));
         let player_two: DWZRating = Rating::new(Some(240.0), Some(90.0));

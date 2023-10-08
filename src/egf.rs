@@ -180,6 +180,13 @@ impl RatingPeriodSystem for EGF {
 
         egf_rating_period(player, &new_results[..])
     }
+
+    fn expected_score(&self, player: &Self::RATING, opponents: &[Self::RATING]) -> Vec<f64> {
+        let new_opponents: Vec<(EGFRating, EGFConfig)> =
+            opponents.iter().map(|o| (*o, self.config)).collect();
+
+        expected_score_rating_period(player, &new_opponents)
+    }
 }
 
 #[must_use]
@@ -356,6 +363,54 @@ pub fn expected_score(
     (exp_one, 1.0 - exp_one)
 }
 
+#[must_use]
+/// Calculates the expected outcome of a player in a rating period or tournament.
+///
+/// Takes in a players as [`EGFRating`] and a list of opponents as a slice of Tuples of [`EGFRating`]s and [`EGFConfig`]s
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near 0.5 mean a draw is likely to occur.
+///
+/// ---
+///
+/// 📌 _**Important note:**_ The parameters intentionally work different from other expected_score_rating_period functions here.  
+/// In most cases the config is not used, however it is required here, because of the handicaps that can change from game-to-game.
+///
+/// ---
+///
+/// # Examples
+/// ```
+/// use skillratings::egf::{expected_score_rating_period, EGFConfig, EGFRating};
+///
+/// let player = EGFRating { rating: 900.0 };
+///
+/// let opponent1 = (EGFRating { rating: 930.0 }, EGFConfig::new());
+///
+/// let opponent2 = (EGFRating { rating: 730.0 }, EGFConfig::new());
+///
+/// let exp = expected_score_rating_period(&player, &[opponent1, opponent2]);
+///
+/// assert_eq!((exp[0] * 100.0).round(), 48.0);
+/// assert_eq!((exp[1] * 100.0).round(), 62.0);
+/// ```
+pub fn expected_score_rating_period(
+    player: &EGFRating,
+    opponents: &[(EGFRating, EGFConfig)],
+) -> Vec<f64> {
+    opponents
+        .iter()
+        .map(|o| {
+            let (h1, h2) = if o.1.handicap.is_sign_negative() {
+                (o.1.handicap.abs(), 0.0)
+            } else {
+                (0.0, o.1.handicap.abs())
+            };
+
+            (1.0 + (beta(o.0.rating, h2) - beta(player.rating, h1)).exp()).recip()
+        })
+        .collect()
+}
+
 fn new_rating(rating: f64, con: f64, score: f64, exp_score: f64, bonus: f64) -> f64 {
     // The absolute minimum rating is set to be -900.
     (con.mul_add(score - exp_score, rating) + bonus).max(-900.0)
@@ -497,6 +552,16 @@ mod tests {
         assert!((new_player_two.rating - 205.842_421_207_441_73).abs() < f64::EPSILON);
         assert!((exp1 - 0.5).abs() < f64::EPSILON);
         assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let rating_period_system: EGF = RatingPeriodSystem::new(EGFConfig::new());
+        let exp_rp =
+            RatingPeriodSystem::expected_score(&rating_period_system, &player_one, &[player_two]);
+        assert!((exp1 - exp_rp[0]).abs() < f64::EPSILON);
+
+        let rating_period_system2: EGF = RatingPeriodSystem::new(EGFConfig { handicap: -0.0 });
+        let exp_rp =
+            RatingPeriodSystem::expected_score(&rating_period_system2, &player_one, &[player_two]);
+        assert!((exp1 - exp_rp[0]).abs() < f64::EPSILON);
 
         let player_one: EGFRating = Rating::new(Some(240.0), Some(90.0));
         let player_two: EGFRating = Rating::new(Some(240.0), Some(90.0));

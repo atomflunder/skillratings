@@ -224,6 +224,10 @@ impl RatingPeriodSystem for Glicko2 {
     fn rate(&self, player: &Glicko2Rating, results: &[(Glicko2Rating, Outcomes)]) -> Glicko2Rating {
         glicko2_rating_period(player, results, &self.config)
     }
+
+    fn expected_score(&self, player: &Self::RATING, opponents: &[Self::RATING]) -> Vec<f64> {
+        expected_score_rating_period(player, opponents)
+    }
 }
 
 /// Calculates the [`Glicko2Rating`]s of two players based on their old ratings, deviations, volatilities, and the outcome of the game.
@@ -495,6 +499,62 @@ pub fn expected_score(player_one: &Glicko2Rating, player_two: &Glicko2Rating) ->
     let exp_two = 1.0 - exp_one;
 
     (exp_one, exp_two)
+}
+
+#[must_use]
+/// Calculates the expected outcome of a player in a rating period or tournament.
+///
+/// Takes in a players as [`Glicko2Rating`] and a list of opponents as a slice of [`Glicko2Rating`]
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// 1.0 means a certain victory for the player, 0.0 means certain loss.
+/// Values near 0.5 mean a draw is likely to occur.
+///
+/// # Examples
+/// ```
+/// use skillratings::glicko2::{expected_score_rating_period, Glicko2Rating};
+///
+/// let player = Glicko2Rating {
+///     rating: 1900.0,
+///     deviation: 120.0,
+///     volatility: 0.00583,
+/// };
+///
+/// let opponent1 = Glicko2Rating {
+///     rating: 1930.0,
+///     deviation: 120.0,
+///     volatility: 0.00583,
+/// };
+///
+/// let opponent2 = Glicko2Rating {
+///     rating: 1730.0,
+///     deviation: 120.0,
+///     volatility: 0.00583,
+/// };
+///
+/// let exp = expected_score_rating_period(&player, &[opponent1, opponent2]);
+///
+/// assert_eq!((exp[0] * 100.0).round(), 46.0);
+/// assert_eq!((exp[1] * 100.0).round(), 70.0);
+/// ```
+pub fn expected_score_rating_period(
+    player: &Glicko2Rating,
+    opponents: &[Glicko2Rating],
+) -> Vec<f64> {
+    opponents
+        .iter()
+        .map(|o| {
+            let player_one_rating = (player.rating - 1500.0) / 173.7178;
+            let player_two_rating = (o.rating - 1500.0) / 173.7178;
+
+            let player_one_deviation = player.deviation / 173.7178;
+            let player_two_deviation = o.deviation / 173.7178;
+
+            let a1 = g_value(player_two_deviation.hypot(player_one_deviation))
+                * (player_one_rating - player_two_rating);
+
+            (1.0 + (-a1).exp()).recip()
+        })
+        .collect()
 }
 
 /// Decays a Rating Deviation Value for a player, if they missed playing in a certain rating period.
@@ -1046,6 +1106,11 @@ mod tests {
         assert!((new_player_two.rating - 218.626_036_739_130_34).abs() < f64::EPSILON);
         assert!((exp1 - 0.5).abs() < f64::EPSILON);
         assert!((exp2 - 0.5).abs() < f64::EPSILON);
+
+        let rating_period_system: Glicko2 = RatingPeriodSystem::new(Glicko2Config::new());
+        let exp_rp =
+            RatingPeriodSystem::expected_score(&rating_period_system, &player_one, &[player_two]);
+        assert!((exp1 - exp_rp[0]).abs() < f64::EPSILON);
 
         let player_one: Glicko2Rating = Rating::new(Some(240.0), Some(90.0));
         let player_two: Glicko2Rating = Rating::new(Some(240.0), Some(90.0));
