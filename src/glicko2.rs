@@ -51,7 +51,7 @@
 //!
 //! - [Wikipedia Article](https://en.wikipedia.org/wiki/Glicko_rating_system)
 //! - [Original Paper by Mark Glickman](http://www.glicko.net/glicko/glicko2.pdf)
-//! - [Glicko-2 Calculator](https://fsmosca-glicko2calculator-glicko2calculator-vik8k0.streamlitapp.com/)
+//! - [Glicko-2 Calculator](https://glicko2-calculator.streamlit.app/)
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -492,10 +492,12 @@ pub fn expected_score(player_one: &Glicko2Rating, player_two: &Glicko2Rating) ->
     let player_one_deviation = player_one.deviation / 173.7178;
     let player_two_deviation = player_two.deviation / 173.7178;
 
-    let a1 = g_value(player_two_deviation.hypot(player_one_deviation))
-        * (player_one_rating - player_two_rating);
-
-    let exp_one = (1.0 + (-a1).exp()).recip();
+    // The win probability of player_one is E(μ, μj, √(φj^2 + φ^2)) instead of E(μ, μj, φj).
+    let exp_one = e_value(
+        player_one_rating,
+        player_two_rating,
+        g_value(player_two_deviation.hypot(player_one_deviation)),
+    );
     let exp_two = 1.0 - exp_one;
 
     (exp_one, exp_two)
