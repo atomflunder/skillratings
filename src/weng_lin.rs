@@ -1149,7 +1149,7 @@ mod tests {
     #[test]
     #[allow(clippy::cognitive_complexity)]
     fn test_weng_multi_team_two() {
-        let t1 = vec![
+        let t1 = [
             WengLinRating::new(),
             WengLinRating {
                 rating: 30.0,
@@ -1161,7 +1161,7 @@ mod tests {
             },
         ];
 
-        let t2 = vec![
+        let t2 = [
             WengLinRating::default(),
             WengLinRating {
                 rating: 41.0,

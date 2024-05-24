@@ -86,7 +86,7 @@ pub fn weng_lin_two_teams_benchmark(c: &mut Criterion) {
 }
 
 pub fn weng_lin_multi_team_benchmark(c: &mut Criterion) {
-    let team_one = vec![
+    let team_one = [
         WengLinRating {
             rating: 32.1,
             uncertainty: 4.233,
@@ -104,7 +104,7 @@ pub fn weng_lin_multi_team_benchmark(c: &mut Criterion) {
             uncertainty: 1.34,
         },
     ];
-    let team_two = vec![
+    let team_two = [
         WengLinRating {
             rating: 29.1,
             uncertainty: 4.233,
@@ -122,7 +122,7 @@ pub fn weng_lin_multi_team_benchmark(c: &mut Criterion) {
             uncertainty: 1.34,
         },
     ];
-    let team_three = vec![
+    let team_three = [
         WengLinRating {
             rating: 13.1,
             uncertainty: 4.233,
