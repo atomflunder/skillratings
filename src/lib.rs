@@ -24,7 +24,7 @@
 //! - [Glicko](https://docs.rs/skillratings/latest/skillratings/glicko/)
 //! - [Glicko-2](https://docs.rs/skillratings/latest/skillratings/glicko2/)
 //! - [TrueSkill](https://docs.rs/skillratings/latest/skillratings/trueskill/)
-//! - [Weng-Lin (Bayesian Approximation System)](https://docs.rs/skillratings/latest/skillratings/weng_lin/)
+//! - [Weng-Lin (OpenSkill)](https://docs.rs/skillratings/latest/skillratings/weng_lin/)
 //! - [FIFA Men's World Ranking](https://docs.rs/skillratings/latest/skillratings/fifa/)
 //! - [Sticko (Stephenson Rating System)](https://docs.rs/skillratings/latest/skillratings/sticko/)
 //! - [Glicko-Boost](https://docs.rs/skillratings/latest/skillratings/glicko_boost/)

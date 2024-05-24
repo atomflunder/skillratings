@@ -2,14 +2,16 @@
 //! Used in games such as Rocket League.
 //!
 //! Developed by Ruby C. Weng and Chih-Jen Lin.
-//! Unlike with the other algorithms, there does not seem to exist a *short* name everyone agrees upon,
-//! so we are just calling it Weng-Lin, for short, after the researchers.
+//! We are calling the algorithm Weng-Lin, for short, after the researchers.
+//! This algorithm is also known online as "OpenSkill", in reference to the TrueSkill algorithm.
 //! But the proper name would be `A Bayesian Approximation Method for Online Ranking`.
 //!
 //! Developed specifically for online games with multiple teams and multiple players,
 //! this algorithm aims to be simpler and faster (~2.5 - 6.5x) than TrueSkill while yielding similar accuracy.
 //!
 //! While TrueSkill is based upon a Gaussian distribution, this algorithm is based upon a logistical distribution, the Bradley-Terry model.
+//!
+//! For the TrueSkill algorithm, please see [`TrueSkill`](crate::trueskill).
 //!
 //! # Quickstart
 //!
@@ -58,6 +60,7 @@
 //! - [Bradley-Terry model Wikipedia](https://en.wikipedia.org/wiki/Bradley–Terry_model)
 //! - [Approximate Bayesian computation Wikipedia](https://en.wikipedia.org/wiki/Approximate_Bayesian_computation)
 //! - [Logistic distribution Wikipedia](https://en.wikipedia.org/wiki/Logistic_distribution)
+//! - [OpenSkill (Python Package)](https://openskill.me/en/stable/)
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
