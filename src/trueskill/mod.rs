@@ -2549,6 +2549,18 @@ mod tests {
             TeamRatingSystem::expected_score(&rating_system, &[player_one], &[player_two]);
 
         assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
+
+        let multi_team_rating: TrueSkill = MultiTeamRatingSystem::new(TrueSkillConfig::new());
+        let mtr = MultiTeamRatingSystem::rate(
+            &multi_team_rating,
+            &[
+                (&[player_one], MultiTeamOutcome::new(1)),
+                (&[player_two], MultiTeamOutcome::new(2)),
+            ],
+        );
+
+        assert!((mtr[0][0].rating - 24.534_091_256_161_39).abs() < f64::EPSILON);
+        assert!((mtr[1][0].rating - 23.465_908_743_838_607).abs() < f64::EPSILON);
     }
 
     #[test]
