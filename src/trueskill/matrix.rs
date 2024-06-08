@@ -236,3 +236,33 @@ impl std::ops::Add for Matrix {
         matrix
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_matrix_panics() {
+        use std::panic::catch_unwind;
+
+        let result = catch_unwind(|| Matrix::new(2, 3).determinant());
+        assert!(result.is_err());
+
+        let result = catch_unwind(|| Matrix::new(2, 2).inverse());
+        assert!(result.is_err());
+
+        let result = catch_unwind(|| Matrix::new(2, 2) * Matrix::new(3, 3));
+        assert!(result.is_err());
+
+        let result = catch_unwind(|| Matrix::new(3, 2) + Matrix::new(2, 2));
+        assert!(result.is_err());
+
+        let result = catch_unwind(|| Matrix::new(2, 2) + Matrix::new(2, 3));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_misc() {
+        assert!(!format!("{:?}", Matrix::new(2, 3)).is_empty());
+    }
+}

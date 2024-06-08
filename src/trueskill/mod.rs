@@ -2109,9 +2109,25 @@ mod tests {
             &Outcomes::WIN,
             &TrueSkillConfig::new(),
         );
+        let mp = trueskill_multi_team(
+            &[
+                (&[player_one], MultiTeamOutcome::new(1)),
+                (&[player_two], MultiTeamOutcome::new(2)),
+            ],
+            &TrueSkillConfig::new(),
+        );
 
         assert_eq!(p1, tp1[0]);
         assert_eq!(p2, tp2[0]);
+
+        // There is a small difference to be found, since the trueskill_multi_team uses the full algorithm,
+        // while the 1vs1 and Team vs Team implementations use some shortcuts.
+        // But they still should yield roughly the same result.
+        assert!((p1.rating - mp[0][0].rating).abs() < 0.001);
+        assert!((p2.rating - mp[1][0].rating).abs() < 0.001);
+
+        assert!((p1.uncertainty - mp[0][0].uncertainty).abs() < 0.001);
+        assert!((p2.uncertainty - mp[1][0].uncertainty).abs() < 0.001);
     }
 
     #[test]
@@ -2441,26 +2457,6 @@ mod tests {
     }
 
     #[test]
-    fn test_matrix_panics() {
-        use std::panic::catch_unwind;
-
-        let result = catch_unwind(|| Matrix::new(2, 3).determinant());
-        assert!(result.is_err());
-
-        let result = catch_unwind(|| Matrix::new(2, 2).inverse());
-        assert!(result.is_err());
-
-        let result = catch_unwind(|| Matrix::new(2, 2) * Matrix::new(3, 3));
-        assert!(result.is_err());
-
-        let result = catch_unwind(|| Matrix::new(3, 2) + Matrix::new(2, 2));
-        assert!(result.is_err());
-
-        let result = catch_unwind(|| Matrix::new(2, 2) + Matrix::new(2, 3));
-        assert!(result.is_err());
-    }
-
-    #[test]
     #[allow(clippy::clone_on_copy)]
     fn test_misc_stuff() {
         let player_one = TrueSkillRating::new();
@@ -2471,8 +2467,6 @@ mod tests {
 
         assert!(!format!("{player_one:?}").is_empty());
         assert!(!format!("{config:?}").is_empty());
-
-        assert!(!format!("{:?}", Matrix::new(2, 3)).is_empty());
 
         assert_eq!(player_one, TrueSkillRating::from((25.0, 25.0 / 3.0)));
     }
@@ -2599,5 +2593,24 @@ mod tests {
 
         assert!((results[2][0].uncertainty - 4.590_018_525_151_38).abs() < f64::EPSILON);
         assert!((results[2][1].uncertainty - 1.976_314_792_712_798_2).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_multi_teams_empty() {
+        let res = trueskill_multi_team(&[], &TrueSkillConfig::new());
+
+        assert!(res.is_empty());
+
+        let res = trueskill_multi_team(
+            &[
+                (&[TrueSkillRating::new()], MultiTeamOutcome::new(1)),
+                (&[], MultiTeamOutcome::new(2)),
+            ],
+            &TrueSkillConfig::new(),
+        );
+
+        assert!(res[1].is_empty());
+        assert!((res[0][0].rating - 25.0).abs() < f64::EPSILON);
+        assert!((res[0][0].uncertainty - 25.0 / 3.0).abs() < f64::EPSILON);
     }
 }

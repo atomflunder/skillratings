@@ -8,8 +8,9 @@ pub struct Gaussian {
 }
 
 impl Gaussian {
+    #[allow(clippy::float_cmp)]
     pub fn with_mu_sigma(mu: f64, sigma: f64) -> Self {
-        assert_ne!(sigma, 0.0, "sigma^2 needs to be greater than 0");
+        assert_ne!(sigma, 0.0, "Sigma cannot be equal to 0.0");
 
         let pi = sigma.powi(-2);
         Self { pi, tau: pi * mu }
@@ -61,5 +62,36 @@ impl Div for Gaussian {
 impl PartialOrd for Gaussian {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.mu().partial_cmp(&other.mu())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::f64::INFINITY;
+
+    use super::*;
+
+    #[test]
+    fn test_gaussian_edge_cases() {
+        let g1 = Gaussian::with_pi_tau(0.0, 0.0);
+
+        assert!(g1.sigma() == INFINITY);
+        assert!(g1.mu() == 0.0);
+    }
+
+    #[test]
+    fn test_gaussian_ordering() {
+        let g1 = Gaussian::with_mu_sigma(1.0, 1.0);
+        let g2 = Gaussian::with_mu_sigma(2.0, 1.0);
+
+        assert!(g1 < g2);
+    }
+
+    #[test]
+    #[should_panic(expected = "Sigma cannot be equal to 0.0")]
+    fn test_invalid_sigma() {
+        let g1 = Gaussian::with_mu_sigma(0.0, 0.0);
+
+        g1.mu();
     }
 }

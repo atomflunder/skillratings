@@ -274,3 +274,69 @@ impl TruncateFactor {
             .update_value(self.id, Gaussian::with_pi_tau(pi, tau))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::f64::INFINITY;
+
+    use super::*;
+
+    #[test]
+    fn test_delta_inf() {
+        let mut v1 = Variable::new();
+
+        v1.set(Gaussian::with_pi_tau(INFINITY, 1.0));
+
+        assert!(v1.delta(Gaussian::with_pi_tau(0.0, 0.0)) < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_sum_factor() {
+        let mut v1 = Variable::new();
+        let mut v2 = Variable::new();
+
+        v1.set(Gaussian::with_pi_tau(INFINITY, 1.0));
+        v2.set(Gaussian::with_pi_tau(0.0, 1.0));
+
+        let mut sm1 = SumFactor::new(
+            0,
+            Rc::new(RefCell::new(v1.clone())),
+            vec![Rc::new(RefCell::new(v2.clone()))],
+            vec![0.0],
+        );
+
+        sm1.up(0);
+
+        assert_eq!(sm1.id, 0);
+        assert_eq!(sm1.coeffs, vec![0.0]);
+    }
+
+    #[test]
+    #[should_panic(expected = "no entry found for key")]
+    fn test_no_update() {
+        let mut v1 = Variable::new();
+        let mut v2 = Variable::new();
+
+        v1.set(Gaussian::with_pi_tau(INFINITY, 1.0));
+        v2.set(Gaussian::with_pi_tau(0.0, 1.0));
+
+        let mut sm1 = SumFactor::new(
+            0,
+            Rc::new(RefCell::new(v1.clone())),
+            vec![Rc::new(RefCell::new(v2.clone()))],
+            vec![0.0],
+        );
+
+        sm1.up(0);
+
+        assert_eq!(sm1.id, 0);
+        assert_eq!(sm1.coeffs, vec![0.0]);
+
+        sm1.update(
+            &Rc::new(RefCell::new(v1)),
+            &[Rc::new(RefCell::new(v2))],
+            &[Gaussian::with_pi_tau(0.0, 1.0)],
+            &[0.0],
+        );
+    }
+}
