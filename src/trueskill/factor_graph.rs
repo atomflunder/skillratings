@@ -7,7 +7,7 @@ use super::gaussian::Gaussian;
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Variable {
     pub gaussian: Gaussian,
-    messages: HashMap<u32, Gaussian>,
+    messages: HashMap<usize, Gaussian>,
 }
 
 impl Variable {
@@ -27,7 +27,7 @@ impl Variable {
         delta
     }
 
-    fn update_message(&mut self, factor_id: u32, message: Gaussian) -> f64 {
+    fn update_message(&mut self, factor_id: usize, message: Gaussian) -> f64 {
         let old_message = self.messages[&factor_id];
         let v = self.messages.entry(factor_id).or_default();
         *v = message;
@@ -35,7 +35,7 @@ impl Variable {
         self.set(self.gaussian / old_message * message)
     }
 
-    fn update_value(&mut self, factor_id: u32, val: Gaussian) -> f64 {
+    fn update_value(&mut self, factor_id: usize, val: Gaussian) -> f64 {
         let old_message = self.messages[&factor_id];
         let v = self.messages.entry(factor_id).or_default();
         *v = val * old_message / self.gaussian;
@@ -54,14 +54,14 @@ impl Variable {
 }
 
 pub struct PriorFactor {
-    id: u32,
+    id: usize,
     pub variable: Rc<RefCell<Variable>>,
     val: Gaussian,
     dynamic: f64,
 }
 
 impl PriorFactor {
-    pub fn new(id: u32, variable: Rc<RefCell<Variable>>, val: Gaussian, dynamic: f64) -> Self {
+    pub fn new(id: usize, variable: Rc<RefCell<Variable>>, val: Gaussian, dynamic: f64) -> Self {
         variable.borrow_mut().messages.entry(id).or_default();
 
         Self {
@@ -80,7 +80,7 @@ impl PriorFactor {
 }
 
 pub struct LikelihoodFactor {
-    id: u32,
+    id: usize,
     mean: Rc<RefCell<Variable>>,
     value: Rc<RefCell<Variable>>,
     variance: f64,
@@ -88,7 +88,7 @@ pub struct LikelihoodFactor {
 
 impl LikelihoodFactor {
     pub fn new(
-        id: u32,
+        id: usize,
         mean: Rc<RefCell<Variable>>,
         value: Rc<RefCell<Variable>>,
         variance: f64,
@@ -132,7 +132,7 @@ impl LikelihoodFactor {
 }
 
 pub struct SumFactor {
-    id: u32,
+    id: usize,
     sum: Rc<RefCell<Variable>>,
     terms: Vec<Rc<RefCell<Variable>>>,
     coeffs: Vec<f64>,
@@ -140,7 +140,7 @@ pub struct SumFactor {
 
 impl SumFactor {
     pub fn new(
-        id: u32,
+        id: usize,
         sum: Rc<RefCell<Variable>>,
         terms: Vec<Rc<RefCell<Variable>>>,
         coeffs: Vec<f64>,
@@ -228,7 +228,7 @@ impl SumFactor {
 }
 
 pub struct TruncateFactor {
-    id: u32,
+    id: usize,
     variable: Rc<RefCell<Variable>>,
     v_func: Box<dyn Fn(f64, f64) -> f64>,
     w_func: Box<dyn Fn(f64, f64) -> f64>,
@@ -237,7 +237,7 @@ pub struct TruncateFactor {
 
 impl TruncateFactor {
     pub fn new(
-        id: u32,
+        id: usize,
         variable: Rc<RefCell<Variable>>,
         v_func: Box<dyn Fn(f64, f64) -> f64>,
         w_func: Box<dyn Fn(f64, f64) -> f64>,

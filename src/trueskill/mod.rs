@@ -1596,16 +1596,16 @@ fn run_schedule(
     draw_probability: f64,
     min_delta: f64,
 ) -> Vec<PriorFactor> {
-    assert!(!(min_delta <= 0.0), "min_delta must be greater than 0");
+    assert!((min_delta > 0.0), "min_delta must be greater than 0");
 
     let mut id = 0;
 
     let mut rating_layer = build_rating_layer(rating_vars, flattened_ratings, tau, id);
-    id += <usize as TryInto<u32>>::try_into(rating_layer.len()).unwrap();
+    id += rating_layer.len();
     let mut perf_layer = build_perf_layer(rating_vars, perf_vars, beta, id);
-    id += <usize as TryInto<u32>>::try_into(perf_layer.len()).unwrap();
+    id += perf_layer.len();
     let mut team_perf_layer = build_team_perf_layer(team_perf_vars, perf_vars, team_sizes, id);
-    id += <usize as TryInto<u32>>::try_into(team_perf_layer.len()).unwrap();
+    id += team_perf_layer.len();
 
     for factor in &mut rating_layer {
         factor.down();
@@ -1619,7 +1619,8 @@ fn run_schedule(
 
     let mut team_diff_layer = build_team_diff_layer(team_diff_vars, team_perf_vars, id);
     let team_diff_len = team_diff_layer.len();
-    id += <usize as TryInto<u32>>::try_into(team_diff_len).unwrap();
+    id += team_diff_len;
+
     let mut trunc_layer = build_trunc_layer(
         team_diff_vars,
         sorted_teams_and_ranks,
@@ -1669,7 +1670,7 @@ fn build_rating_layer(
     rating_vars: &[Rc<RefCell<Variable>>],
     flattened_ratings: &[TrueSkillRating],
     tau: f64,
-    starting_id: u32,
+    starting_id: usize,
 ) -> Vec<PriorFactor> {
     let mut v = Vec::with_capacity(rating_vars.len());
     let mut i = starting_id;
@@ -1690,7 +1691,7 @@ fn build_perf_layer(
     rating_vars: &[Rc<RefCell<Variable>>],
     perf_vars: &[Rc<RefCell<Variable>>],
     beta: f64,
-    starting_id: u32,
+    starting_id: usize,
 ) -> Vec<LikelihoodFactor> {
     let beta_sq = beta.powi(2);
     let mut v = Vec::with_capacity(rating_vars.len());
@@ -1712,7 +1713,7 @@ fn build_team_perf_layer(
     team_perf_vars: &[Rc<RefCell<Variable>>],
     perf_vars: &[Rc<RefCell<Variable>>],
     team_sizes: &[usize],
-    starting_id: u32,
+    starting_id: usize,
 ) -> Vec<SumFactor> {
     let mut v = Vec::with_capacity(team_perf_vars.len());
     let mut i = starting_id;
@@ -1738,7 +1739,7 @@ fn build_team_perf_layer(
 fn build_team_diff_layer(
     team_diff_vars: &[Rc<RefCell<Variable>>],
     team_perf_vars: &[Rc<RefCell<Variable>>],
-    starting_id: u32,
+    starting_id: usize,
 ) -> Vec<SumFactor> {
     let mut v = Vec::with_capacity(team_diff_vars.len());
     let mut i = starting_id;
@@ -1760,7 +1761,7 @@ fn build_trunc_layer(
     sorted_teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)],
     draw_probability: f64,
     beta: f64,
-    starting_id: u32,
+    starting_id: usize,
 ) -> Vec<TruncateFactor> {
     fn v_w(diff: f64, draw_margin: f64) -> f64 {
         let x = diff - draw_margin;
@@ -1797,6 +1798,7 @@ fn build_trunc_layer(
         panic!("floating point error");
     }
 
+    #[allow(clippy::suboptimal_flops)]
     fn w_d(diff: f64, draw_margin: f64) -> f64 {
         let abs_diff = diff.abs();
         let a = draw_margin - abs_diff;
