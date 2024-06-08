@@ -1,9 +1,9 @@
 use skillratings::{
     trueskill::{
-        expected_score, expected_score_two_teams, trueskill, trueskill_rating_period,
-        trueskill_two_teams, TrueSkillConfig, TrueSkillRating,
+        expected_score, expected_score_two_teams, trueskill, trueskill_multi_team,
+        trueskill_rating_period, trueskill_two_teams, TrueSkillConfig, TrueSkillRating,
     },
-    Outcomes,
+    MultiTeamOutcome, Outcomes,
 };
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
@@ -79,6 +79,97 @@ pub fn trueskill_team_benchmark(c: &mut Criterion) {
                 black_box(&team_one),
                 black_box(&team_two),
                 black_box(&outcome),
+                black_box(&config),
+            )
+        })
+    });
+}
+
+pub fn trueskill_multi_team_benchmark(c: &mut Criterion) {
+    let team_one = vec![
+        TrueSkillRating {
+            rating: 32.1,
+            uncertainty: 4.233,
+        },
+        TrueSkillRating {
+            rating: 41.01,
+            uncertainty: 1.34,
+        },
+        TrueSkillRating {
+            rating: 32.1,
+            uncertainty: 4.233,
+        },
+        TrueSkillRating {
+            rating: 41.01,
+            uncertainty: 1.34,
+        },
+    ];
+    let team_two = vec![
+        TrueSkillRating {
+            rating: 29.1,
+            uncertainty: 4.233,
+        },
+        TrueSkillRating {
+            rating: 12.01,
+            uncertainty: 1.34,
+        },
+        TrueSkillRating {
+            rating: 9.1,
+            uncertainty: 4.233,
+        },
+        TrueSkillRating {
+            rating: 53.01,
+            uncertainty: 1.34,
+        },
+    ];
+    let team_three = vec![
+        TrueSkillRating {
+            rating: 29.1,
+            uncertainty: 4.233,
+        },
+        TrueSkillRating {
+            rating: 12.01,
+            uncertainty: 1.34,
+        },
+        TrueSkillRating {
+            rating: 29.1,
+            uncertainty: 4.233,
+        },
+        TrueSkillRating {
+            rating: 53.01,
+            uncertainty: 1.34,
+        },
+    ];
+    let team_four = vec![
+        TrueSkillRating {
+            rating: 29.1,
+            uncertainty: 1.233,
+        },
+        TrueSkillRating {
+            rating: 22.01,
+            uncertainty: 1.34,
+        },
+        TrueSkillRating {
+            rating: 9.1,
+            uncertainty: 6.23,
+        },
+        TrueSkillRating {
+            rating: 13.01,
+            uncertainty: 2.34,
+        },
+    ];
+
+    let config = TrueSkillConfig::new();
+
+    c.bench_function("TrueSkill 4v4v4v4", |b| {
+        b.iter(|| {
+            trueskill_multi_team(
+                &[
+                    (&team_one, MultiTeamOutcome::new(1)),
+                    (&team_two, MultiTeamOutcome::new(3)),
+                    (&team_three, MultiTeamOutcome::new(2)),
+                    (&team_four, MultiTeamOutcome::new(2)),
+                ],
                 black_box(&config),
             )
         })
@@ -251,6 +342,7 @@ criterion_group!(
     benches,
     trueskill_benchmark,
     trueskill_team_benchmark,
+    trueskill_multi_team_benchmark,
     expected_trueskill,
     expected_trueskill_teams,
     rating_period_trueskill,
