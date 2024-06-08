@@ -2561,6 +2561,13 @@ mod tests {
 
         assert!((mtr[0][0].rating - 24.534_091_256_161_39).abs() < f64::EPSILON);
         assert!((mtr[1][0].rating - 23.465_908_743_838_607).abs() < f64::EPSILON);
+
+        let exp = MultiTeamRatingSystem::expected_score(
+            &multi_team_rating,
+            &[&[player_one], &[player_two]],
+        );
+
+        assert!(((exp.iter().sum::<f64>()) - 1.0).abs() < f64::EPSILON);
     }
 
     #[test]
