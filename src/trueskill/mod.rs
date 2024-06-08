@@ -84,7 +84,10 @@ use matrix::Matrix;
 use serde::{Deserialize, Serialize};
 
 use crate::{weng_lin::WengLinRating, Outcomes};
-use crate::{MultiTeamOutcome, Rating, RatingPeriodSystem, RatingSystem, TeamRatingSystem};
+use crate::{
+    MultiTeamOutcome, MultiTeamRatingSystem, Rating, RatingPeriodSystem, RatingSystem,
+    TeamRatingSystem,
+};
 
 const MIN_DELTA: f64 = 0.0001;
 
@@ -266,6 +269,26 @@ impl TeamRatingSystem for TrueSkill {
     }
 }
 
+impl MultiTeamRatingSystem for TrueSkill {
+    type RATING = TrueSkillRating;
+    type CONFIG = TrueSkillConfig;
+
+    fn new(config: Self::CONFIG) -> Self {
+        Self { config }
+    }
+
+    fn rate(
+        &self,
+        teams_and_ranks: &[(&[Self::RATING], MultiTeamOutcome)],
+    ) -> Vec<Vec<TrueSkillRating>> {
+        trueskill_multi_team(teams_and_ranks, &self.config)
+    }
+
+    fn expected_score(&self, teams: &[&[Self::RATING]]) -> Vec<f64> {
+        expected_score_multi_team(teams, &self.config)
+    }
+}
+
 #[must_use]
 /// Calculates the [`TrueSkillRating`]s of two players based on their old ratings, uncertainties, and the outcome of the game.
 ///
@@ -274,7 +297,10 @@ impl TeamRatingSystem for TrueSkill {
 /// The outcome of the match is in the perspective of `player_one`.
 /// This means [`Outcomes::WIN`] is a win for `player_one` and [`Outcomes::LOSS`] is a win for `player_two`.
 ///
-/// Similar to [`trueskill_rating_period`] and [`trueskill_two_teams`].
+/// Similar to [`trueskill_rating_period`], [`trueskill_two_teams`] and [`trueskill_multi_teams`].
+///
+/// This algorithm uses some shortcuts to speed-up and simplify 1-vs-1 ratings. This is fine for 99.9% of use-cases,
+/// but if you need maximum precision, consider using [`trueskill_multi_teams`].
 ///
 /// **Caution regarding usage of TrueSkill**:  
 /// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.  
@@ -389,7 +415,7 @@ pub fn trueskill(
 /// The outcome of the match is in the perspective of the player.
 /// This means [`Outcomes::WIN`] is a win for the player and [`Outcomes::LOSS`] is a win for the opponent.
 ///
-/// Similar to [`trueskill`] or [`trueskill_two_teams`].
+/// Similar to [`trueskill`].
 ///
 /// **Caution regarding usage of TrueSkill**:  
 /// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.  
@@ -494,7 +520,10 @@ pub fn trueskill_rating_period(
 /// The outcome of the match is in the perspective of `team_one`.
 /// This means [`Outcomes::WIN`] is a win for `team_one` and [`Outcomes::LOSS`] is a win for `team_two`.
 ///
-/// Similar to [`trueskill`].
+/// Similar to [`trueskill`] and [`trueskill_multi_teams`].
+///
+/// This algorithm uses some shortcuts to speed-up and simplify Team-vs-Team ratings. This is fine for 99.9% of use-cases,
+/// but if you need maximum precision, consider using [`trueskill_multi_teams`].
 ///
 /// **Caution regarding usage of TrueSkill**:
 /// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill(TM).
@@ -634,7 +663,7 @@ pub fn trueskill_two_teams(
 ///
 /// Ties are represented by several teams having the same rank.
 ///
-/// Similar to [`trueskill_two_teams`].
+/// Similar to [`trueskill`] and [`trueskill_two_teams`].
 ///
 /// **Caution regarding usage of TrueSkill**:
 /// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill(TM).

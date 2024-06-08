@@ -336,7 +336,7 @@ mod tests {
             &Rc::new(RefCell::new(v1)),
             &[Rc::new(RefCell::new(v2))],
             &[Gaussian::with_pi_tau(0.0, 1.0)],
-            &[0.0],
+            &[0.0, 1.0, 2.0, 3.0],
         );
     }
 }
