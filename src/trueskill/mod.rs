@@ -713,6 +713,9 @@ pub fn trueskill_multi_team(
     teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)],
     config: &TrueSkillConfig,
 ) -> Vec<Vec<TrueSkillRating>> {
+    // TODO: Add partial play weights.
+    // Match Quality will also be affected (Matrix implementation), Expected Score probably too.
+
     if teams_and_ranks.is_empty() {
         return Vec::new();
     }

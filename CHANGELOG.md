@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.27.0 - 2024-06-08
+
+- Add full support for rating more than 2 teams with TrueSkill
+    - Includes match quality, expected outcomes, and the rating function
+
 ## v0.26.0 - 2023-10-08
 
 - Add expected_score_rating_period functions for all rating systems

@@ -6,7 +6,7 @@
 [![](https://img.shields.io/crates/d/skillratings)](https://crates.io/crates/skillratings)
 
 Skillratings provides a collection of well-known (and lesser known) skill rating algorithms, that allow you to assess a player's skill level instantly.  
-You can easily calculate skill ratings instantly in 1vs1 matches, Team vs Team matches, or in tournaments / rating periods.  
+You can easily calculate skill ratings instantly in 1 vs 1 matches, Team vs Team Matches, Free-For-Alls, Multiple-Team Matches, or in Tournaments / Rating Periods.  
 This library is incredibly lightweight (no dependencies by default), user-friendly, and of course, *blazingly fast*.
 
 Currently supported algorithms:
@@ -24,7 +24,7 @@ Currently supported algorithms:
 - [DWZ (Deutsche Wertungszahl)](https://docs.rs/skillratings/latest/skillratings/dwz/)
 - [Ingo](https://docs.rs/skillratings/latest/skillratings/ingo/)
 
-Most of these are known from their usage in chess and various other games.  
+Most of these are known from their usage in online multiplayer games.  
 Click on the documentation for the modules linked above for more information about the specific rating algorithms, and their advantages and disadvantages.
 
 ## Table of Contents
@@ -54,7 +54,7 @@ Alternatively, you can add the following to your `Cargo.toml` file manually:
 
 ```toml
 [dependencies]
-skillratings = "0.26"
+skillratings = "0.27"
 ```
 
 ### Serde support
@@ -71,7 +71,7 @@ By editing `Cargo.toml` manually:
 
 ```toml
 [dependencies]
-skillratings = {version = "0.26", features = ["serde"]}
+skillratings = {version = "0.27", features = ["serde"]}
 ```
 
 ## Usage and Examples
@@ -168,7 +168,7 @@ assert_eq!(new_team_one[0].rating.round(), 32.0);
 
 ### Free-For-Alls and Multiple Teams
 
-The *Weng-Lin* algorithm supports rating matches with multiple Teams.  
+The Weng-Lin and TrueSkill algorithms also support rating matches with multiple Teams.  
 Here is an example showing a 3-Team game with 3 players each.
 
 ```rust
