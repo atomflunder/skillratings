@@ -69,13 +69,24 @@
 //! - [Moserware: Computing Your Skill](http://www.moserware.com/2010/03/computing-your-skill.html)
 //! - [TrueSkill Calculator](https://trueskill-calculator.vercel.app/)
 
-use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
+mod factor_graph;
+mod gaussian;
+mod matrix;
 
+use std::cell::RefCell;
+use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
+use std::rc::Rc;
+
+use factor_graph::{LikelihoodFactor, PriorFactor, SumFactor, TruncateFactor, Variable};
+use gaussian::Gaussian;
+use matrix::Matrix;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{weng_lin::WengLinRating, Outcomes};
-use crate::{Rating, RatingPeriodSystem, RatingSystem, TeamRatingSystem};
+use crate::{MultiTeamOutcome, Rating, RatingPeriodSystem, RatingSystem, TeamRatingSystem};
+
+const MIN_DELTA: f64 = 0.0001;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -616,6 +627,123 @@ pub fn trueskill_two_teams(
 }
 
 #[must_use]
+/// Not yet fully implemented.
+pub fn trueskill_multi_team(
+    teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)],
+    config: &TrueSkillConfig,
+) -> Vec<Vec<TrueSkillRating>> {
+    if teams_and_ranks.is_empty() {
+        return Vec::new();
+    }
+
+    // Just returning the original teams if a team is empty.
+    for (team, _) in teams_and_ranks {
+        if team.is_empty() {
+            return teams_and_ranks
+                .iter()
+                .map(|(team, _)| team.to_vec())
+                .collect();
+        }
+    }
+
+    let mut sorted_teams_and_ranks_with_pos = Vec::new();
+    for (pos, (team, outcome)) in teams_and_ranks.iter().enumerate() {
+        sorted_teams_and_ranks_with_pos.push((pos, (*team, *outcome)));
+    }
+    sorted_teams_and_ranks_with_pos.sort_by_key(|v| v.1 .1);
+
+    let teams_and_ranks: Vec<(&[TrueSkillRating], MultiTeamOutcome)> =
+        sorted_teams_and_ranks_with_pos
+            .iter()
+            .map(|v| v.1)
+            .collect();
+
+    let mut flattened_ratings = Vec::new();
+    for (team, _) in &teams_and_ranks {
+        for player in *team {
+            flattened_ratings.push(*player);
+        }
+    }
+
+    let rating_vars = {
+        let mut v = Vec::with_capacity(flattened_ratings.len());
+        for _ in 0..flattened_ratings.len() {
+            v.push(Rc::new(RefCell::new(Variable::new())));
+        }
+
+        v
+    };
+    let perf_vars = {
+        let mut v = Vec::with_capacity(flattened_ratings.len());
+        for _ in 0..flattened_ratings.len() {
+            v.push(Rc::new(RefCell::new(Variable::new())));
+        }
+
+        v
+    };
+    let team_perf_vars = {
+        let mut v = Vec::with_capacity(teams_and_ranks.len());
+        for _ in 0..teams_and_ranks.len() {
+            v.push(Rc::new(RefCell::new(Variable::new())));
+        }
+
+        v
+    };
+    let team_diff_vars = {
+        let mut v = Vec::with_capacity(teams_and_ranks.len() - 1);
+        for _ in 0..(teams_and_ranks.len() - 1) {
+            v.push(Rc::new(RefCell::new(Variable::new())));
+        }
+
+        v
+    };
+    let team_sizes = team_sizes(&teams_and_ranks);
+
+    let rating_layer = run_schedule(
+        &rating_vars,
+        &perf_vars,
+        &team_perf_vars,
+        &team_diff_vars,
+        &team_sizes,
+        &teams_and_ranks,
+        &flattened_ratings,
+        config.default_dynamics,
+        config.beta,
+        config.draw_probability,
+        MIN_DELTA,
+    );
+
+    let mut transformed_groups = Vec::new();
+    let mut iter_team_sizes = vec![0];
+    iter_team_sizes.extend_from_slice(&team_sizes[..(team_sizes.len() - 1)]);
+
+    for (start, end) in iter_team_sizes.into_iter().zip(&team_sizes) {
+        let mut group = Vec::new();
+        for f in &rating_layer[start..*end] {
+            let gaussian = f.variable.borrow().gaussian;
+            let mu = gaussian.mu();
+            let sigma = gaussian.sigma();
+
+            group.push(TrueSkillRating {
+                rating: mu,
+                uncertainty: sigma,
+            });
+        }
+
+        transformed_groups.push(group);
+    }
+
+    let mut unsorted_with_pos = sorted_teams_and_ranks_with_pos
+        .iter()
+        .map(|v| v.0)
+        .zip(transformed_groups)
+        .collect::<Vec<_>>();
+    unsorted_with_pos.sort_by_key(|v| v.0);
+
+    unsorted_with_pos.into_iter().map(|v| v.1).collect()
+}
+
+#[must_use]
 /// Gets the quality of the match, which is equal to the probability that the match will end in a draw.
 /// The higher the Value, the better the quality of the match.
 ///
@@ -1149,7 +1277,7 @@ pub fn get_rank(player: &TrueSkillRating) -> f64 {
 }
 
 fn draw_margin(draw_probability: f64, beta: f64, total_players: f64) -> f64 {
-    inverse_cdf(0.5 * (draw_probability + 1.0), 0.0, 1.0) * total_players.sqrt() * beta
+    inverse_cdf((draw_probability + 1.0) / 2.0, 0.0, 1.0) * total_players.sqrt() * beta
 }
 
 fn v_non_draw(difference: f64, draw_margin: f64, c: f64) -> f64 {
@@ -1341,246 +1469,281 @@ fn pdf(x: f64, mu: f64, sigma: f64) -> f64 {
     ((2.0 * PI).sqrt() * sigma.abs()).recip() * (-(((x - mu) / sigma.abs()).powi(2) / 2.0)).exp()
 }
 
-// Same here, this Matrix could have been imported, but we implement it ourselves,
-// since we only have to use some basic things here.
-#[derive(Clone, Debug)]
-struct Matrix {
-    data: Vec<f64>,
-    rows: usize,
-    cols: usize,
-}
+#[allow(clippy::too_many_arguments)]
+fn run_schedule(
+    rating_vars: &[Rc<RefCell<Variable>>],
+    perf_vars: &[Rc<RefCell<Variable>>],
+    team_perf_vars: &[Rc<RefCell<Variable>>],
+    team_diff_vars: &[Rc<RefCell<Variable>>],
+    team_sizes: &[usize],
+    sorted_teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)],
+    flattened_ratings: &[TrueSkillRating],
+    tau: f64,
+    beta: f64,
+    draw_probability: f64,
+    min_delta: f64,
+) -> Vec<PriorFactor> {
+    assert!(!(min_delta <= 0.0), "min_delta must be greater than 0");
 
-impl Matrix {
-    fn set(&mut self, row: usize, col: usize, val: f64) {
-        self.data[row * self.cols + col] = val;
+    let mut id = 0;
+
+    let mut rating_layer = build_rating_layer(rating_vars, flattened_ratings, tau, id);
+    id += <usize as TryInto<u32>>::try_into(rating_layer.len()).unwrap();
+    let mut perf_layer = build_perf_layer(rating_vars, perf_vars, beta, id);
+    id += <usize as TryInto<u32>>::try_into(perf_layer.len()).unwrap();
+    let mut team_perf_layer = build_team_perf_layer(team_perf_vars, perf_vars, team_sizes, id);
+    id += <usize as TryInto<u32>>::try_into(team_perf_layer.len()).unwrap();
+
+    for factor in &mut rating_layer {
+        factor.down();
+    }
+    for factor in &mut perf_layer {
+        factor.down();
+    }
+    for factor in &mut team_perf_layer {
+        factor.down();
     }
 
-    fn get(&self, row: usize, col: usize) -> f64 {
-        self.data[row * self.cols + col]
-    }
+    let mut team_diff_layer = build_team_diff_layer(team_diff_vars, team_perf_vars, id);
+    let team_diff_len = team_diff_layer.len();
+    id += <usize as TryInto<u32>>::try_into(team_diff_len).unwrap();
+    let mut trunc_layer = build_trunc_layer(
+        team_diff_vars,
+        sorted_teams_and_ranks,
+        draw_probability,
+        beta,
+        id,
+    );
 
-    fn new(rows: usize, cols: usize) -> Self {
-        Self {
-            data: vec![0.0; rows * cols],
-            rows,
-            cols,
-        }
-    }
-
-    fn new_from_data(data: &[f64], rows: usize, cols: usize) -> Self {
-        Self {
-            data: data.to_vec(),
-            rows,
-            cols,
-        }
-    }
-
-    fn new_diagonal(data: &[f64]) -> Self {
-        let mut matrix = Self::new(data.len(), data.len());
-
-        for (i, val) in data.iter().enumerate() {
-            matrix.set(i, i, *val);
-        }
-
-        matrix
-    }
-
-    fn create_rotated_a_matrix(teams: &[&[TrueSkillRating]]) -> Self {
-        let total_players = teams.iter().map(|team| team.len()).sum::<usize>();
-
-        let mut player_assignments: Vec<f64> = vec![];
-
-        let mut total_previous_players = 0;
-
-        let team_assignments_list_count = teams.len();
-
-        for current_column in 0..team_assignments_list_count - 1 {
-            let current_team = teams[current_column];
-
-            player_assignments.append(&mut vec![0.0; total_previous_players]);
-
-            for _current_player in current_team {
-                player_assignments.push(1.0); // TODO: Replace 1.0 by partial play weighting
-                total_previous_players += 1;
-            }
-
-            let mut rows_remaining = total_players - total_previous_players;
-            let next_team = teams[current_column + 1];
-
-            for _next_player in next_team {
-                player_assignments.push(-1.0 * 1.0); // TODO: Replace 1.0 by partial play weighting
-                rows_remaining -= 1;
-            }
-
-            player_assignments.append(&mut vec![0.0; rows_remaining]);
-        }
-
-        Self::new_from_data(
-            &player_assignments,
-            team_assignments_list_count - 1,
-            total_players as usize,
-        )
-    }
-
-    fn transpose(&self) -> Self {
-        let mut matrix = Self::new(self.cols, self.rows);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                matrix.set(j, i, self.get(i, j));
-            }
-        }
-
-        matrix
-    }
-
-    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-    fn determinant(&self) -> f64 {
-        assert_eq!(self.rows, self.cols, "Matrix must be square");
-
-        if self.rows == 1 {
-            return self.get(0, 0);
-        }
-
-        let mut sum = 0.0;
-
-        for i in 0..self.rows {
-            sum += self.get(0, i) * self.minor(0, i).determinant() * (-1.0_f64).powi(i as i32);
-        }
-
-        sum
-    }
-
-    fn minor(&self, row: usize, col: usize) -> Self {
-        let mut matrix = Self::new(self.rows - 1, self.cols - 1);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                if i != row && j != col {
-                    matrix.set(
-                        if i > row { i - 1 } else { i },
-                        if j > col { j - 1 } else { j },
-                        self.get(i, j),
-                    );
-                }
-            }
-        }
-
-        matrix
-    }
-
-    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-    fn adjugate(&self) -> Self {
-        let mut matrix = Self::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                matrix.set(
-                    i,
-                    j,
-                    self.minor(j, i).determinant() * (-1.0_f64).powi((i + j) as i32),
-                );
-            }
-        }
-
-        matrix
-    }
-
-    fn inverse(&self) -> Self {
-        let det = self.determinant();
-
-        // Avoiding 1/0
-        assert!((det != 0.0), "Matrix is not invertible");
-
-        self.adjugate() * det.recip()
-    }
-}
-
-impl std::ops::Mul for Matrix {
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        if self.cols == rhs.rows {
-            let mut matrix = Self::new(self.rows, rhs.cols);
-
-            for i in 0..self.rows {
-                for j in 0..rhs.cols {
-                    let mut sum = 0.0;
-
-                    for k in 0..self.cols {
-                        sum += self.get(i, k) * rhs.get(k, j);
-                    }
-
-                    matrix.set(i, j, sum);
-                }
-            }
-
-            matrix
-        } else if self.rows == rhs.cols {
-            let mut matrix = Self::new(self.cols, rhs.rows);
-
-            for i in 0..self.cols {
-                for j in 0..rhs.rows {
-                    let mut sum = 0.0;
-
-                    for k in 0..self.rows {
-                        sum += self.get(k, i) * rhs.get(j, k);
-                    }
-
-                    matrix.set(i, j, sum);
-                }
-            }
-
-            matrix
+    let mut delta: f64;
+    for _ in 0..10 {
+        if team_diff_len == 1 {
+            team_diff_layer[0].down();
+            delta = trunc_layer[0].up();
         } else {
-            panic!("Cannot multiply matrices with incompatible dimensions");
-        }
-    }
-}
-
-impl std::ops::Mul<f64> for Matrix {
-    type Output = Self;
-
-    fn mul(self, rhs: f64) -> Self::Output {
-        let mut matrix = Self::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                matrix.set(i, j, self.get(i, j) * rhs);
+            delta = 0.0;
+            for x in 0..(team_diff_len - 1) {
+                team_diff_layer[x].down();
+                delta = delta.max(trunc_layer[x].up());
+                team_diff_layer[x].up(1);
+            }
+            for x in (1..team_diff_len).rev() {
+                team_diff_layer[x].down();
+                delta = delta.max(trunc_layer[x].up());
+                team_diff_layer[x].up(0);
             }
         }
-
-        matrix
+        if delta <= min_delta {
+            break;
+        }
     }
+
+    team_diff_layer[0].up(0);
+    team_diff_layer[team_diff_len - 1].up(1);
+    for f in &mut team_perf_layer {
+        for x in 0..f.terms_len() {
+            f.up(x);
+        }
+    }
+    for f in &mut perf_layer {
+        f.up();
+    }
+
+    rating_layer
 }
 
-impl std::ops::Add for Matrix {
-    type Output = Self;
+fn build_rating_layer(
+    rating_vars: &[Rc<RefCell<Variable>>],
+    flattened_ratings: &[TrueSkillRating],
+    tau: f64,
+    starting_id: u32,
+) -> Vec<PriorFactor> {
+    let mut v = Vec::with_capacity(rating_vars.len());
+    let mut i = starting_id;
+    for (var, rating) in rating_vars.iter().zip(flattened_ratings) {
+        v.push(PriorFactor::new(
+            i,
+            Rc::clone(var),
+            Gaussian::with_mu_sigma(rating.rating, rating.uncertainty),
+            tau,
+        ));
+        i += 1;
+    }
 
-    fn add(self, rhs: Self) -> Self::Output {
-        assert_eq!(
-            self.rows, rhs.rows,
-            "Cannot add matrices with different row counts"
-        );
-        assert_eq!(
-            self.cols, rhs.cols,
-            "Cannot add matrices with different column counts"
-        );
+    v
+}
 
-        let mut matrix = Self::new(self.rows, self.cols);
+fn build_perf_layer(
+    rating_vars: &[Rc<RefCell<Variable>>],
+    perf_vars: &[Rc<RefCell<Variable>>],
+    beta: f64,
+    starting_id: u32,
+) -> Vec<LikelihoodFactor> {
+    let beta_sq = beta.powi(2);
+    let mut v = Vec::with_capacity(rating_vars.len());
+    let mut i = starting_id;
+    for (rating_var, perf_var) in rating_vars.iter().zip(perf_vars) {
+        v.push(LikelihoodFactor::new(
+            i,
+            Rc::clone(rating_var),
+            Rc::clone(perf_var),
+            beta_sq,
+        ));
+        i += 1;
+    }
 
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                matrix.set(i, j, self.get(i, j) + rhs.get(i, j));
-            }
+    v
+}
+
+fn build_team_perf_layer(
+    team_perf_vars: &[Rc<RefCell<Variable>>],
+    perf_vars: &[Rc<RefCell<Variable>>],
+    team_sizes: &[usize],
+    starting_id: u32,
+) -> Vec<SumFactor> {
+    let mut v = Vec::with_capacity(team_perf_vars.len());
+    let mut i = starting_id;
+    for (team, team_perf_var) in team_perf_vars.iter().enumerate() {
+        let start = if team > 0 { team_sizes[team - 1] } else { 0 };
+
+        let end = team_sizes[team];
+        let child_perf_vars = perf_vars[start..end].to_vec();
+        let coeffs = vec![1.0; child_perf_vars.len()];
+
+        v.push(SumFactor::new(
+            i,
+            Rc::clone(team_perf_var),
+            child_perf_vars,
+            coeffs,
+        ));
+        i += 1;
+    }
+
+    v
+}
+
+fn build_team_diff_layer(
+    team_diff_vars: &[Rc<RefCell<Variable>>],
+    team_perf_vars: &[Rc<RefCell<Variable>>],
+    starting_id: u32,
+) -> Vec<SumFactor> {
+    let mut v = Vec::with_capacity(team_diff_vars.len());
+    let mut i = starting_id;
+    for (team, team_diff_var) in team_diff_vars.iter().enumerate() {
+        v.push(SumFactor::new(
+            i,
+            Rc::clone(team_diff_var),
+            team_perf_vars[team..(team + 2)].to_vec(),
+            vec![1.0, -1.0],
+        ));
+        i += 1;
+    }
+
+    v
+}
+
+fn build_trunc_layer(
+    team_diff_vars: &[Rc<RefCell<Variable>>],
+    sorted_teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)],
+    draw_probability: f64,
+    beta: f64,
+    starting_id: u32,
+) -> Vec<TruncateFactor> {
+    fn v_w(diff: f64, draw_margin: f64) -> f64 {
+        let x = diff - draw_margin;
+        let denom = cdf(x, 0.0, 1.0);
+
+        if denom == 0.0 {
+            -x
+        } else {
+            pdf(x, 0.0, 1.0) / denom
+        }
+    }
+
+    fn v_d(diff: f64, draw_margin: f64) -> f64 {
+        let abs_diff = diff.abs();
+        let a = draw_margin - abs_diff;
+        let b = -draw_margin - abs_diff;
+        let denom = cdf(a, 0.0, 1.0) - cdf(b, 0.0, 1.0);
+        let numer = pdf(b, 0.0, 1.0) - pdf(a, 0.0, 1.0);
+
+        let lhs = if denom == 0.0 { a } else { numer / denom };
+        let rhs = if diff < 0.0 { -1.0 } else { 1.0 };
+
+        lhs * rhs
+    }
+
+    fn w_w(diff: f64, draw_margin: f64) -> f64 {
+        let x = diff - draw_margin;
+        let v = v_w(diff, draw_margin);
+        let w = v * (v + x);
+        if 0.0 < w && w < 1.0 {
+            return w;
         }
 
-        matrix
+        panic!("floating point error");
     }
+
+    fn w_d(diff: f64, draw_margin: f64) -> f64 {
+        let abs_diff = diff.abs();
+        let a = draw_margin - abs_diff;
+        let b = -draw_margin - abs_diff;
+        let denom = cdf(a, 0.0, 1.0) - cdf(b, 0.0, 1.0);
+
+        assert!(!(denom == 0.0), "floating point error");
+
+        let v = v_d(abs_diff, draw_margin);
+        v.mul_add(v, (a * pdf(a, 0.0, 1.0) - b * pdf(b, 0.0, 1.0)) / denom)
+    }
+
+    let mut v = Vec::with_capacity(team_diff_vars.len());
+    let mut i = starting_id;
+    for (x, team_diff_var) in team_diff_vars.iter().enumerate() {
+        let size = sorted_teams_and_ranks[x..(x + 2)]
+            .iter()
+            .map(|v| v.0.len() as f64)
+            .sum();
+        let draw_margin = draw_margin(draw_probability, beta, size);
+        let v_func: Box<dyn Fn(f64, f64) -> f64>;
+        let w_func: Box<dyn Fn(f64, f64) -> f64>;
+        if sorted_teams_and_ranks[x].1 == sorted_teams_and_ranks[x + 1].1 {
+            v_func = Box::new(v_d);
+            w_func = Box::new(w_d);
+        } else {
+            v_func = Box::new(v_w);
+            w_func = Box::new(w_w);
+        };
+
+        v.push(TruncateFactor::new(
+            i,
+            Rc::clone(team_diff_var),
+            v_func,
+            w_func,
+            draw_margin,
+        ));
+        i += 1;
+    }
+
+    v
+}
+
+fn team_sizes(teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)]) -> Vec<usize> {
+    let mut team_sizes = Vec::new();
+    for (team, _) in teams_and_ranks {
+        if team_sizes.is_empty() {
+            team_sizes.push(team.len());
+        } else {
+            team_sizes.push(team.len() + team_sizes[team_sizes.len() - 1]);
+        }
+    }
+
+    team_sizes
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::MultiTeamOutcome;
+
     use super::*;
     use std::f64::{INFINITY, NEG_INFINITY};
 
@@ -2279,5 +2442,68 @@ mod tests {
             TeamRatingSystem::expected_score(&rating_system, &[player_one], &[player_two]);
 
         assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    /// This example is taken from the Python TrueSkill package:
+    /// https://github.com/sublee/trueskill/blob/3ff78b26c8374b30cc0d6bae32cb45c9bee46a1d/trueskilltest.py#L311
+    fn test_trueskill_multi_team() {
+        let t1p1 = TrueSkillRating {
+            rating: 40.0,
+            uncertainty: 4.0,
+        };
+        let t1p2 = TrueSkillRating {
+            rating: 45.0,
+            uncertainty: 3.0,
+        };
+
+        let t2p1 = TrueSkillRating {
+            rating: 20.0,
+            uncertainty: 7.0,
+        };
+        let t2p2 = TrueSkillRating {
+            rating: 19.0,
+            uncertainty: 6.0,
+        };
+        let t2p3 = TrueSkillRating {
+            rating: 30.0,
+            uncertainty: 9.0,
+        };
+        let t2p4 = TrueSkillRating {
+            rating: 10.0,
+            uncertainty: 4.0,
+        };
+
+        let t3p1 = TrueSkillRating {
+            rating: 50.0,
+            uncertainty: 5.0,
+        };
+        let t3p2 = TrueSkillRating {
+            rating: 30.0,
+            uncertainty: 2.0,
+        };
+
+        let t1 = [t1p1, t1p2];
+        let t2 = [t2p1, t2p2, t2p3, t2p4];
+        let t3 = [t3p1, t3p2];
+
+        let teams_and_ranks = [
+            (&t1[..], MultiTeamOutcome::new(0)),
+            (&t2[..], MultiTeamOutcome::new(1)),
+            (&t3[..], MultiTeamOutcome::new(1)),
+        ];
+        let results = trueskill_multi_team(&teams_and_ranks, &TrueSkillConfig::new());
+        for (i, team) in results.into_iter().enumerate() {
+            for (j, player) in team.into_iter().enumerate() {
+                eprintln!(
+                    "T{}P{}; R: {}, U: {}",
+                    i + 1,
+                    j + 1,
+                    player.rating,
+                    player.uncertainty
+                );
+            }
+        }
+        panic!("supposed to fail");
     }
 }
