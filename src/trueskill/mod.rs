@@ -644,7 +644,88 @@ pub fn trueskill_two_teams(
 }
 
 #[must_use]
-/// Not yet fully implemented.
+/// Calculates the [`TrueSkillRating`] of multiple teams based on their ratings, uncertainties, and the outcome of the game.
+///
+/// Takes in a slice, which contains tuples of teams, which are just slices of [`TrueSkillRating`]s,
+/// as well the rank of the team as an [`MultiTeamOutcome`] and a [`TrueSkillConfig`].
+///
+/// Ties are represented by several teams having the same rank.
+///
+/// Similar to [`trueskill_two_teams`].
+///
+/// **Caution regarding usage of TrueSkill**:
+/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill(TM).
+/// If your project is commercial, you should use another rating system included here.
+///
+/// # Examples
+/// ```
+/// use skillratings::{
+///     trueskill::{trueskill_multi_team, TrueSkillConfig, TrueSkillRating},
+///     MultiTeamOutcome,
+/// };
+///
+/// let team_one = vec![
+///     TrueSkillRating::new(),
+///     TrueSkillRating {
+///         rating: 30.0,
+///         uncertainty: 1.2,
+///     },
+///     TrueSkillRating {
+///         rating: 21.0,
+///         uncertainty: 6.5,
+///     },
+/// ];
+///
+/// let team_two = vec![
+///     TrueSkillRating::default(),
+///     TrueSkillRating {
+///         rating: 41.0,
+///         uncertainty: 1.4,
+///     },
+///     TrueSkillRating {
+///         rating: 19.2,
+///         uncertainty: 4.3,
+///     },
+/// ];
+///
+/// let team_three = vec![
+///     TrueSkillRating::default(),
+///     TrueSkillRating {
+///         rating: 29.4,
+///         uncertainty: 1.6,
+///     },
+///     TrueSkillRating {
+///         rating: 17.2,
+///         uncertainty: 2.1,
+///     },
+/// ];
+///
+/// let teams_and_ranks = vec![
+///     (&team_one[..], MultiTeamOutcome::new(2)), // Team 1 takes the second place.
+///     (&team_two[..], MultiTeamOutcome::new(1)), // Team 2 takes the first place.
+///     (&team_three[..], MultiTeamOutcome::new(3)), // Team 3 takes the third place.
+/// ];
+///
+/// let new_teams = trueskill_multi_team(&teams_and_ranks, &TrueSkillConfig::new());
+///
+/// assert_eq!(new_teams.len(), 3);
+///
+/// let new_one = &new_teams[0];
+/// let new_two = &new_teams[1];
+/// let new_three = &new_teams[2];
+///
+/// assert!((new_one[0].rating - 25.622_306_739_859_763).abs() < f64::EPSILON);
+/// assert!((new_one[1].rating - 30.012_965_086_723_046).abs() < f64::EPSILON);
+/// assert!((new_one[2].rating - 21.378635787625903).abs() < f64::EPSILON);
+///
+/// assert!((new_two[0].rating - 28.246_057_397_676_047).abs() < f64::EPSILON);
+/// assert!((new_two[1].rating - 41.091_932_136_518_125).abs() < f64::EPSILON);
+/// assert!((new_two[2].rating - 20.064_520_412_174_183).abs() < f64::EPSILON);
+///
+/// assert!((new_three[0].rating - 21.131_635_862_464_19).abs() < f64::EPSILON);
+/// assert!((new_three[1].rating - 29.257_024_085_611_56).abs() < f64::EPSILON);
+/// assert!((new_three[2].rating - 16.953_981_169_279_245).abs() < f64::EPSILON);
+/// ```
 pub fn trueskill_multi_team(
     teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)],
     config: &TrueSkillConfig,
@@ -2445,17 +2526,27 @@ mod tests {
             (&t3[..], MultiTeamOutcome::new(1)),
         ];
         let results = trueskill_multi_team(&teams_and_ranks, &TrueSkillConfig::new());
-        for (i, team) in results.into_iter().enumerate() {
-            for (j, player) in team.into_iter().enumerate() {
-                eprintln!(
-                    "T{}P{}; R: {}, U: {}",
-                    i + 1,
-                    j + 1,
-                    player.rating,
-                    player.uncertainty
-                );
-            }
-        }
-        panic!("supposed to fail");
+
+        assert!((results[0][0].rating - 40.876_849_177_315_655).abs() < f64::EPSILON);
+        assert!((results[0][1].rating - 45.493_394_092_398_44).abs() < f64::EPSILON);
+
+        assert!((results[1][0].rating - 19.608_650_920_845_236).abs() < f64::EPSILON);
+        assert!((results[1][1].rating - 18.712_463_514_890_54).abs() < f64::EPSILON);
+        assert!((results[1][2].rating - 29.353_112_227_810_637).abs() < f64::EPSILON);
+        assert!((results[1][3].rating - 9.872_175_198_037_164).abs() < f64::EPSILON);
+
+        assert!((results[2][0].rating - 48.829_832_201_455_32).abs() < f64::EPSILON);
+        assert!((results[2][1].rating - 29.812_500_188_903_005).abs() < f64::EPSILON);
+
+        assert!((results[0][0].uncertainty - 3.839_527_589_355_37).abs() < f64::EPSILON);
+        assert!((results[0][1].uncertainty - 2.933_671_613_522_051).abs() < f64::EPSILON);
+
+        assert!((results[1][0].uncertainty - 6.396_044_310_523_897).abs() < f64::EPSILON);
+        assert!((results[1][1].uncertainty - 5.624_556_429_622_889).abs() < f64::EPSILON);
+        assert!((results[1][2].uncertainty - 7.673_456_361_986_594).abs() < f64::EPSILON);
+        assert!((results[1][3].uncertainty - 3.891_408_425_994_520_3).abs() < f64::EPSILON);
+
+        assert!((results[2][0].uncertainty - 4.590_018_525_151_38).abs() < f64::EPSILON);
+        assert!((results[2][1].uncertainty - 1.976_314_792_712_798_2).abs() < f64::EPSILON);
     }
 }
