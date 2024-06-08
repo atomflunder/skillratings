@@ -443,7 +443,7 @@ pub fn expected_score_rating_period(player: &DWZRating, opponents: &[DWZRating])
 /// Gets a proper first [`DWZRating`].
 ///
 /// In the case that you do not have enough opponents to rate a player against,
-/// consider using [`DWZRating::from()`](DWZRating) if you have an [`EloRating`](crate::elo::EloRating)
+/// consider using [`DWZRating::from()`](DWZRating) if you have an [`EloRating`]
 /// or [`DWZRating::new()`](DWZRating) if not.
 ///
 /// Takes in the player's age and their results as a Slice of tuples containing the opponent and the outcome.

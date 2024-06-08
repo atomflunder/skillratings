@@ -12,7 +12,11 @@
 //!
 //! | Match type | Matches needed |
 //! | ---------- | -------------- |
+//! | 8 Players Free-For-All | 3 |
+//! | 4 Players Free-For-All | 5 |
+//! | 4 Teams / 2 Players each | 10 |
 //! | 1 Player vs 1 Player | 12 |
+//! | 4 Teams / 4 Players each | 20 |
 //! | 4 Players vs 4 Players | 46 |
 //! | 8 Players vs 8 Players | 91 |
 //!
@@ -297,10 +301,10 @@ impl MultiTeamRatingSystem for TrueSkill {
 /// The outcome of the match is in the perspective of `player_one`.
 /// This means [`Outcomes::WIN`] is a win for `player_one` and [`Outcomes::LOSS`] is a win for `player_two`.
 ///
-/// Similar to [`trueskill_rating_period`], [`trueskill_two_teams`] and [`trueskill_multi_teams`].
+/// Similar to [`trueskill_rating_period`], [`trueskill_two_teams`] and [`trueskill_multi_team`].
 ///
 /// This algorithm uses some shortcuts to speed-up and simplify 1-vs-1 ratings. This is fine for 99.9% of use-cases,
-/// but if you need maximum precision, consider using [`trueskill_multi_teams`].
+/// but if you need maximum precision, consider using [`trueskill_multi_team`].
 ///
 /// **Caution regarding usage of TrueSkill**:  
 /// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.  
@@ -520,10 +524,10 @@ pub fn trueskill_rating_period(
 /// The outcome of the match is in the perspective of `team_one`.
 /// This means [`Outcomes::WIN`] is a win for `team_one` and [`Outcomes::LOSS`] is a win for `team_two`.
 ///
-/// Similar to [`trueskill`] and [`trueskill_multi_teams`].
+/// Similar to [`trueskill`] and [`trueskill_multi_team`].
 ///
 /// This algorithm uses some shortcuts to speed-up and simplify Team-vs-Team ratings. This is fine for 99.9% of use-cases,
-/// but if you need maximum precision, consider using [`trueskill_multi_teams`].
+/// but if you need maximum precision, consider using [`trueskill_multi_team`].
 ///
 /// **Caution regarding usage of TrueSkill**:
 /// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill(TM).
@@ -862,7 +866,7 @@ pub fn trueskill_multi_team(
 ///
 /// Takes in two players as [`TrueSkillRating`]s and returns the probability of a draw occurring as an [`f64`] between 1.0 and 0.0.
 ///
-/// Similar to [`match_quality_two_teams`] and [`match_quality_multi_team`].
+/// Similar to [`match_quality_rating_period`], [`match_quality_two_teams`] and [`match_quality_multi_team`].
 ///
 /// # Examples
 /// ```
@@ -901,6 +905,47 @@ pub fn match_quality(
     .exp();
 
     a * b
+}
+
+#[must_use]
+/// Gets the quality of multiple matches, which is equal to the probability that the match will end in a draw.
+/// The higher the Value, the better the quality of the match.
+///
+/// Takes in a player as a [`TrueSkillRating`], and a slice of opponents as [`TrueSkillRating`]s and returns the probabilities of a draw occurring as a Vec of [`f64`]s between 1.0 and 0.0.
+///
+/// Similar to [`match_quality`].
+///
+/// # Examples
+/// ```
+/// use skillratings::trueskill::{match_quality_rating_period, TrueSkillConfig, TrueSkillRating};
+///
+/// let player_one = TrueSkillRating::new();
+/// let player_two = TrueSkillRating::new();
+/// let player_three = TrueSkillRating {
+///     rating: 13.0,
+///     uncertainty: 6.1,
+/// };
+///
+/// let config = TrueSkillConfig::new();
+///
+/// let qualities = match_quality_rating_period(&player_one, &[player_two, player_three], &config);
+///
+/// // According to TrueSkill, there is a 44.7% chance this first match will end in a draw.
+/// assert!(((qualities[0] * 1000.0).round() - 447.0).abs() < f64::EPSILON);
+/// // Similarly, the second match has a 29.8% chance of ending in a draw.
+/// assert!(((qualities[1] * 1000.0).round() - 298.0).abs() < f64::EPSILON);
+/// ```
+pub fn match_quality_rating_period(
+    player: &TrueSkillRating,
+    results: &[TrueSkillRating],
+    config: &TrueSkillConfig,
+) -> Vec<f64> {
+    // No shortcut, it's just a simple loop.
+    // But this is implemented here for consistency with the other functions.
+    results
+        .iter()
+        .map(|r| match_quality(player, r, config))
+        .collect()
 }
 
 #[must_use]
@@ -2643,6 +2688,80 @@ mod tests {
 
         assert!((results[2][0].uncertainty - 4.590_018_525_151_38).abs() < f64::EPSILON);
         assert!((results[2][1].uncertainty - 1.976_314_792_712_798_2).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_ffa() {
+        let p1 = TrueSkillRating {
+            rating: 41.023,
+            uncertainty: 2.1333,
+        };
+        let p2 = TrueSkillRating {
+            rating: 21.0,
+            uncertainty: 1.87,
+        };
+
+        let p3 = TrueSkillRating {
+            rating: 42.0,
+            uncertainty: 1.223,
+        };
+
+        let teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)] = &[
+            (&[p1], MultiTeamOutcome::new(1)),
+            (&[p2], MultiTeamOutcome::new(3)),
+            (&[p3], MultiTeamOutcome::new(2)),
+        ];
+
+        let results = trueskill_multi_team(teams_and_ranks, &TrueSkillConfig::new());
+
+        assert!((results[0][0].rating - 41.720_925_460_665).abs() < f64::EPSILON);
+        assert!((results[1][0].rating - 20.997_268_045_415_94).abs() < f64::EPSILON);
+        assert!((results[2][0].rating - 41.771_076_420_914_83).abs() < f64::EPSILON);
+
+        assert!((results[0][0].uncertainty - 2.050_533_079_246_658_7).abs() < f64::EPSILON);
+        assert!((results[1][0].uncertainty - 1.870_534_805_422_220_2).abs() < f64::EPSILON);
+        assert!((results[2][0].uncertainty - 1.209_939_281_670_434_9).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_unlikely_ffa() {
+        let p1 = TrueSkillRating {
+            rating: 0.4,
+            uncertainty: 8.1333,
+        };
+        let p2 = TrueSkillRating {
+            rating: -21.0,
+            uncertainty: 1.87,
+        };
+
+        let p3 = TrueSkillRating {
+            rating: 122.0,
+            uncertainty: 0.01,
+        };
+
+        let p4 = TrueSkillRating {
+            rating: -1.0,
+            uncertainty: -1.223,
+        };
+
+        let teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)] = &[
+            (&[p1], MultiTeamOutcome::new(1)),
+            (&[p2], MultiTeamOutcome::new(3)),
+            (&[p3], MultiTeamOutcome::new(2)),
+            (&[p4], MultiTeamOutcome::new(2)),
+        ];
+
+        let results = trueskill_multi_team(teams_and_ranks, &TrueSkillConfig::new());
+
+        assert!((results[0][0].rating - 46.844_398_641_974_195).abs() < f64::EPSILON);
+        assert!((results[1][0].rating - -21.0).abs() < f64::EPSILON);
+        assert!((results[2][0].rating - 121.973_594_228_967_41).abs() < f64::EPSILON);
+        assert!((results[3][0].rating - 3.577_783_039_440_541_7).abs() < f64::EPSILON);
+
+        assert!((results[0][0].uncertainty - 4.453_979_220_473_841).abs() < f64::EPSILON);
+        assert!((results[1][0].uncertainty - 1.871_855_882_391_709_3).abs() < f64::EPSILON);
+        assert!((results[2][0].uncertainty - 0.083_922_196_135_183_51).abs() < f64::EPSILON);
+        assert!((results[3][0].uncertainty - 1.197_926_990_096_083_4).abs() < f64::EPSILON);
     }
 
     #[test]
