@@ -72,7 +72,7 @@ impl PriorFactor {
         }
     }
 
-    pub fn down(&mut self) -> f64 {
+    pub fn down(&self) -> f64 {
         let sigma = self.val.sigma().hypot(self.dynamic);
         let value = Gaussian::with_mu_sigma(self.val.mu(), sigma);
         self.variable.borrow_mut().update_value(self.id, value)
@@ -104,7 +104,7 @@ impl LikelihoodFactor {
         }
     }
 
-    pub fn down(&mut self) -> f64 {
+    pub fn down(&self) -> f64 {
         let msg = {
             let mean = self.mean.borrow();
             mean.gaussian / mean.messages[&self.id]
@@ -115,7 +115,7 @@ impl LikelihoodFactor {
             .update_message(self.id, Gaussian::with_pi_tau(a * msg.pi, a * msg.tau))
     }
 
-    pub fn up(&mut self) -> f64 {
+    pub fn up(&self) -> f64 {
         let msg = {
             let value = self.value.borrow();
             value.gaussian / value.messages[&self.id]
@@ -158,7 +158,7 @@ impl SumFactor {
         }
     }
 
-    pub fn down(&mut self) -> f64 {
+    pub fn down(&self) -> f64 {
         let msgs: Vec<Gaussian> = self
             .terms
             .iter()
@@ -167,7 +167,7 @@ impl SumFactor {
         self.update(&self.sum, &self.terms, &msgs, &self.coeffs)
     }
 
-    pub fn up(&mut self, index: usize) -> f64 {
+    pub fn up(&self, index: usize) -> f64 {
         let coeff = self.coeffs[index];
         let mut coeffs = Vec::new();
         for (x, c) in self.coeffs.iter().enumerate() {
@@ -254,7 +254,7 @@ impl TruncateFactor {
         }
     }
 
-    pub fn up(&mut self) -> f64 {
+    pub fn up(&self) -> f64 {
         let div = {
             let variable = self.variable.borrow();
             variable.gaussian / variable.messages[&self.id]
@@ -277,15 +277,13 @@ impl TruncateFactor {
 
 #[cfg(test)]
 mod tests {
-    use std::f64::INFINITY;
-
     use super::*;
 
     #[test]
     fn test_delta_inf() {
         let mut v1 = Variable::new();
 
-        v1.set(Gaussian::with_pi_tau(INFINITY, 1.0));
+        v1.set(Gaussian::with_pi_tau(f64::INFINITY, 1.0));
 
         assert!(v1.delta(Gaussian::with_pi_tau(0.0, 0.0)) < f64::EPSILON);
     }
@@ -295,10 +293,10 @@ mod tests {
         let mut v1 = Variable::new();
         let mut v2 = Variable::new();
 
-        v1.set(Gaussian::with_pi_tau(INFINITY, 1.0));
+        v1.set(Gaussian::with_pi_tau(f64::INFINITY, 1.0));
         v2.set(Gaussian::with_pi_tau(0.0, 1.0));
 
-        let mut sm1 = SumFactor::new(
+        let sm1 = SumFactor::new(
             0,
             Rc::new(RefCell::new(v1.clone())),
             vec![Rc::new(RefCell::new(v2.clone()))],
@@ -317,10 +315,10 @@ mod tests {
         let mut v1 = Variable::new();
         let mut v2 = Variable::new();
 
-        v1.set(Gaussian::with_pi_tau(INFINITY, 1.0));
+        v1.set(Gaussian::with_pi_tau(f64::INFINITY, 1.0));
         v2.set(Gaussian::with_pi_tau(0.0, 1.0));
 
-        let mut sm1 = SumFactor::new(
+        let sm1 = SumFactor::new(
             0,
             Rc::new(RefCell::new(v1.clone())),
             vec![Rc::new(RefCell::new(v2.clone()))],

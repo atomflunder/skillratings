@@ -67,15 +67,13 @@ impl PartialOrd for Gaussian {
 
 #[cfg(test)]
 mod tests {
-    use std::f64::INFINITY;
-
     use super::*;
 
     #[test]
     fn test_gaussian_edge_cases() {
         let g1 = Gaussian::with_pi_tau(0.0, 0.0);
 
-        assert!(g1.sigma() == INFINITY);
+        assert!(g1.sigma() == f64::INFINITY);
         assert!(g1.mu() == 0.0);
     }
 

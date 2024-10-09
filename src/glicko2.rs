@@ -667,6 +667,7 @@ fn new_volatility(
         (delta_squared - deviation_squared - v).ln()
     } else {
         let mut k: f64 = 1.0;
+        #[allow(clippy::while_float)]
         while f_value(
             k.mul_add(-tau, a),
             delta_squared,
@@ -685,6 +686,7 @@ fn new_volatility(
     let mut fb = f_value(b, delta_squared, deviation_squared, v, old_volatility, tau);
 
     // 0.000001 is the convergence tolerance suggested by Mark Glickman.
+    #[allow(clippy::while_float)]
     while (b - a).abs() > convergence_tolerance {
         let c = a + ((a - b) * fa / (fb - fa));
         let fc = f_value(c, delta_squared, deviation_squared, v, old_volatility, tau);

@@ -1663,11 +1663,11 @@ fn run_schedule(
         factor.down();
     }
 
-    let mut team_diff_layer = build_team_diff_layer(team_diff_vars, team_perf_vars, id);
+    let team_diff_layer = build_team_diff_layer(team_diff_vars, team_perf_vars, id);
     let team_diff_len = team_diff_layer.len();
     id += team_diff_len;
 
-    let mut trunc_layer = build_trunc_layer(
+    let trunc_layer = build_trunc_layer(
         team_diff_vars,
         sorted_teams_and_ranks,
         draw_probability,
@@ -1906,7 +1906,6 @@ mod tests {
     use crate::MultiTeamOutcome;
 
     use super::*;
-    use std::f64::{INFINITY, NEG_INFINITY};
 
     #[test]
     /// This example is taken from this presentation (Page 20):
@@ -2483,11 +2482,11 @@ mod tests {
 
         assert!((dist - 0.096_800).abs() < 0.000_001);
 
-        let dist_inf = cdf(INFINITY, 0.0, 1.0);
+        let dist_inf = cdf(f64::INFINITY, 0.0, 1.0);
 
         assert!((dist_inf - 1.0).abs() < f64::EPSILON);
 
-        let dist_neg_inf = cdf(NEG_INFINITY, 0.0, 1.0);
+        let dist_neg_inf = cdf(f64::NEG_INFINITY, 0.0, 1.0);
 
         assert!((dist_neg_inf - 0.0).abs() < f64::EPSILON);
     }
@@ -2508,29 +2507,29 @@ mod tests {
 
     #[test]
     fn test_wv_edge_cases() {
-        let w = w_non_draw(NEG_INFINITY, 0.0, 1.0);
+        let w = w_non_draw(f64::NEG_INFINITY, 0.0, 1.0);
 
         assert!((w - 1.0).abs() < f64::EPSILON);
 
-        let v = v_non_draw(NEG_INFINITY, 0.0, 1.0);
+        let v = v_non_draw(f64::NEG_INFINITY, 0.0, 1.0);
 
-        assert!(v == INFINITY);
+        assert!(v == f64::INFINITY);
 
-        let w2 = w_draw(NEG_INFINITY, 0.0, 1.0);
+        let w2 = w_draw(f64::NEG_INFINITY, 0.0, 1.0);
 
         assert!((w2 - 1.0).abs() < f64::EPSILON);
 
-        let v2 = v_draw(NEG_INFINITY, 0.0, 1.0);
+        let v2 = v_draw(f64::NEG_INFINITY, 0.0, 1.0);
 
-        assert!(v2 == INFINITY);
+        assert!(v2 == f64::INFINITY);
 
-        let w3 = w_non_draw(1.0, INFINITY, 1.0);
+        let w3 = w_non_draw(1.0, f64::INFINITY, 1.0);
 
         assert!((w3 - 0.0).abs() < f64::EPSILON);
 
-        let v3 = v_draw(INFINITY, f64::MAX, 1.0);
+        let v3 = v_draw(f64::INFINITY, f64::MAX, 1.0);
 
-        assert!(v3 == NEG_INFINITY);
+        assert!(v3 == f64::NEG_INFINITY);
     }
 
     #[test]
