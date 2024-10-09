@@ -3,7 +3,8 @@
 //!
 //! Developed specifically for online games with multiple teams and multiple players.
 //!
-//! **Caution:** TrueSkill is patented. If you have a commercial project, it is recommended to use another algorithm included here.
+//! **Caution:** TrueSkill is patented. If you have a commercial project, it is recommended to use another algorithm included here,
+//! for example the [`Weng-Lin algorithm`](crate::weng_lin).
 //!
 //! TrueSkill uses a normal distribution with a skill rating (μ) and an uncertainty value (σ) to represent a players skill level,
 //! similar to [`Glicko`](crate::glicko) and [`Glicko-2`](crate::glicko2).
