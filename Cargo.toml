@@ -1,6 +1,6 @@
 [package]
 name = "skillratings"
-version = "0.27.0"
+version = "0.27.1"
 edition = "2021"
 description = "Calculate a player's skill rating using algorithms like Elo, Glicko, Glicko-2, TrueSkill and many more."
 readme = "README.md"

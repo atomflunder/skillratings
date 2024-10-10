@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.27.1 - 2024-10-10
+
+- Slightly simplify TrueSkill calculations
+
 ## v0.27.0 - 2024-06-08
 
 - Add full support for rating more than 2 teams with TrueSkill
