@@ -230,8 +230,8 @@ impl SumFactor {
 pub struct TruncateFactor {
     id: usize,
     variable: Rc<RefCell<Variable>>,
-    v_func: Box<dyn Fn(f64, f64) -> f64>,
-    w_func: Box<dyn Fn(f64, f64) -> f64>,
+    v_func: Box<dyn Fn(f64, f64, f64) -> f64>,
+    w_func: Box<dyn Fn(f64, f64, f64) -> f64>,
     draw_margin: f64,
 }
 
@@ -239,8 +239,8 @@ impl TruncateFactor {
     pub fn new(
         id: usize,
         variable: Rc<RefCell<Variable>>,
-        v_func: Box<dyn Fn(f64, f64) -> f64>,
-        w_func: Box<dyn Fn(f64, f64) -> f64>,
+        v_func: Box<dyn Fn(f64, f64, f64) -> f64>,
+        w_func: Box<dyn Fn(f64, f64, f64) -> f64>,
         draw_margin: f64,
     ) -> Self {
         variable.borrow_mut().messages.entry(id).or_default();
@@ -260,10 +260,10 @@ impl TruncateFactor {
             variable.gaussian / variable.messages[&self.id]
         };
         let pi_sqrt = div.pi.sqrt();
-        let arg_1 = div.tau / pi_sqrt;
-        let arg_2 = self.draw_margin * pi_sqrt;
-        let v = (self.v_func)(arg_1, arg_2);
-        let w = (self.w_func)(arg_1, arg_2);
+        let arg_1 = div.tau;
+        let arg_2 = self.draw_margin * div.pi;
+        let v = (self.v_func)(arg_1, arg_2, pi_sqrt);
+        let w = (self.w_func)(arg_1, arg_2, pi_sqrt);
         let denom = 1.0 - w;
 
         let pi = div.pi / denom;
