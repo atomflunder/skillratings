@@ -79,7 +79,7 @@ mod gaussian;
 mod matrix;
 
 use std::cell::RefCell;
-use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
+use std::f64::consts::{FRAC_1_SQRT_2, FRAC_2_SQRT_PI, PI, SQRT_2};
 use std::rc::Rc;
 
 use factor_graph::{LikelihoodFactor, PriorFactor, SumFactor, TruncateFactor, Variable};
@@ -733,7 +733,7 @@ pub fn trueskill_two_teams(
 ///
 /// assert!((new_one[0].rating - 25.622_306_739_859_763).abs() < f64::EPSILON);
 /// assert!((new_one[1].rating - 30.012_965_086_723_046).abs() < f64::EPSILON);
-/// assert!((new_one[2].rating - 21.378635787625903).abs() < f64::EPSILON);
+/// assert!((new_one[2].rating - 21.378_635_787_625_903).abs() < f64::EPSILON);
 ///
 /// assert!((new_two[0].rating - 28.246_057_397_676_047).abs() < f64::EPSILON);
 /// assert!((new_two[1].rating - 41.091_932_136_518_125).abs() < f64::EPSILON);
@@ -1107,7 +1107,7 @@ pub fn match_quality_two_teams(
 /// // There is a ~28.6% chance of a draw occurring.
 /// assert_eq!(quality, 0.285_578_468_347_742_1);
 /// ```
-pub fn match_quality_multi_team(teams: &[&[TrueSkillRating]], config: &TrueSkillConfig) -> f64 {
+pub fn match_quality_multi_team(teams: &[&[TrueSkillRating]], config: &TrueSkillConfig, weights: Option<&[&[f64]]>) -> f64 {
     if teams.is_empty() {
         return 0.0;
     }
@@ -1117,6 +1117,32 @@ pub fn match_quality_multi_team(teams: &[&[TrueSkillRating]], config: &TrueSkill
             return 0.0;
         }
     }
+
+    let team_weights_flatten: Vec<f64> = if let Some(weights) = weights {
+        assert_eq!(weights.len(), teams.len(), "number of weight groups must match the number of teams");
+
+        for (i, &team) in weights.iter().enumerate() {
+            assert_eq!(team.len(), teams[i].len(), "number of weights in a group must match the nubmer of players in a team");
+
+            for &weight in team {
+                assert!(weight >= MIN_DELTA, "weights must not be less than 0.0001");
+            }
+        }
+
+        weights
+            .into_iter()
+            .flat_map(|team| team.into_iter().map(|w| *w).collect::<Vec<_>>())
+            .collect()
+    } else {
+        let mut weights = Vec::new();
+        for &team in teams {
+            for _ in team {
+                weights.push(1.0);
+            }
+        }
+
+        weights
+    };
 
     let total_players = teams.iter().map(|t| t.len()).sum::<usize>();
 
@@ -1136,7 +1162,7 @@ pub fn match_quality_multi_team(teams: &[&[TrueSkillRating]], config: &TrueSkill
     let mean_matrix = Matrix::new_from_data(&team_ratings_flatten, total_players, 1);
     let variance_matrix = Matrix::new_diagonal(&team_uncertainties_sq_flatten);
 
-    let rotated_a_matrix = Matrix::create_rotated_a_matrix(teams);
+    let rotated_a_matrix = Matrix::create_rotated_a_matrix(teams, &team_weights_flatten);
     let a_matrix = rotated_a_matrix.transpose();
 
     let a_ta = rotated_a_matrix.clone() * a_matrix.clone() * config.beta.powi(2);
@@ -1643,7 +1669,7 @@ fn inverse_erfc(y: f64) -> f64 {
 
     for _ in 0..2 {
         let err = erfc(x) - y;
-        x += err / 1.128_379_167_095_512_57f64.mul_add((-(x.powi(2))).exp(), -x * err);
+        x += err / FRAC_2_SQRT_PI.mul_add((-(x.powi(2))).exp(), -x * err);
     }
 
     if zero_point {
@@ -2348,16 +2374,17 @@ mod tests {
         let exp = match_quality_multi_team(
             &[&team_one, &team_two, &team_three],
             &TrueSkillConfig::new(),
+            None,
         );
 
         // Double checked this with the most popular python implementation.
         assert!((exp - 0.017_538_349_223_941_27).abs() < f64::EPSILON);
 
-        let exp = match_quality_multi_team(&[], &TrueSkillConfig::default());
+        let exp = match_quality_multi_team(&[], &TrueSkillConfig::default(), None);
 
         assert!(exp < f64::EPSILON);
 
-        let exp = match_quality_multi_team(&[&team_one, &[]], &TrueSkillConfig::default());
+        let exp = match_quality_multi_team(&[&team_one, &[]], &TrueSkillConfig::default(), None);
 
         assert!(exp < f64::EPSILON);
     }

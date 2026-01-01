@@ -43,7 +43,7 @@ impl Matrix {
         matrix
     }
 
-    pub fn create_rotated_a_matrix(teams: &[&[TrueSkillRating]]) -> Self {
+    pub fn create_rotated_a_matrix(teams: &[&[TrueSkillRating]], flattened_weights: &[f64]) -> Self {
         let total_players = teams.iter().map(|team| team.len()).sum::<usize>();
 
         let mut player_assignments: Vec<f64> = vec![];
@@ -58,7 +58,7 @@ impl Matrix {
             player_assignments.append(&mut vec![0.0; total_previous_players]);
 
             for _current_player in current_team {
-                player_assignments.push(1.0); // TODO: Replace 1.0 by partial play weighting
+                player_assignments.push(flattened_weights[player_assignments.len()]);
                 total_previous_players += 1;
             }
 
@@ -66,7 +66,7 @@ impl Matrix {
             let next_team = teams[current_column + 1];
 
             for _next_player in next_team {
-                player_assignments.push(-1.0 * 1.0); // TODO: Replace 1.0 by partial play weighting
+                player_assignments.push(-1.0 * flattened_weights[player_assignments.len()]);
                 rows_remaining -= 1;
             }
 
