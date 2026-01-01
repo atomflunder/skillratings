@@ -443,7 +443,6 @@ impl MultiTeamOutcome {
 }
 
 impl From<usize> for MultiTeamOutcome {
-    #[must_use]
     #[inline]
     fn from(v: usize) -> Self {
         Self(v)
@@ -451,7 +450,6 @@ impl From<usize> for MultiTeamOutcome {
 }
 
 impl From<MultiTeamOutcome> for usize {
-    #[must_use]
     #[inline]
     fn from(v: MultiTeamOutcome) -> Self {
         v.0
