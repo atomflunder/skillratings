@@ -286,7 +286,7 @@ impl MultiTeamRatingSystem for TrueSkill {
         &self,
         teams_and_ranks: &[(&[Self::RATING], MultiTeamOutcome)],
     ) -> Vec<Vec<TrueSkillRating>> {
-        trueskill_multi_team(teams_and_ranks, &self.config)
+        trueskill_multi_team(teams_and_ranks, &self.config, None)
     }
 
     fn expected_score(&self, teams: &[&[Self::RATING]]) -> Vec<f64> {
@@ -723,7 +723,7 @@ pub fn trueskill_two_teams(
 ///     (&team_three[..], MultiTeamOutcome::new(3)), // Team 3 takes the third place.
 /// ];
 ///
-/// let new_teams = trueskill_multi_team(&teams_and_ranks, &TrueSkillConfig::new());
+/// let new_teams = trueskill_multi_team(&teams_and_ranks, None, &TrueSkillConfig::new());
 ///
 /// assert_eq!(new_teams.len(), 3);
 ///
@@ -746,6 +746,7 @@ pub fn trueskill_two_teams(
 pub fn trueskill_multi_team(
     teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)],
     config: &TrueSkillConfig,
+    weights: Option<&[&[f64]]>,
 ) -> Vec<Vec<TrueSkillRating>> {
     // TODO: Add partial play weights.
     // Match Quality will also be affected (Matrix implementation), Expected Score probably too.
@@ -764,22 +765,61 @@ pub fn trueskill_multi_team(
         }
     }
 
+    let weights: Vec<Vec<f64>> = if let Some(weights) = weights {
+        assert_eq!(weights.len(), teams_and_ranks.len(), "number of weight groups must match the number of teams");
+
+        for (i, &team) in weights.iter().enumerate() {
+            assert_eq!(team.len(), teams_and_ranks[i].0.len(), "number of weights in a group must match the nubmer of players in a team");
+
+            for &weight in team {
+                assert!(weight >= MIN_DELTA, "weights must not be less than 0.0001");
+            }
+        }
+
+        weights
+            .into_iter()
+            .map(|team| team.into_iter().map(|w| *w).collect())
+            .collect()
+    } else {
+        let mut weights = Vec::with_capacity(teams_and_ranks.len());
+        for &(team, _) in teams_and_ranks {
+            weights.push(Vec::with_capacity(team.len()));
+            for _ in team {
+                weights.last_mut().unwrap().push(1.0);
+            }
+        }
+
+        weights
+    };
+
     let mut sorted_teams_and_ranks_with_pos = Vec::new();
-    for (pos, (team, outcome)) in teams_and_ranks.iter().enumerate() {
-        sorted_teams_and_ranks_with_pos.push((pos, (*team, *outcome)));
+    for (pos, ((team, outcome), weights)) in teams_and_ranks.iter().zip(&weights).enumerate() {
+        sorted_teams_and_ranks_with_pos.push((pos, (*team, *outcome, &weights[..])));
     }
     sorted_teams_and_ranks_with_pos.sort_by_key(|v| v.1 .1);
 
     let teams_and_ranks: Vec<(&[TrueSkillRating], MultiTeamOutcome)> =
         sorted_teams_and_ranks_with_pos
             .iter()
-            .map(|v| v.1)
+            .map(|v| (v.1 .0, v.1 .1))
             .collect();
 
+    let weights: Vec<&[f64]> = sorted_teams_and_ranks_with_pos
+        .iter()
+        .map(|v| v.1 .2)
+        .collect();
+
     let mut flattened_ratings = Vec::new();
-    for (team, _) in &teams_and_ranks {
-        for player in *team {
-            flattened_ratings.push(*player);
+    for &(team, _) in &teams_and_ranks {
+        for &player in team {
+            flattened_ratings.push(player);
+        }
+    }
+
+    let mut flattened_weights = Vec::new();
+    for group in weights {
+        for &weight in group {
+            flattened_weights.push(weight);
         }
     }
 
@@ -825,6 +865,7 @@ pub fn trueskill_multi_team(
         &team_sizes,
         &teams_and_ranks,
         &flattened_ratings,
+        &flattened_weights,
         config.default_dynamics,
         config.beta,
         config.draw_probability,
@@ -1637,6 +1678,7 @@ fn run_schedule(
     team_sizes: &[usize],
     sorted_teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)],
     flattened_ratings: &[TrueSkillRating],
+    flattened_weights: &[f64],
     tau: f64,
     beta: f64,
     draw_probability: f64,
@@ -1650,7 +1692,8 @@ fn run_schedule(
     id += rating_layer.len();
     let mut perf_layer = build_perf_layer(rating_vars, perf_vars, beta, id);
     id += perf_layer.len();
-    let mut team_perf_layer = build_team_perf_layer(team_perf_vars, perf_vars, team_sizes, id);
+    let mut team_perf_layer =
+        build_team_perf_layer(team_perf_vars, perf_vars, flattened_weights, team_sizes, id);
     id += team_perf_layer.len();
 
     for factor in &mut rating_layer {
@@ -1758,6 +1801,7 @@ fn build_perf_layer(
 fn build_team_perf_layer(
     team_perf_vars: &[Rc<RefCell<Variable>>],
     perf_vars: &[Rc<RefCell<Variable>>],
+    flattened_weights: &[f64],
     team_sizes: &[usize],
     starting_id: usize,
 ) -> Vec<SumFactor> {
@@ -1768,7 +1812,7 @@ fn build_team_perf_layer(
 
         let end = team_sizes[team];
         let child_perf_vars = perf_vars[start..end].to_vec();
-        let coeffs = vec![1.0; child_perf_vars.len()];
+        let coeffs = flattened_weights[start..end].to_vec();
 
         v.push(SumFactor::new(
             i,
@@ -2143,6 +2187,7 @@ mod tests {
                 (&[player_two], MultiTeamOutcome::new(2)),
             ],
             &TrueSkillConfig::new(),
+            None,
         );
 
         assert_eq!(p1, tp1[0]);
@@ -2617,7 +2662,7 @@ mod tests {
             (&t2[..], MultiTeamOutcome::new(1)),
             (&t3[..], MultiTeamOutcome::new(1)),
         ];
-        let results = trueskill_multi_team(&teams_and_ranks, &TrueSkillConfig::new());
+        let results = trueskill_multi_team(&teams_and_ranks, &TrueSkillConfig::new(), None);
 
         assert!((results[0][0].rating - 40.876_849_177_315_655).abs() < f64::EPSILON);
         assert!((results[0][1].rating - 45.493_394_092_398_45).abs() < f64::EPSILON);
@@ -2664,7 +2709,7 @@ mod tests {
             (&[p3], MultiTeamOutcome::new(2)),
         ];
 
-        let results = trueskill_multi_team(teams_and_ranks, &TrueSkillConfig::new());
+        let results = trueskill_multi_team(teams_and_ranks, &TrueSkillConfig::new(), None);
 
         assert!((results[0][0].rating - 41.720_925_460_665_01).abs() < f64::EPSILON);
         assert!((results[1][0].rating - 20.997_268_045_415_94).abs() < f64::EPSILON);
@@ -2703,7 +2748,7 @@ mod tests {
             (&[p4], MultiTeamOutcome::new(2)),
         ];
 
-        let results = trueskill_multi_team(teams_and_ranks, &TrueSkillConfig::new());
+        let results = trueskill_multi_team(teams_and_ranks, &TrueSkillConfig::new(), None);
 
         assert!((results[0][0].rating - 46.844_398_641_974_97).abs() < f64::EPSILON);
         assert!((results[1][0].rating - -21.0).abs() < f64::EPSILON);
@@ -2718,7 +2763,7 @@ mod tests {
 
     #[test]
     fn test_multi_teams_empty() {
-        let res = trueskill_multi_team(&[], &TrueSkillConfig::new());
+        let res = trueskill_multi_team(&[], &TrueSkillConfig::new(), None);
 
         assert!(res.is_empty());
 
@@ -2728,6 +2773,7 @@ mod tests {
                 (&[], MultiTeamOutcome::new(2)),
             ],
             &TrueSkillConfig::new(),
+            None,
         );
 
         assert!(res[1].is_empty());

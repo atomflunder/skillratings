@@ -171,6 +171,7 @@ pub fn trueskill_multi_team_benchmark(c: &mut Criterion) {
                     (&team_four, MultiTeamOutcome::new(2)),
                 ],
                 black_box(&config),
+                None,
             )
         })
     });
