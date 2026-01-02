@@ -7,40 +7,39 @@
 
 Skillratings provides a collection of well-known (and lesser known) skill rating algorithms, that allow you to assess a player's skill level instantly.  
 You can easily calculate skill ratings instantly in 1 vs 1 matches, Team vs Team Matches, Free-For-Alls, Multiple-Team Matches, or in Tournaments / Rating Periods.  
-This library is incredibly lightweight (no dependencies by default), user-friendly, and of course, *blazingly fast*.
+This library is incredibly lightweight (no dependencies by default), user-friendly, and of course, _blazingly fast_.
 
 Currently supported algorithms:
 
-- [Elo](https://docs.rs/skillratings/latest/skillratings/elo/)
-- [Glicko](https://docs.rs/skillratings/latest/skillratings/glicko/)
-- [Glicko-2](https://docs.rs/skillratings/latest/skillratings/glicko2/)
-- [TrueSkill](https://docs.rs/skillratings/latest/skillratings/trueskill/)
-- [Weng-Lin (OpenSkill)](https://docs.rs/skillratings/latest/skillratings/weng_lin/)
-- [FIFA Men's World Ranking](https://docs.rs/skillratings/latest/skillratings/fifa/)
-- [Sticko (Stephenson Rating System)](https://docs.rs/skillratings/latest/skillratings/sticko/)
-- [Glicko-Boost](https://docs.rs/skillratings/latest/skillratings/glicko_boost/)
-- [USCF (US Chess Federation Ratings)](https://docs.rs/skillratings/latest/skillratings/uscf/)
-- [EGF (European Go Federation Ratings)](https://docs.rs/skillratings/latest/skillratings/egf/)
-- [DWZ (Deutsche Wertungszahl)](https://docs.rs/skillratings/latest/skillratings/dwz/)
-- [Ingo](https://docs.rs/skillratings/latest/skillratings/ingo/)
+-   [Elo](https://docs.rs/skillratings/latest/skillratings/elo/)
+-   [Glicko](https://docs.rs/skillratings/latest/skillratings/glicko/)
+-   [Glicko-2](https://docs.rs/skillratings/latest/skillratings/glicko2/)
+-   [TrueSkill](https://docs.rs/skillratings/latest/skillratings/trueskill/)
+-   [Weng-Lin (OpenSkill)](https://docs.rs/skillratings/latest/skillratings/weng_lin/)
+-   [FIFA Men's World Ranking](https://docs.rs/skillratings/latest/skillratings/fifa/)
+-   [Sticko (Stephenson Rating System)](https://docs.rs/skillratings/latest/skillratings/sticko/)
+-   [Glicko-Boost](https://docs.rs/skillratings/latest/skillratings/glicko_boost/)
+-   [USCF (US Chess Federation Ratings)](https://docs.rs/skillratings/latest/skillratings/uscf/)
+-   [EGF (European Go Federation Ratings)](https://docs.rs/skillratings/latest/skillratings/egf/)
+-   [DWZ (Deutsche Wertungszahl)](https://docs.rs/skillratings/latest/skillratings/dwz/)
+-   [Ingo](https://docs.rs/skillratings/latest/skillratings/ingo/)
 
 Most of these are known from their usage in online multiplayer games.  
 Click on the documentation for the modules linked above for more information about the specific rating algorithms, and their advantages and disadvantages.
 
 ## Table of Contents
 
-- [Installation](#installation)
-    - [Serde Support](#serde-support)
-- [Usage and Examples](#usage-and-examples)
-    - [Player vs. Player](#player-vs-player)
-    - [Team vs. Team](#team-vs-team)
-    - [Free-For-Alls and Multiple Teams](#free-for-alls-and-multiple-teams)
-    - [Expected Outcome](#expected-outcome)
-    - [Rating Period](#rating-period)
-    - [Switching between different rating systems](#switching-between-different-rating-systems)
-- [Contributing](#contributing)
-- [License](#license)
-
+-   [Installation](#installation)
+    -   [Serde Support](#serde-support)
+-   [Usage and Examples](#usage-and-examples)
+    -   [Player vs. Player](#player-vs-player)
+    -   [Team vs. Team](#team-vs-team)
+    -   [Free-For-Alls and Multiple Teams](#free-for-alls-and-multiple-teams)
+    -   [Expected Outcome](#expected-outcome)
+    -   [Rating Period](#rating-period)
+    -   [Switching between different rating systems](#switching-between-different-rating-systems)
+-   [Contributing](#contributing)
+-   [License](#license)
 
 ## Installation
 
@@ -54,7 +53,7 @@ Alternatively, you can add the following to your `Cargo.toml` file manually:
 
 ```toml
 [dependencies]
-skillratings = "0.27"
+skillratings = "0.28"
 ```
 
 ### Serde support
@@ -71,7 +70,7 @@ By editing `Cargo.toml` manually:
 
 ```toml
 [dependencies]
-skillratings = {version = "0.27", features = ["serde"]}
+skillratings = {version = "0.28", features = ["serde"]}
 ```
 
 ## Usage and Examples
@@ -83,7 +82,7 @@ For more information, please head over [to the documentation](https://docs.rs/sk
 ### Player-vs-Player
 
 Every rating algorithm included here can be used to rate 1v1 games.  
-We use *Glicko-2* in this example here.
+We use _Glicko-2_ in this example here.
 
 ```rust
 use skillratings::{
@@ -120,7 +119,7 @@ assert_eq!(new_player_one.rating.round(), 1612.0);
 ### Team-vs-Team
 
 Some algorithms like TrueSkill or Weng-Lin allow you to rate team-based games as well.  
-This example shows a 3v3 game using *TrueSkill*.
+This example shows a 3v3 game using _TrueSkill_.
 
 ```rust
 use skillratings::{
@@ -235,7 +234,7 @@ assert_eq!(new_teams[0][0].rating.round(), 28.0);
 ### Expected outcome
 
 Every rating algorithm has an `expected_score` function that you can use to predict the outcome of a game.  
-This example is using *Glicko* (*not Glicko-2!*) to demonstrate.
+This example is using _Glicko_ (_not Glicko-2!_) to demonstrate.
 
 ```rust
 use skillratings::glicko::{expected_score, GlickoRating};
@@ -265,7 +264,7 @@ assert_eq!((exp_one * 100.0).round(), 25.0);
 
 Every rating algorithm included here has a `..._rating_period` that allows you to calculate a player's new rating using a list of results.  
 This can be useful in tournaments, or if you only update ratings at the end of a certain rating period, as the name suggests.  
-We are using the *Elo* rating algorithm in this example.
+We are using the _Elo_ rating algorithm in this example.
 
 ```rust
 use skillratings::{
@@ -344,7 +343,7 @@ assert_eq!(new_one.uncertainty().unwrap().round(), 118.0);
 
 ## Contributing
 
-Contributions of any kind are always welcome!  
+Contributions of any kind are always welcome!
 
 Found a bug or have a feature request? [Submit a new issue](https://github.com/atomflunder/skillratings/issues/).  
 Alternatively, [open a pull request](https://github.com/atomflunder/skillratings/pulls) if you want to add features or fix bugs.  
@@ -355,3 +354,4 @@ Thanks to everyone who takes their time to contribute.
 ## License
 
 This project is licensed under either the [MIT License](/LICENSE-MIT), or the [Apache License, Version 2.0](/LICENSE-APACHE).
+

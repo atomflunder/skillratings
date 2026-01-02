@@ -63,7 +63,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.27"
+//! skillratings = "0.28"
 //! ```
 //!
 //! ### Serde support
@@ -80,7 +80,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = {version = "0.27", features = ["serde"]}
+//! skillratings = {version = "0.28", features = ["serde"]}
 //! ```
 //!
 //! ## Usage and Examples
