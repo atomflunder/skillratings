@@ -2891,4 +2891,18 @@ mod tests {
         assert!((res[0][0].rating - 25.0).abs() < f64::EPSILON);
         assert!((res[0][0].uncertainty - 25.0 / 3.0).abs() < f64::EPSILON);
     }
+
+    #[test]
+    fn test_weight_error() {
+        let res = trueskill_multi_team(
+            &[
+                (&[TrueSkillRating::new()], MultiTeamOutcome::new(1)),
+                (&[TrueSkillRating::new()], MultiTeamOutcome::new(2)),
+            ],
+            &TrueSkillConfig::new(),
+            Some(&[&[0.0]]),
+        );
+
+        assert!(matches!(res, Err(WeightError::TeamAmount)));
+    }
 }
