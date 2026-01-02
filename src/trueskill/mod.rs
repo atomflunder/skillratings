@@ -178,7 +178,7 @@ pub struct TrueSkillConfig {
     /// It determines how easy it will be for a player to move up and down a leaderboard.
     /// A larger value will tend to cause more volatility of player positions.
     /// By default set to 25 / 300 ≈ `0.0833`.
-    pub default_dynamics: f64,
+    pub dynamics_factor: f64,
 }
 
 impl TrueSkillConfig {
@@ -189,7 +189,7 @@ impl TrueSkillConfig {
         Self {
             draw_probability: 0.1,
             beta: (25.0 / 3.0) * 0.5,
-            default_dynamics: 25.0 / 300.0,
+            dynamics_factor: 25.0 / 300.0,
         }
     }
 }
@@ -383,7 +383,7 @@ pub fn trueskill(
         player_one.uncertainty,
         v,
         c,
-        config.default_dynamics,
+        config.dynamics_factor,
         rank_multiplier1,
     );
     let new_rating2 = new_rating(
@@ -391,12 +391,12 @@ pub fn trueskill(
         player_two.uncertainty,
         v,
         c,
-        config.default_dynamics,
+        config.dynamics_factor,
         rank_multiplier2,
     );
 
-    let new_uncertainty1 = new_uncertainty(player_one.uncertainty, c, w, config.default_dynamics);
-    let new_uncertainty2 = new_uncertainty(player_two.uncertainty, c, w, config.default_dynamics);
+    let new_uncertainty1 = new_uncertainty(player_one.uncertainty, c, w, config.dynamics_factor);
+    let new_uncertainty2 = new_uncertainty(player_two.uncertainty, c, w, config.dynamics_factor);
 
     (
         TrueSkillRating {
@@ -505,10 +505,10 @@ pub fn trueskill_rating_period(
             player_uncertainty,
             v,
             c,
-            config.default_dynamics,
+            config.dynamics_factor,
             rank_multiplier,
         );
-        player_uncertainty = new_uncertainty(player_uncertainty, c, w, config.default_dynamics);
+        player_uncertainty = new_uncertainty(player_uncertainty, c, w, config.dynamics_factor);
     }
 
     TrueSkillRating {
@@ -629,10 +629,10 @@ pub fn trueskill_two_teams(
             player.uncertainty,
             v,
             c,
-            config.default_dynamics,
+            config.dynamics_factor,
             rank_multiplier1,
         );
-        let new_uncertainty = new_uncertainty(player.uncertainty, c, w, config.default_dynamics);
+        let new_uncertainty = new_uncertainty(player.uncertainty, c, w, config.dynamics_factor);
 
         new_team_one.push(TrueSkillRating {
             rating: new_rating,
@@ -646,10 +646,10 @@ pub fn trueskill_two_teams(
             player.uncertainty,
             v,
             c,
-            config.default_dynamics,
+            config.dynamics_factor,
             rank_multiplier2,
         );
-        let new_uncertainty = new_uncertainty(player.uncertainty, c, w, config.default_dynamics);
+        let new_uncertainty = new_uncertainty(player.uncertainty, c, w, config.dynamics_factor);
 
         new_team_two.push(TrueSkillRating {
             rating: new_rating,
@@ -869,7 +869,7 @@ pub fn trueskill_multi_team(
         &teams_and_ranks,
         &flattened_ratings,
         &flattened_weights,
-        config.default_dynamics,
+        config.dynamics_factor,
         config.beta,
         config.draw_probability,
         MIN_DELTA,
@@ -1484,6 +1484,8 @@ pub fn get_rank(player: &TrueSkillRating) -> f64 {
     player.uncertainty.mul_add(-3.0, player.rating)
 }
 
+// TODO: docs everywhere
+
 fn draw_margin(draw_probability: f64, beta: f64, total_players: f64) -> f64 {
     inverse_cdf((draw_probability + 1.0) / 2.0, 0.0, 1.0) * total_players.sqrt() * beta
 }
@@ -1569,16 +1571,16 @@ fn new_rating(
     uncertainty: f64,
     v: f64,
     c: f64,
-    default_dynamics: f64,
+    dynamics_factor: f64,
     rank_multiplier: f64,
 ) -> f64 {
-    let mean_multiplier = uncertainty.mul_add(uncertainty, default_dynamics.powi(2)) / c;
+    let mean_multiplier = uncertainty.mul_add(uncertainty, dynamics_factor.powi(2)) / c;
 
     (rank_multiplier * mean_multiplier).mul_add(v, rating)
 }
 
-fn new_uncertainty(uncertainty: f64, c: f64, w: f64, default_dynamics: f64) -> f64 {
-    let variance = uncertainty.mul_add(uncertainty, default_dynamics.powi(2));
+fn new_uncertainty(uncertainty: f64, c: f64, w: f64, dynamics_factor: f64) -> f64 {
+    let variance = uncertainty.mul_add(uncertainty, dynamics_factor.powi(2));
     let dev_multiplier = variance / c.powi(2);
 
     (variance * w.mul_add(-dev_multiplier, 1.0)).sqrt()
