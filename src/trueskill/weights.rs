@@ -7,11 +7,14 @@ pub enum WeightError {
     TeamAmount,
     /// If the amount of players in a team does not match.
     PlayerAmount {
+        /// The team that contains the wrong amount of players.
         team: usize,
     },
-    // If a weight is negative.
+    /// If a weight is negative.
     Weight {
+        /// The team that contains the wrong weight.
         team: usize,
+        /// The player that was assigned the wrong weight.
         player: usize,
     },
 }
@@ -45,7 +48,7 @@ pub fn get_weights(
 
 mod tests {
     #![allow(clippy::unwrap_used)]
-
+    #[allow(unused_imports)]
     use super::*;
 
     #[test]

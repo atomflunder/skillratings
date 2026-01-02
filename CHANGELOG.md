@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.28.1 - 2026-01-02
+
+- Overhaul documentation
+
 ## v0.28.0 - 2026-01-02
 
 - Add partial play weightings to TrueSkill calculations

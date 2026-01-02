@@ -89,12 +89,14 @@ use matrix::Matrix;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::trueskill::weights::{get_weights, WeightError};
+use crate::trueskill::weights::get_weights;
 use crate::{weng_lin::WengLinRating, Outcomes};
 use crate::{
     MultiTeamOutcome, MultiTeamRatingSystem, Rating, RatingPeriodSystem, RatingSystem,
     TeamRatingSystem,
 };
+
+pub use crate::trueskill::weights::WeightError;
 
 const MIN_DELTA: f64 = 0.0001;
 
@@ -760,7 +762,7 @@ pub fn trueskill_two_teams(
 ///
 /// # Errors
 ///
-/// This function may return a [`WeightError`] if it receives invalid weights. Weights are invalid if:
+/// This function may return a [`weights::WeightError`] if it receives invalid weights. Weights are invalid if:
 /// - The number of teams does not match the `teams_and_ranks` argument
 /// - The number of players inside a team does not match
 /// - One of the weights is negative
@@ -1109,7 +1111,7 @@ pub fn match_quality_two_teams(
 ///
 /// # Errors
 ///
-/// This function may return a [`WeightError`] if it receives invalid weights. Weights are invalid if:
+/// This function may return a [`weights::WeightError`]  if it receives invalid weights. Weights are invalid if:
 /// - The number of teams does not match the `teams_and_ranks` argument
 /// - The number of players inside a team does not match
 /// - One of the weights is negative
