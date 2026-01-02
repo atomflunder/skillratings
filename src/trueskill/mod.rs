@@ -2764,27 +2764,27 @@ mod tests {
             Some(&[&[0.7, 1.0], &[0.33, 0.33, 0.9, 1.0], &[1.0, 0.0333]]),
         );
 
-        assert!((results[0][0].rating - 40.026_286_826_773_564).abs() < f64::EPSILON);
-        assert!((results[0][1].rating - 45.021_130_470_607_574).abs() < f64::EPSILON);
+        assert!((results[0][0].rating - 40.027_231_346_252_364).abs() < f64::EPSILON);
+        assert!((results[0][1].rating - 45.021_889_715_580_61).abs() < f64::EPSILON);
 
-        assert!((results[1][0].rating - 20.082_452_235_420_86).abs() < f64::EPSILON);
-        assert!((results[1][1].rating - 19.060_580_252_324_95).abs() < f64::EPSILON);
-        assert!((results[1][2].rating - 30.371_702_626_477_003).abs() < f64::EPSILON);
-        assert!((results[1][3].rating - 10.081_609_235_036_387).abs() < f64::EPSILON);
+        assert!((results[1][0].rating - 20.098_036_453_507_61).abs() < f64::EPSILON);
+        assert!((results[1][1].rating - 19.072_030_467_824_426).abs() < f64::EPSILON);
+        assert!((results[1][2].rating - 30.441_957_784_082_72).abs() < f64::EPSILON);
+        assert!((results[1][3].rating - 10.097_034_118_427_457).abs() < f64::EPSILON);
 
-        assert!((results[2][0].rating - 49.813_838_697_261_95).abs() < f64::EPSILON);
-        assert!((results[2][1].rating - 24.999_006_686_507_37).abs() < f64::EPSILON);
+        assert!((results[2][0].rating - 49.787_633_108_041_61).abs() < f64::EPSILON);
+        assert!((results[2][1].rating - 29.998_866_859_567_126).abs() < f64::EPSILON);
 
-        assert!((results[0][0].uncertainty - 3.990_362_953_599_359).abs() < f64::EPSILON);
-        assert!((results[0][1].uncertainty - 2.992_106_348_200_95).abs() < f64::EPSILON);
+        assert!((results[0][0].uncertainty - 3.990_045_287_325_199).abs() < f64::EPSILON);
+        assert!((results[0][1].uncertainty - 2.991_832_600_124_326_7).abs() < f64::EPSILON);
 
-        assert!((results[1][0].uncertainty - 6.888_273_305_666_226).abs() < f64::EPSILON);
-        assert!((results[1][1].uncertainty - 5.930_054_453_398_119).abs() < f64::EPSILON);
-        assert!((results[1][2].uncertainty - 7.023_596_164_093_662).abs() < f64::EPSILON);
-        assert!((results[1][3].uncertainty - 3.805_261_818_933_183).abs() < f64::EPSILON);
+        assert!((results[1][0].uncertainty - 6.888_248_560_920_697).abs() < f64::EPSILON);
+        assert!((results[1][1].uncertainty - 5.930_038_936_969_937).abs() < f64::EPSILON);
+        assert!((results[1][2].uncertainty - 7.023_102_950_896_653).abs() < f64::EPSILON);
+        assert!((results[1][3].uncertainty - 3.805_217_937_147_945).abs() < f64::EPSILON);
 
-        assert!((results[2][0].uncertainty - 4.590_705_619_656_805).abs() < f64::EPSILON);
-        assert!((results[2][1].uncertainty - 2.001_707_393_284_209_8).abs() < f64::EPSILON);
+        assert!((results[2][0].uncertainty - 4.589_940_271_249_083).abs() < f64::EPSILON);
+        assert!((results[2][1].uncertainty - 2.001_707_343_315_781_7).abs() < f64::EPSILON);
     }
 
     #[test]
