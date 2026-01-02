@@ -1,3 +1,5 @@
+use crate::trueskill::MIN_DELTA;
+
 use super::TrueSkillRating;
 
 // This Matrix could have been imported, but we implement it ourselves, since we only have to use some basic things here.
@@ -43,7 +45,42 @@ impl Matrix {
         matrix
     }
 
-    pub fn create_rotated_a_matrix(teams: &[&[TrueSkillRating]], flattened_weights: &[f64]) -> Self {
+    pub fn create_rotated_a_matrix(
+        teams: &[&[TrueSkillRating]],
+        weights: Option<&[&[f64]]>,
+    ) -> Self {
+        let team_weights: Vec<Vec<f64>> = weights.map_or_else(
+            || {
+                let mut weights = Vec::new();
+                for &team in teams {
+                    weights.push(vec![1.0; team.len()]);
+                }
+
+                weights
+            },
+            |weights| {
+                assert_eq!(
+                    weights.len(),
+                    teams.len(),
+                    "number of weight groups must match the number of teams"
+                );
+
+                for (i, &team) in weights.iter().enumerate() {
+                    assert_eq!(
+                        team.len(),
+                        teams[i].len(),
+                        "number of weights in a group must match the nubmer of players in a team"
+                    );
+
+                    for &weight in team {
+                        assert!(weight >= MIN_DELTA, "weights must not be less than 0.0001");
+                    }
+                }
+
+                weights.iter().map(|w| w.to_vec()).collect()
+            },
+        );
+
         let total_players = teams.iter().map(|team| team.len()).sum::<usize>();
 
         let mut player_assignments: Vec<f64> = vec![];
@@ -57,16 +94,16 @@ impl Matrix {
 
             player_assignments.append(&mut vec![0.0; total_previous_players]);
 
-            for _current_player in current_team {
-                player_assignments.push(flattened_weights[player_assignments.len()]);
+            for i in 0..current_team.len() {
+                player_assignments.push(team_weights[current_column][i]);
                 total_previous_players += 1;
             }
 
             let mut rows_remaining = total_players - total_previous_players;
             let next_team = teams[current_column + 1];
 
-            for _next_player in next_team {
-                player_assignments.push(-1.0 * flattened_weights[player_assignments.len()]);
+            for i in 0..next_team.len() {
+                player_assignments.push(-1.0 * team_weights[current_column + 1][i]);
                 rows_remaining -= 1;
             }
 
