@@ -1,6 +1,8 @@
+use std::{error::Error, fmt::Display};
+
 use crate::trueskill::TrueSkillRating;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Errors that can occur when passing in invalid weights.
 pub enum WeightError {
     /// If the amount of teams does not match.
@@ -18,6 +20,27 @@ pub enum WeightError {
         player: usize,
     },
 }
+
+impl Display for WeightError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::TeamAmount => {
+                write!(f, "The amount of teams is invalid.")
+            }
+            Self::PlayerAmount { team } => {
+                write!(f, "The amount of players in team {team} is invalid.")
+            }
+            Self::Weight { team, player } => {
+                write!(
+                    f,
+                    "The weight for player {player} in team {team} is invalid",
+                )
+            }
+        }
+    }
+}
+
+impl Error for WeightError {}
 
 pub fn get_weights(
     teams: &[&[TrueSkillRating]],
@@ -46,9 +69,10 @@ pub fn get_weights(
     Ok(teams.iter().map(|team| vec![1.0; team.len()]).collect())
 }
 
+#[cfg(test)]
 mod tests {
     #![allow(clippy::unwrap_used)]
-    #[allow(unused_imports)]
+
     use super::*;
 
     #[test]
@@ -58,6 +82,12 @@ mod tests {
 
         let err = get_weights(teams, Some(weights));
         assert!(matches!(err, Err(WeightError::TeamAmount)));
+
+        let u = err.unwrap_err();
+        assert_eq!(
+            format!("{:?}", u.to_string()),
+            "\"The amount of teams is invalid.\""
+        );
     }
 
     #[test]
@@ -67,6 +97,12 @@ mod tests {
 
         let err = get_weights(teams, Some(weights));
         assert!(matches!(err, Err(WeightError::PlayerAmount { team: 1 })));
+
+        let u = err.unwrap_err();
+        assert_eq!(
+            format!("{:?}", u.to_string()),
+            "\"The amount of players in team 1 is invalid.\""
+        );
     }
 
     #[test]
@@ -79,6 +115,12 @@ mod tests {
             err,
             Err(WeightError::Weight { team: 1, player: 0 })
         ));
+
+        let u = err.unwrap_err();
+        assert_eq!(
+            format!("{:?}", u.to_string()),
+            "\"The weight for player 0 in team 1 is invalid\""
+        );
     }
 
     #[test]

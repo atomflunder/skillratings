@@ -4,6 +4,10 @@ This is a broad overview of the changes that have been made over the lifespan of
 
 ## v0.28.1 - 2026-01-02
 
+- Internal restructuring and linting
+
+## v0.28.1 - 2026-01-02
+
 - Overhaul documentation
 
 ## v0.28.0 - 2026-01-02

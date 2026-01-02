@@ -1,4 +1,5 @@
 //! This is the Stephenson rating algorithm, nicknamed "Sticko" due to it being an improvement on the Glicko rating algorithm.  
+//!
 //! Allows for player advantages, and the winner of a chess outcome prediction competition.
 //!
 //! For the original Glicko algorithm, please see [`Glicko`](crate::glicko), or for the improved versions see [`Glicko-Boost`](crate::glicko_boost) or [`Glicko-2`](crate::glicko2).

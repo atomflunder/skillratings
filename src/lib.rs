@@ -1,6 +1,6 @@
 #![warn(
-    missing_docs,
     clippy::pedantic,
+    missing_docs,
     clippy::nursery,
     clippy::unwrap_used,
     clippy::expect_used
