@@ -308,7 +308,7 @@ impl MultiTeamRatingSystem for TrueSkill {
 /// Similar to [`trueskill_rating_period`], [`trueskill_two_teams`] and [`trueskill_multi_team`].
 ///
 /// This algorithm uses some shortcuts to speed-up and simplify 1-vs-1 ratings. This is fine for 99.9% of use-cases,
-/// but if you need maximum precision, consider using [`trueskill_multi_team`].
+/// but if you need maximum precision or need custom weightings, consider using [`trueskill_multi_team`].
 ///
 /// **Caution regarding usage of TrueSkill**:  
 /// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.  
@@ -531,7 +531,7 @@ pub fn trueskill_rating_period(
 /// Similar to [`trueskill`] and [`trueskill_multi_team`].
 ///
 /// This algorithm uses some shortcuts to speed-up and simplify Team-vs-Team ratings. This is fine for 99.9% of use-cases,
-/// but if you need maximum precision, consider using [`trueskill_multi_team`].
+/// but if you need maximum precision or need custom weightings, consider using [`trueskill_multi_team`].
 ///
 /// **Caution regarding usage of TrueSkill**:
 /// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill(TM).
