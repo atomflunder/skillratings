@@ -1,4 +1,4 @@
-use crate::trueskill::MIN_DELTA;
+use crate::trueskill::weights::{get_weights, WeightError};
 
 use super::TrueSkillRating;
 
@@ -48,38 +48,8 @@ impl Matrix {
     pub fn create_rotated_a_matrix(
         teams: &[&[TrueSkillRating]],
         weights: Option<&[&[f64]]>,
-    ) -> Self {
-        let team_weights: Vec<Vec<f64>> = weights.map_or_else(
-            || {
-                let mut weights = Vec::new();
-                for &team in teams {
-                    weights.push(vec![1.0; team.len()]);
-                }
-
-                weights
-            },
-            |weights| {
-                assert_eq!(
-                    weights.len(),
-                    teams.len(),
-                    "number of weight groups must match the number of teams"
-                );
-
-                for (i, &team) in weights.iter().enumerate() {
-                    assert_eq!(
-                        team.len(),
-                        teams[i].len(),
-                        "number of weights in a group must match the nubmer of players in a team"
-                    );
-
-                    for &weight in team {
-                        assert!(weight >= MIN_DELTA, "weights must not be less than 0.0001");
-                    }
-                }
-
-                weights.iter().map(|w| w.to_vec()).collect()
-            },
-        );
+    ) -> Result<Self, WeightError> {
+        let team_weights: Vec<Vec<f64>> = get_weights(teams, weights)?;
 
         let total_players = teams.iter().map(|team| team.len()).sum::<usize>();
 
@@ -110,11 +80,11 @@ impl Matrix {
             player_assignments.append(&mut vec![0.0; rows_remaining]);
         }
 
-        Self::new_from_data(
+        Ok(Self::new_from_data(
             &player_assignments,
             team_assignments_list_count - 1,
             total_players,
-        )
+        ))
     }
 
     pub fn transpose(&self) -> Self {
