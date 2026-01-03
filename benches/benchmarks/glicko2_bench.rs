@@ -3,7 +3,8 @@ use skillratings::{
     Outcomes,
 };
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
+use std::hint::black_box;
 
 pub fn glicko2_bench(c: &mut Criterion) {
     let player_one = Glicko2Rating {
