@@ -27,7 +27,9 @@ jobs:
         run: cargo fmt --check
 
       - name: Run clippy
-        run: cargo clippy --all -- -A warnings
+        run: cargo clippy --all
+        env:
+          RUSTFLAGS: ""
 
       - name: Test crate
         run: cargo test --verbose
