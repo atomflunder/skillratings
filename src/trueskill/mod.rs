@@ -1517,6 +1517,16 @@ mod tests {
 
     use super::*;
 
+    /// Complex floating point operations are notoriously unreliable.
+    ///
+    /// In the TrueSkill multi-team functions, differences in floating point implementations across operating systems become apparent.
+    /// These variations are larger than [`f64::EPSILON`], so we use a more forgiving threshold instead.
+    ///
+    /// On Windows the toolchain is based on msvc, on Linux it is based on glibc and on MacOS it is clang/llvm.
+    ///
+    /// See also: https://github.com/atomflunder/skillratings/issues/14
+    const ERROR_MARGIN: f64 = 0.000_000_000_01;
+
     #[test]
     /// This example is taken from this presentation (Page 20):
     /// https://ubm-twvideo01.s3.amazonaws.com/o1/vault/gdc2017/Presentations/Izquierdo_Mario_Ranking_Systems_Elo.pdf
@@ -2158,8 +2168,8 @@ mod tests {
             ],
         );
 
-        assert!((mtr[0][0].rating - 24.534_091_256_161_39).abs() < f64::EPSILON);
-        assert!((mtr[1][0].rating - 23.465_908_743_838_607).abs() < f64::EPSILON);
+        assert!((mtr[0][0].rating - 24.534_091_256_161_39).abs() < ERROR_MARGIN);
+        assert!((mtr[1][0].rating - 23.465_908_743_838_607).abs() < ERROR_MARGIN);
 
         let exp = MultiTeamRatingSystem::expected_score(
             &multi_team_rating,
@@ -2220,27 +2230,27 @@ mod tests {
         let results =
             trueskill_multi_team(&teams_and_ranks, &TrueSkillConfig::new(), None).unwrap();
 
-        assert!((results[0][0].rating - 40.876_849_177_315_655).abs() < f64::EPSILON);
-        assert!((results[0][1].rating - 45.493_394_092_398_45).abs() < f64::EPSILON);
+        assert!((results[0][0].rating - 40.876_849_177_315_655).abs() < ERROR_MARGIN);
+        assert!((results[0][1].rating - 45.493_394_092_398_45).abs() < ERROR_MARGIN);
 
-        assert!((results[1][0].rating - 19.608_650_920_845_23).abs() < f64::EPSILON);
-        assert!((results[1][1].rating - 18.712_463_514_890_54).abs() < f64::EPSILON);
-        assert!((results[1][2].rating - 29.353_112_227_810_637).abs() < f64::EPSILON);
-        assert!((results[1][3].rating - 9.872_175_198_037_164).abs() < f64::EPSILON);
+        assert!((results[1][0].rating - 19.608_650_920_845_23).abs() < ERROR_MARGIN);
+        assert!((results[1][1].rating - 18.712_463_514_890_54).abs() < ERROR_MARGIN);
+        assert!((results[1][2].rating - 29.353_112_227_810_637).abs() < ERROR_MARGIN);
+        assert!((results[1][3].rating - 9.872_175_198_037_164).abs() < ERROR_MARGIN);
 
-        assert!((results[2][0].rating - 48.829_832_201_455_31).abs() < f64::EPSILON);
-        assert!((results[2][1].rating - 29.812_500_188_902_998).abs() < f64::EPSILON);
+        assert!((results[2][0].rating - 48.829_832_201_455_31).abs() < ERROR_MARGIN);
+        assert!((results[2][1].rating - 29.812_500_188_902_998).abs() < ERROR_MARGIN);
 
-        assert!((results[0][0].uncertainty - 3.839_527_589_355_369_8).abs() < f64::EPSILON);
-        assert!((results[0][1].uncertainty - 2.933_671_613_522_051).abs() < f64::EPSILON);
+        assert!((results[0][0].uncertainty - 3.839_527_589_355_369_8).abs() < ERROR_MARGIN);
+        assert!((results[0][1].uncertainty - 2.933_671_613_522_051).abs() < ERROR_MARGIN);
 
-        assert!((results[1][0].uncertainty - 6.396_044_310_523_896).abs() < f64::EPSILON);
-        assert!((results[1][1].uncertainty - 5.624_556_429_622_889).abs() < f64::EPSILON);
-        assert!((results[1][2].uncertainty - 7.673_456_361_986_593).abs() < f64::EPSILON);
-        assert!((results[1][3].uncertainty - 3.891_408_425_994_520_3).abs() < f64::EPSILON);
+        assert!((results[1][0].uncertainty - 6.396_044_310_523_896).abs() < ERROR_MARGIN);
+        assert!((results[1][1].uncertainty - 5.624_556_429_622_889).abs() < ERROR_MARGIN);
+        assert!((results[1][2].uncertainty - 7.673_456_361_986_593).abs() < ERROR_MARGIN);
+        assert!((results[1][3].uncertainty - 3.891_408_425_994_520_3).abs() < ERROR_MARGIN);
 
-        assert!((results[2][0].uncertainty - 4.590_018_525_151_379).abs() < f64::EPSILON);
-        assert!((results[2][1].uncertainty - 1.976_314_792_712_798).abs() < f64::EPSILON);
+        assert!((results[2][0].uncertainty - 4.590_018_525_151_379).abs() < ERROR_MARGIN);
+        assert!((results[2][1].uncertainty - 1.976_314_792_712_798).abs() < ERROR_MARGIN);
     }
 
     #[test]
@@ -2297,27 +2307,27 @@ mod tests {
         )
         .unwrap();
 
-        assert!((results[0][0].rating - 40.027_231_346_252_364).abs() < f64::EPSILON);
-        assert!((results[0][1].rating - 45.021_889_715_580_61).abs() < f64::EPSILON);
+        assert!((results[0][0].rating - 40.027_231_346_252_364).abs() < ERROR_MARGIN);
+        assert!((results[0][1].rating - 45.021_889_715_580_61).abs() < ERROR_MARGIN);
 
-        assert!((results[1][0].rating - 20.098_036_453_507_61).abs() < f64::EPSILON);
-        assert!((results[1][1].rating - 19.072_030_467_824_426).abs() < f64::EPSILON);
-        assert!((results[1][2].rating - 30.441_957_784_082_72).abs() < f64::EPSILON);
-        assert!((results[1][3].rating - 10.097_034_118_427_457).abs() < f64::EPSILON);
+        assert!((results[1][0].rating - 20.098_036_453_507_61).abs() < ERROR_MARGIN);
+        assert!((results[1][1].rating - 19.072_030_467_824_426).abs() < ERROR_MARGIN);
+        assert!((results[1][2].rating - 30.441_957_784_082_72).abs() < ERROR_MARGIN);
+        assert!((results[1][3].rating - 10.097_034_118_427_457).abs() < ERROR_MARGIN);
 
-        assert!((results[2][0].rating - 49.787_633_108_041_61).abs() < f64::EPSILON);
-        assert!((results[2][1].rating - 29.998_866_859_567_126).abs() < f64::EPSILON);
+        assert!((results[2][0].rating - 49.787_633_108_041_61).abs() < ERROR_MARGIN);
+        assert!((results[2][1].rating - 29.998_866_859_567_126).abs() < ERROR_MARGIN);
 
-        assert!((results[0][0].uncertainty - 3.990_045_287_325_199).abs() < f64::EPSILON);
-        assert!((results[0][1].uncertainty - 2.991_832_600_124_326_7).abs() < f64::EPSILON);
+        assert!((results[0][0].uncertainty - 3.990_045_287_325_199).abs() < ERROR_MARGIN);
+        assert!((results[0][1].uncertainty - 2.991_832_600_124_326_7).abs() < ERROR_MARGIN);
 
-        assert!((results[1][0].uncertainty - 6.888_248_560_920_697).abs() < f64::EPSILON);
-        assert!((results[1][1].uncertainty - 5.930_038_936_969_937).abs() < f64::EPSILON);
-        assert!((results[1][2].uncertainty - 7.023_102_950_896_653).abs() < f64::EPSILON);
-        assert!((results[1][3].uncertainty - 3.805_217_937_147_945).abs() < f64::EPSILON);
+        assert!((results[1][0].uncertainty - 6.888_248_560_920_697).abs() < ERROR_MARGIN);
+        assert!((results[1][1].uncertainty - 5.930_038_936_969_937).abs() < ERROR_MARGIN);
+        assert!((results[1][2].uncertainty - 7.023_102_950_896_653).abs() < ERROR_MARGIN);
+        assert!((results[1][3].uncertainty - 3.805_217_937_147_945).abs() < ERROR_MARGIN);
 
-        assert!((results[2][0].uncertainty - 4.589_940_271_249_083).abs() < f64::EPSILON);
-        assert!((results[2][1].uncertainty - 2.001_707_343_315_781_7).abs() < f64::EPSILON);
+        assert!((results[2][0].uncertainty - 4.589_940_271_249_083).abs() < ERROR_MARGIN);
+        assert!((results[2][1].uncertainty - 2.001_707_343_315_781_7).abs() < ERROR_MARGIN);
     }
 
     #[test]
@@ -2344,13 +2354,13 @@ mod tests {
 
         let results = trueskill_multi_team(teams_and_ranks, &TrueSkillConfig::new(), None).unwrap();
 
-        assert!((results[0][0].rating - 41.720_925_460_665_01).abs() < f64::EPSILON);
-        assert!((results[1][0].rating - 20.997_268_045_415_94).abs() < f64::EPSILON);
-        assert!((results[2][0].rating - 41.771_076_420_914_83).abs() < f64::EPSILON);
+        assert!((results[0][0].rating - 41.720_925_460_665_01).abs() < ERROR_MARGIN);
+        assert!((results[1][0].rating - 20.997_268_045_415_94).abs() < ERROR_MARGIN);
+        assert!((results[2][0].rating - 41.771_076_420_914_83).abs() < ERROR_MARGIN);
 
-        assert!((results[0][0].uncertainty - 2.050_533_079_246_658_7).abs() < f64::EPSILON);
-        assert!((results[1][0].uncertainty - 1.870_534_805_422_220_2).abs() < f64::EPSILON);
-        assert!((results[2][0].uncertainty - 1.209_939_281_670_434_9).abs() < f64::EPSILON);
+        assert!((results[0][0].uncertainty - 2.050_533_079_246_658_7).abs() < ERROR_MARGIN);
+        assert!((results[1][0].uncertainty - 1.870_534_805_422_220_2).abs() < ERROR_MARGIN);
+        assert!((results[2][0].uncertainty - 1.209_939_281_670_434_9).abs() < ERROR_MARGIN);
     }
 
     #[test]
@@ -2383,15 +2393,15 @@ mod tests {
 
         let results = trueskill_multi_team(teams_and_ranks, &TrueSkillConfig::new(), None).unwrap();
 
-        assert!((results[0][0].rating - 46.844_398_641_974_97).abs() < f64::EPSILON);
-        assert!((results[1][0].rating - -21.0).abs() < f64::EPSILON);
-        assert!((results[2][0].rating - 121.973_594_228_967_43).abs() < f64::EPSILON);
-        assert!((results[3][0].rating - 3.577_783_039_440_43).abs() < f64::EPSILON);
+        assert!((results[0][0].rating - 46.844_398_641_974_97).abs() < ERROR_MARGIN);
+        assert!((results[1][0].rating - -21.0).abs() < ERROR_MARGIN);
+        assert!((results[2][0].rating - 121.973_594_228_967_43).abs() < ERROR_MARGIN);
+        assert!((results[3][0].rating - 3.577_783_039_440_43).abs() < ERROR_MARGIN);
 
-        assert!((results[0][0].uncertainty - 4.453_979_220_477_661).abs() < f64::EPSILON);
-        assert!((results[1][0].uncertainty - 1.871_855_882_391_709_3).abs() < f64::EPSILON);
-        assert!((results[2][0].uncertainty - 0.083_922_196_135_183_55).abs() < f64::EPSILON);
-        assert!((results[3][0].uncertainty - 1.197_926_990_096_302_3).abs() < f64::EPSILON);
+        assert!((results[0][0].uncertainty - 4.453_979_220_477_661).abs() < ERROR_MARGIN);
+        assert!((results[1][0].uncertainty - 1.871_855_882_391_709_3).abs() < ERROR_MARGIN);
+        assert!((results[2][0].uncertainty - 0.083_922_196_135_183_55).abs() < ERROR_MARGIN);
+        assert!((results[3][0].uncertainty - 1.197_926_990_096_302_3).abs() < ERROR_MARGIN);
     }
 
     #[test]
