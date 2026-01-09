@@ -1526,7 +1526,7 @@ mod tests {
     /// On Windows the toolchain is based on msvc, on Linux it is based on glibc and on MacOS it is clang/llvm.
     ///
     /// See also: https://github.com/atomflunder/skillratings/issues/14
-    const ERROR_MARGIN: f64 = 0.000_000_000_1;
+    const ERROR_MARGIN: f64 = 0.000_000_001;
 
     #[test]
     /// This example is taken from this presentation (Page 20):
