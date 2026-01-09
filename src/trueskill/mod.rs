@@ -1515,7 +1515,8 @@ mod tests {
     /// In the TrueSkill multi-team functions, differences in floating point implementations across operating systems become apparent.
     /// These variations are larger than [`f64::EPSILON`], so we use a more forgiving threshold instead.
     ///
-    /// On Windows the toolchain is based on msvc, on Linux it is based on glibc and on MacOS it is clang/llvm.
+    /// On Windows the rust toolchain is based on msvc, on Linux it is based on glibc and on MacOS it is clang/llvm.
+    /// They all have different floating point implementations, so the results differ slightly on each platform.
     ///
     /// See also: https://github.com/atomflunder/skillratings/issues/14
     const ERROR_MARGIN: f64 = 0.000_000_000_1;
