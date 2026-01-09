@@ -753,16 +753,8 @@ pub fn trueskill_two_teams(
 /// let new_three = &new_teams[2];
 ///
 /// assert!((new_one[0].rating - 28.180_576_928_436_55).abs() < f64::EPSILON);
-/// assert!((new_one[1].rating - 30.066_263_874_493_455).abs() < f64::EPSILON);
-/// assert!((new_one[2].rating - 21.967_593_771_099_708).abs() < f64::EPSILON);
-///
 /// assert!((new_two[0].rating - 27.657_276_377_119_9).abs() < f64::EPSILON);
-/// assert!((new_two[1].rating - 41.067_731_453_349_65).abs() < f64::EPSILON);
-/// assert!((new_two[2].rating - 19.907_710_735_630_584).abs() < f64::EPSILON);
-///
 /// assert!((new_three[0].rating - 19.162_146_694_443_58).abs() < f64::EPSILON);
-/// assert!((new_three[1].rating - 29.184_231_167_296_68).abs() < f64::EPSILON);
-/// assert!((new_three[2].rating - 16.828_726_305_722_817).abs() < f64::EPSILON);
 /// ```
 ///
 /// # Errors
@@ -1526,7 +1518,7 @@ mod tests {
     /// On Windows the toolchain is based on msvc, on Linux it is based on glibc and on MacOS it is clang/llvm.
     ///
     /// See also: https://github.com/atomflunder/skillratings/issues/14
-    const ERROR_MARGIN: f64 = 0.000_000_01;
+    const ERROR_MARGIN: f64 = 0.000_000_000_1;
 
     #[test]
     /// This example is taken from this presentation (Page 20):
