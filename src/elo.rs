@@ -1,4 +1,4 @@
-//! The Elo algorithm, the most widespread rating system and the gold-standard in chess and other games.  
+//! The Elo algorithm, the most widespread rating system and the gold-standard in chess and other games.\
 //!
 //! Used in the official FIDE chess ratings, many online games, and the basis of even more rating systems.
 //!
@@ -7,7 +7,7 @@
 //!
 //! # Quickstart
 //!
-//! This is the most basic example on how to use the Elo Module.  
+//! This is the most basic example on how to use the Elo Module.\
 //! Please take a look at the functions below to see more advanced use cases.
 //!
 //! ```
@@ -136,7 +136,7 @@ impl From<FifaRating> for EloRating {
 pub struct EloConfig {
     /// The k-value is the maximum amount of rating change from a single match.
     /// In chess, k-values from 40 to 10 are used, with the most common being 32, 24, 16 or 10.
-    /// The higher the number, the more volatile the ranking.  
+    /// The higher the number, the more volatile the ranking.\
     /// Here the default is 32.
     pub k: f64,
 }
@@ -311,7 +311,7 @@ pub fn elo_rating_period(
 
 /// Calculates the expected score of two players based on their elo rating.
 ///
-/// Takes in two players as [`EloRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// Takes in two players as [`EloRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -338,7 +338,7 @@ pub fn expected_score(player_one: &EloRating, player_two: &EloRating) -> (f64, f
 /// Calculates the expected outcome of a player in a rating period or tournament.
 ///
 /// Takes in a players as [`EloRating`] and a list of opponents as a slice of [`EloRating`]
-/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///

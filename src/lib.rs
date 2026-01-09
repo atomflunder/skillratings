@@ -14,8 +14,8 @@
     clippy::cast_precision_loss,
 )]
 
-//! Skillratings provides a collection of well-known (and lesser known) skill rating algorithms, that allow you to assess a player's skill level instantly.  
-//! You can easily calculate skill ratings instantly in 1vs1 matches, Team vs Team matches, or in tournaments / rating periods.  
+//! Skillratings provides a collection of well-known (and lesser known) skill rating algorithms, that allow you to assess a player's skill level instantly.\
+//! You can easily calculate skill ratings instantly in 1vs1 matches, Team vs Team matches, or in tournaments / rating periods.\
 //! This library is incredibly lightweight (no dependencies by default), user-friendly, and of course, *blazingly fast*.
 //!
 //! Currently supported algorithms:
@@ -33,7 +33,7 @@
 //! - [DWZ (Deutsche Wertungszahl)](https://docs.rs/skillratings/latest/skillratings/dwz/)
 //! - [Ingo](https://docs.rs/skillratings/latest/skillratings/ingo/)
 //!
-//! Most of these are known from their usage in chess and various other games.  
+//! Most of these are known from their usage in chess and various other games.\
 //! Click on the documentation for the modules linked above for more information about the specific rating algorithms, and their advantages and disadvantages.
 //!
 //! ## Table of Contents
@@ -85,13 +85,13 @@
 //!
 //! ## Usage and Examples
 //!
-//! Below you can find some basic examples of the use cases of this crate.  
-//! There are many more rating algorithms available with lots of useful functions that are not covered here.  
+//! Below you can find some basic examples of the use cases of this crate.\
+//! There are many more rating algorithms available with lots of useful functions that are not covered here.\
 //! For more information head over to the modules linked above or below.
 //!
 //! ### Player-vs-Player
 //!
-//! Every rating algorithm included here can be used to rate 1v1 games.  
+//! Every rating algorithm included here can be used to rate 1v1 games.\
 //! We use *Glicko-2* in this example here.
 //!
 //! ```rust
@@ -128,7 +128,7 @@
 //!
 //! ### Team-vs-Team
 //!
-//! Some algorithms like TrueSkill or Weng-Lin allow you to rate team-based games as well.  
+//! Some algorithms like TrueSkill or Weng-Lin allow you to rate team-based games as well.\
 //! This example shows a 3v3 game using *TrueSkill*.
 //!
 //! ```rust
@@ -177,7 +177,7 @@
 //!
 //! ### Free-For-Alls and Multiple Teams
 //!
-//! The *Weng-Lin* algorithm supports rating matches with multiple Teams.  
+//! The *Weng-Lin* algorithm supports rating matches with multiple Teams.\
 //! Here is an example showing a 3-Team game with 3 players each.
 //!
 //! ```rust
@@ -243,7 +243,7 @@
 //!
 //! ### Expected outcome
 //!
-//! Every rating algorithm has an `expected_score` function that you can use to predict the outcome of a game.  
+//! Every rating algorithm has an `expected_score` function that you can use to predict the outcome of a game.\
 //! This example is using *Glicko* (*not Glicko-2!*) to demonstrate.
 //!
 //! ```rust
@@ -272,8 +272,8 @@
 //!
 //! ### Rating period
 //!
-//! Every rating algorithm included here has a `..._rating_period` that allows you to calculate a player's new rating using a list of results.  
-//! This can be useful in tournaments, or if you only update ratings at the end of a certain rating period, as the name suggests.  
+//! Every rating algorithm included here has a `..._rating_period` that allows you to calculate a player's new rating using a list of results.\
+//! This can be useful in tournaments, or if you only update ratings at the end of a certain rating period, as the name suggests.\
 //! We are using the *Elo* rating algorithm in this example.
 //!
 //! ```rust
@@ -305,10 +305,10 @@
 //! ### Switching between different rating systems
 //!
 //! If you want to switch between different rating systems, for example to compare results or to do scientific analyisis,
-//! we provide Traits to make switching as easy and fast as possible.  
+//! we provide Traits to make switching as easy and fast as possible.\
 //! All you have to do is provide the right Config for your rating system.
 //!
-//! _**Disclaimer:**_ For more accurate and fine-tuned calculations it is recommended that you use the rating system modules directly.  
+//! _**Disclaimer:**_ For more accurate and fine-tuned calculations it is recommended that you use the rating system modules directly.\
 //! The Traits are primarily meant to be used for comparisions between systems.
 //!
 //! In the following example, we are using the `RatingSystem` (1v1) Trait with Glicko-2:
@@ -354,10 +354,10 @@
 //!
 //! ## Contributing
 //!
-//! Contributions of any kind are always welcome!  
+//! Contributions of any kind are always welcome!\
 //!
-//! Found a bug or have a feature request? [Submit a new issue](https://github.com/atomflunder/skillratings/issues/).  
-//! Alternatively, [open a pull request](https://github.com/atomflunder/skillratings/pulls) if you want to add features or fix bugs.  
+//! Found a bug or have a feature request? [Submit a new issue](https://github.com/atomflunder/skillratings/issues/).\
+//! Alternatively, [open a pull request](https://github.com/atomflunder/skillratings/pulls) if you want to add features or fix bugs.\
 //! Leaving other feedback is of course also appreciated.
 //!
 //! Thanks to everyone who takes their time to contribute.
@@ -386,7 +386,7 @@ pub mod weng_lin;
 
 /// The possible outcomes for a match: Win, Draw, Loss.
 ///
-/// Note that this is always from the perspective of player one.  
+/// Note that this is always from the perspective of player one.\
 /// That means a win is a win for player one and a loss is a win for player two.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -416,11 +416,11 @@ impl Outcomes {
 
 /// Outcome for a free-for-all match or a match that involves more than two teams.
 ///
-/// Every team is assigned a rank, depending on their placement. The lower the rank, the better.  
+/// Every team is assigned a rank, depending on their placement. The lower the rank, the better.\
 /// If two or more teams tie with each other, assign them the same rank.
 ///
 /// For example: Team A takes 1st place, Team C takes 2nd place, Team B takes 3rd place,
-/// and Teams D and E tie with each other and both take the 4th place.  
+/// and Teams D and E tie with each other and both take the 4th place.\
 /// In that case you would assign Team A = 1, Team B = 3, Team C = 2, Team D = 4, and Team E = 4.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -458,7 +458,7 @@ impl From<MultiTeamOutcome> for usize {
 
 /// Measure of player's skill.
 ///
-/// 📌 _**Important note:**_ Please keep in mind that some rating systems use widely different scales for measuring ratings.  
+/// 📌 _**Important note:**_ Please keep in mind that some rating systems use widely different scales for measuring ratings.\
 /// Please check out the documentation for each rating system for more information, or use `None` to always use default values.
 ///
 /// Some rating systems might consider other values too (volatility, age, matches played etc.).
@@ -476,7 +476,7 @@ pub trait Rating {
 
 /// Rating system for 1v1 matches.
 ///
-/// 📌 _**Important note:**_ The RatingSystem Trait only implements the `rate` and `expected_score` functions.  
+/// 📌 _**Important note:**_ The RatingSystem Trait only implements the `rate` and `expected_score` functions.\
 /// Some rating systems might also implement additional functions (confidence interval, match quality, etc.) which you can only access by using those directly.
 pub trait RatingSystem {
     #[cfg(feature = "serde")]
@@ -501,7 +501,7 @@ pub trait RatingSystem {
 
 /// Rating system for rating periods.
 ///
-/// 📌 _**Important note:**_ The RatingPeriodSystem Trait only implements the `rate` and `expected_score` functions.  
+/// 📌 _**Important note:**_ The RatingPeriodSystem Trait only implements the `rate` and `expected_score` functions.\
 /// Some rating systems might also implement additional functions which you can only access by using those directly.
 pub trait RatingPeriodSystem {
     #[cfg(feature = "serde")]
@@ -521,7 +521,7 @@ pub trait RatingPeriodSystem {
 
 /// Rating system for two teams.
 ///
-/// 📌 _**Important note:**_ The TeamRatingSystem Trait only implements the `rate` and `expected_score` functions.  
+/// 📌 _**Important note:**_ The TeamRatingSystem Trait only implements the `rate` and `expected_score` functions.\
 /// Some rating systems might also implement additional functions which you can only access by using those directly.
 pub trait TeamRatingSystem {
     #[cfg(feature = "serde")]
@@ -546,7 +546,7 @@ pub trait TeamRatingSystem {
 
 /// Rating system for more than two teams.
 ///
-/// 📌 _**Important note:**_ The MultiTeamRatingSystem Trait only implements the `rate` and `expected_score` functions.  
+/// 📌 _**Important note:**_ The MultiTeamRatingSystem Trait only implements the `rate` and `expected_score` functions.\
 /// Some rating systems might also implement additional functions which you can only access by using those directly.
 pub trait MultiTeamRatingSystem {
     #[cfg(feature = "serde")]

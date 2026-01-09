@@ -1,11 +1,11 @@
-//! The Glicko-Boost rating algorithm, an improvement on the Glicko rating system designed specifically for chess.  
+//! The Glicko-Boost rating algorithm, an improvement on the Glicko rating system designed specifically for chess.\
 //! Allows for player advantages, designed for a chess outcome prediction competition.
 //!
-//! For the original Glicko algorithm, please see [`Glicko`](crate::glicko), or [`Glicko-2`](crate::glicko2).  
+//! For the original Glicko algorithm, please see [`Glicko`](crate::glicko), or [`Glicko-2`](crate::glicko2).\
 //! For an alternative update to the Glicko system, please see [`Sticko`](crate::sticko).
 //!
 //! In 2012, the data prediction website [Kaggle](https://kaggle.com) hosted the "FIDE/Deloitte Chess Rating Challenge"
-//!  where competitors where asked to create a new, more accurate chess rating system.  
+//!  where competitors where asked to create a new, more accurate chess rating system.\
 //! This is the improved Glicko rating system that Mark Glickman entered.
 //!
 //! The main improvement over Glicko are the new configurable parameters found in the [`GlickoBoostConfig`]:
@@ -15,11 +15,11 @@
 //! - Alpha (α) 0-4 are five parameters to decay idle player's Rating Deviations more accurately.
 //!
 //! These make Glicko-Boost more configurable and possibly more accurate than the Glicko algorithm.
-//! The Rating Boost allows over-achieving players to climb incredibly quickly.  
+//! The Rating Boost allows over-achieving players to climb incredibly quickly.\
 //! When all parameters (except Alpha (α)) are set to 0, the Glicko-Boost algorithm will produce the exact same results as Glicko.
 //!
 //! Please note that in this implementation, it does not make much sense to re-rate the player's as described in the [original paper](http://glicko.net/glicko/glicko-boost.pdf),
-//! due to the fact that we only play each player once, and not rate a whole tournament.  
+//! due to the fact that we only play each player once, and not rate a whole tournament.\
 //! This means that compared to Table 3 in the original paper, we "skip" Steps 2 and 4, the ratings that are calculated here are comparable to the ratings described in Step 3.
 //!
 //! # Quickstart
@@ -169,29 +169,29 @@ impl From<StickoRating> for GlickoBoostRating {
 /// If the `eta` parameter is set to `0.0`,
 /// this will behave exactly like the [`Glicko`](crate::glicko::glicko) calculations.
 pub struct GlickoBoostConfig {
-    /// The advantage parameter of the first player.  
+    /// The advantage parameter of the first player.\
     /// If your game is biased towards player one set this to a positive number,
-    /// or set this to a negative number if the second player has an advantage.  
+    /// or set this to a negative number if the second player has an advantage.\
     /// With this you could represent the advantage of playing white in chess,
-    /// or home-team advantage in sports like football and so on.  
-    /// In chess, a value of `30.0` seems to be about correct.  
-    /// By default set to `0.0`.  
+    /// or home-team advantage in sports like football and so on.\
+    /// In chess, a value of `30.0` seems to be about correct.\
+    /// By default set to `0.0`.\
     /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
     pub eta: f64,
-    /// The "exceptional performance" threshold.  
+    /// The "exceptional performance" threshold.\
     /// For outstanding performances, the rating deviation of the player will get boosted by the b values.
-    /// By default set to `1.96`, which is approximately equal to 2.5% of performances.  
-    /// The higher this value, the harder it is to reach the threshold.  
+    /// By default set to `1.96`, which is approximately equal to 2.5% of performances.\
+    /// The higher this value, the harder it is to reach the threshold.\
     /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
     pub k: f64,
     /// The rating deviation boost factors. A tuple of 2 [`f64`]s.
-    /// The first value is multiplicative, the second additive.  
-    /// By default set to 0.20139 and 17.5.  
-    /// If k is set to 0, these will do nothing.  
+    /// The first value is multiplicative, the second additive.\
+    /// By default set to 0.20139 and 17.5.\
+    /// If k is set to 0, these will do nothing.\
     /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set both of these to `0.0`.
     pub b: (f64, f64),
     /// The rating deviation increase factors. A tuple of 5 [`f64`]s.
-    /// These values regulate the rating deviation increase of player's who have not played in a rating period.  
+    /// These values regulate the rating deviation increase of player's who have not played in a rating period.\
     /// By default set to 5.83733, -1.75374e-04, -7.080124e-05, 0.001733792, and 0.00026706.
     pub alpha: (f64, f64, f64, f64, f64),
 }
@@ -438,13 +438,13 @@ pub fn glicko_boost(
 ///
 /// ---
 ///
-/// 📌 _**Important note:**_ We need an added parameter in the results tuple here.    
+/// 📌 _**Important note:**_ We need an added parameter in the results tuple here.  \
 /// The boolean specifies if the player was playing as the first player, aka White in Chess.
-/// If set to `true` the player was playing as White, if set to `false` the player was playing as Black.  
+/// If set to `true` the player was playing as White, if set to `false` the player was playing as Black.\
 /// In the [`glicko_boost`] function this is determined by the order of players that are input to the function, but we cannot do this here,
 /// and because it likely changes from game-to-game, we need a separate parameter controlling it.
 ///
-/// The colour you play in each game matters if the [`GlickoBoostConfig`] is set up with an advantage for the first player.  
+/// The colour you play in each game matters if the [`GlickoBoostConfig`] is set up with an advantage for the first player.\
 /// It makes sense to do so in Chess, or Sports with an home-team-advantage.
 ///
 /// ---
@@ -581,7 +581,7 @@ pub fn glicko_boost_rating_period(
 #[must_use]
 /// Calculates the expected outcome of two players based on Glicko-Boost.
 ///
-/// Takes in two players as [`GlickoBoostRating`]s and a [`GlickoBoostConfig`] and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// Takes in two players as [`GlickoBoostRating`]s and a [`GlickoBoostConfig`] and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -635,12 +635,12 @@ pub fn expected_score(
 ///
 /// ---
 ///
-/// 📌 _**Important note:**_ The parameters intentionally work different from other expected_score_rating_period functions here.  
+/// 📌 _**Important note:**_ The parameters intentionally work different from other expected_score_rating_period functions here.\
 /// An additional config is used, because of the set advantage parameter that describes inherit imbalances, like playing White in Chess
 /// or a Football team playing at home.
 ///
 /// Because of those advantages, we also need a boolean which specifies if the player was playing as the first / advantaged player (e.g. White in Chess).
-/// If set to `true` the player was playing with the advantage, if set to `false` the player was with the disadvantage.  
+/// If set to `true` the player was playing with the advantage, if set to `false` the player was with the disadvantage.\
 ///
 /// If the config is set to not have any advantages, the boolean will not matter.
 ///

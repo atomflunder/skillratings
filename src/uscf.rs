@@ -1,4 +1,4 @@
-//! The USCF (US Chess Federation) Rating Algorithm, developed by Mark Glickman as an improvement on Elo.  
+//! The USCF (US Chess Federation) Rating Algorithm, developed by Mark Glickman as an improvement on Elo.\
 //! Used to rate US Chess events in favour of Elo, and continues to be enhanced over the years.
 //!
 //! This rating system was, just like Glicko, developed by Mark Glickman, and is thus heavily influenced by it.
@@ -8,17 +8,17 @@
 //! and thus may yield *slightly* different calculations to the proper formulas in some circumstances,
 //! specifically if a player has 8 or less games played, with only wins or only losses.
 //!
-//! Also, this implementation can not determine rating floors for each player, except the most basic floor.  
-//! This is due to the rating floor being determined by the *all-time highest* rating for each player, which we cannot know.  
-//! This is something you need to keep track of yourself, unfortunately.  
+//! Also, this implementation can not determine rating floors for each player, except the most basic floor.\
+//! This is due to the rating floor being determined by the *all-time highest* rating for each player, which we cannot know.\
+//! This is something you need to keep track of yourself, unfortunately.\
 //! The formula for calculating a rating floor (the lowest rating possible) of a player is the player's highest ever achieved rating,
 //! subtracted by 200 points and then using the floor just below that.
-//! As of 2022, rating floors exist at every 100 point mark between 1200 and 2100.  
+//! As of 2022, rating floors exist at every 100 point mark between 1200 and 2100.\
 //! For example, a player with an all-time highest rating of 1941 has a rating floor of 1700.
 //!
 //! # Quickstart
 //!
-//! This is the most basic example on how to use the USCF Module.  
+//! This is the most basic example on how to use the USCF Module.\
 //! Please take a look at the functions below to see more advanced use cases.
 //!
 //! ```
@@ -74,10 +74,10 @@ use crate::{elo::EloRating, Outcomes, Rating, RatingPeriodSystem, RatingSystem};
 ///
 /// The age is the actual age of the player,
 /// if unsure or unavailable the official guidelines say to set this to `26`,
-/// if the player is inferred to be an adult, or to `15` if not.  
+/// if the player is inferred to be an adult, or to `15` if not.\
 ///
-/// The default rating is dependent on the age of the player.  
-/// If the player is 26 or older this will be 1300.0, if the player is 15 the rating will be 750.0.  
+/// The default rating is dependent on the age of the player.\
+/// If the player is 26 or older this will be 1300.0, if the player is 15 the rating will be 750.0.\
 /// The minimum rating value is set to be 100.0.
 pub struct USCFRating {
     /// The player's USCF rating number.
@@ -88,8 +88,8 @@ pub struct USCFRating {
 
 impl USCFRating {
     #[must_use]
-    /// Initialise a new `USCFRating` with a new rating dependent on the age of the player.  
-    /// The age is the actual age of the player, if unsure or unavailable set this to `26`.  
+    /// Initialise a new `USCFRating` with a new rating dependent on the age of the player.\
+    /// The age is the actual age of the player, if unsure or unavailable set this to `26`.\
     /// The rating of a 26 year old will be 1300.0.
     pub fn new(age: usize) -> Self {
         Self {
@@ -155,12 +155,12 @@ impl From<EloRating> for USCFRating {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// Constants used in the USCF Rating calculations.
 pub struct USCFConfig {
-    /// The t value controls the difficulty of earning bonus rating points.  
+    /// The t value controls the difficulty of earning bonus rating points.\
     /// The higher the t value, the more difficult it is.
     ///
     /// The USCF changes this value periodically.
     /// As of 2022, the last change was in May 2017 where this was set from 12 to 14.
-    /// The lowest value was 6, from 2008 to 2012.  
+    /// The lowest value was 6, from 2008 to 2012.\
     /// By default set to 14.0.
     pub t: f64,
 }
@@ -333,8 +333,8 @@ pub fn uscf(
 #[must_use]
 /// The "traditional" way of calculating a [`USCFRating`] of a player in a rating period.
 ///
-/// Note that in this case, all of the matches are considered to be played at once.  
-/// This means that the player will not get updated in-between matches, as you might expect.  
+/// Note that in this case, all of the matches are considered to be played at once.\
+/// This means that the player will not get updated in-between matches, as you might expect.\
 /// This will result in *slightly* different results than if you were to use the [`uscf`] function in a loop.
 ///
 /// Takes in a player as an [`USCFRating`] and their results as a Slice of tuples containing the opponent as an [`USCFRating`],
@@ -446,7 +446,7 @@ pub fn uscf_rating_period(
 #[must_use]
 /// Calculates the expected outcome of two players based on the USCF rating algorithm.
 ///
-/// Takes in two players as [`USCFRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// Takes in two players as [`USCFRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -479,7 +479,7 @@ pub fn expected_score(player_one: &USCFRating, player_two: &USCFRating) -> (f64,
 /// Calculates the expected outcome of a player in a rating period or tournament.
 ///
 /// Takes in a players as [`USCFRating`] and a list of opponents as a slice of [`USCFRating`]
-/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///

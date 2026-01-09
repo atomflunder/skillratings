@@ -1,13 +1,13 @@
-//! The Ingo algorithm, the predecessor of DWZ and one of the first rating algorithms invented in 1947.  
+//! The Ingo algorithm, the predecessor of DWZ and one of the first rating algorithms invented in 1947.\
 //! Sometimes still used in Xiangqi ("Chinese Chess").
 //!
 //! Unlike with the other rating systems, with Ingo a lower rating is more desirable,
-//! and negative values are possible, though unlikely.  
+//! and negative values are possible, though unlikely.\
 //! A player with an Ingo rating of 0 has an equivalent Elo rating of 2840, and an Ingo rating of -1 equals 2848 Elo.
 //!
 //! # Quickstart
 //!
-//! This is the most basic example on how to use the Ingo Module.  
+//! This is the most basic example on how to use the Ingo Module.\
 //! Please take a look at the functions below to see more advanced use cases.
 //!
 //! ```
@@ -52,10 +52,10 @@ use crate::{elo::EloRating, Outcomes, Rating, RatingPeriodSystem, RatingSystem};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The Ingo rating of a player.
 ///
-/// Note that unlike in the other systems, a lower score is better than a higher score.  
+/// Note that unlike in the other systems, a lower score is better than a higher score.\
 /// Negative values are possible.
 ///
-/// The age is the actual age of the player, if unsure or unavailable set this to `>25`.  
+/// The age is the actual age of the player, if unsure or unavailable set this to `>25`.\
 /// Converting from an `EloRating` or using `IngoRating::default()` will set the age to 26.
 ///
 /// The default rating is 230.0.
@@ -69,7 +69,7 @@ pub struct IngoRating {
 
 impl IngoRating {
     #[must_use]
-    /// Initialise a new `IngoRating` with a rating of 230.0 and the given age.  
+    /// Initialise a new `IngoRating` with a rating of 230.0 and the given age.\
     /// The age is the actual age of the player, if unsure or unavailable set this to `>25`.
     pub const fn new(age: usize) -> Self {
         Self { rating: 230.0, age }
@@ -303,7 +303,7 @@ pub fn ingo_rating_period(player: &IngoRating, results: &[(IngoRating, Outcomes)
 #[must_use]
 /// Calculates the expected outcome of two players based on Ingo.
 ///
-/// Takes in two players as [`IngoRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// Takes in two players as [`IngoRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -341,7 +341,7 @@ pub fn expected_score(player_one: &IngoRating, player_two: &IngoRating) -> (f64,
 /// Calculates the expected outcome of a player in a rating period or tournament.
 ///
 /// Takes in a players as [`IngoRating`] and a list of opponents as a slice of [`IngoRating`]
-/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///

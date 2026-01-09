@@ -1,9 +1,9 @@
-//! The EGF (European Go Federation) rating system is a variation of the Elo rating system, adapted for playing Go.  
+//! The EGF (European Go Federation) rating system is a variation of the Elo rating system, adapted for playing Go.\
 //! Used for calculating Go player ratings in Europe since 1998.
 //!
-//! The ratings are loosely centred around the Go ranks, ranging from 30 *kyu* (lowest) to 9 *dan* (highest).  
-//! A rating of 2100 equals a rank of 1 *dan*, and 1 rank up and down equals a gain or loss of around 100 points.  
-//! So a 2 *dan* rank would equal around 2200 points, and so on. The lowest rank, 30 *kyu*, is equal to -900 points.  
+//! The ratings are loosely centred around the Go ranks, ranging from 30 *kyu* (lowest) to 9 *dan* (highest).\
+//! A rating of 2100 equals a rank of 1 *dan*, and 1 rank up and down equals a gain or loss of around 100 points.\
+//! So a 2 *dan* rank would equal around 2200 points, and so on. The lowest rank, 30 *kyu*, is equal to -900 points.\
 //! You start at a rating of 0, around 21 *kyu*.
 //! The [full table of ranks/rating can be found here](https://senseis.xmp.net/?GoR),
 //! or [here is an unofficial comparison table](https://forums.online-go.com/t/go-ranks-vs-chess-ratings/41594/42)
@@ -11,7 +11,7 @@
 //!
 //! # Quickstart
 //!
-//! This is the most basic example on how to use the EGF Module.  
+//! This is the most basic example on how to use the EGF Module.\
 //! Please take a look at the functions below to see more advanced use cases.
 //!
 //! ```
@@ -63,7 +63,7 @@ use crate::{Outcomes, Rating, RatingPeriodSystem, RatingSystem};
 ///
 /// If the player has a Go rank or similar,
 /// you can set the rating value manually approximately according to
-/// [this unofficial comparison table](https://forums.online-go.com/t/go-ranks-vs-chess-ratings/41594/42).  
+/// [this unofficial comparison table](https://forums.online-go.com/t/go-ranks-vs-chess-ratings/41594/42).\
 /// Keep in mind that here, the lowest possible rating is -900.0.
 ///
 /// The default rating is 0.0.
@@ -110,16 +110,16 @@ impl From<f64> for EGFRating {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// Constants used in the EGF Calculations.
 pub struct EGFConfig {
-    /// The [handicap](https://en.wikipedia.org/wiki/Handicapping_in_Go), of the perspective of player one.  
-    /// As a general rule, one handicap point is about equal to a 100 rating point difference.  
+    /// The [handicap](https://en.wikipedia.org/wiki/Handicapping_in_Go), of the perspective of player one.\
+    /// As a general rule, one handicap point is about equal to a 100 rating point difference.\
     ///
     /// If player one has a handicap in the game,
-    /// you can set this number to the amount of handicap stones given to the opponent.  
-    /// If player two is the one with the handicap, set this number to the negative amount of stones given.  
-    /// If an equal game is played, this value should be 0.0.  
-    /// For example, if player two has a handicap of 4 points (player one starts with 4 stones), set this number to -4.0.  
+    /// you can set this number to the amount of handicap stones given to the opponent.\
+    /// If player two is the one with the handicap, set this number to the negative amount of stones given.\
+    /// If an equal game is played, this value should be 0.0.\
+    /// For example, if player two has a handicap of 4 points (player one starts with 4 stones), set this number to -4.0.\
     ///
-    /// The maximum number should not exceed 9.0 or -9.0.  
+    /// The maximum number should not exceed 9.0 or -9.0.\
     /// By default set to 0.0.
     pub handicap: f64,
 }
@@ -255,9 +255,9 @@ pub fn egf(
 ///
 /// ---
 ///
-/// 📌 _**Important note:**_ The parameters intentionally work different from other rating_period functions here.  
-/// In most cases the config is a separate parameter, because it holds static values that should not change from game-to-game.  
-/// Here, the config is in the tuple together with the results, because the handicaps will likely change each game, if used.  
+/// 📌 _**Important note:**_ The parameters intentionally work different from other rating_period functions here.\
+/// In most cases the config is a separate parameter, because it holds static values that should not change from game-to-game.\
+/// Here, the config is in the tuple together with the results, because the handicaps will likely change each game, if used.\
 /// Thus it would not make sense to have the config as its own separate parameter, disconnected from the game results.
 ///
 /// ---
@@ -266,7 +266,7 @@ pub fn egf(
 /// This means [`Outcomes::WIN`] is a win for the player and [`Outcomes::LOSS`] is a win for the opponent.
 ///
 /// Keep in mind that [according to EGF](https://www.europeangodatabase.eu/EGD/EGF_rating_system.php#Remarks),
-/// the rating will not update in between games of a tournament, in contrast to the other rating_period algorithms.  
+/// the rating will not update in between games of a tournament, in contrast to the other rating_period algorithms.\
 /// That means that for example, in game 5 of a tournament,
 /// the ratings will still be calculated with the ratings *before* game 1,
 /// and not with the ratings after game 4, as you might expect.
@@ -326,7 +326,7 @@ pub fn egf_rating_period(
 #[must_use]
 /// Calculates the expected score of two players based on their EGF rating.
 ///
-/// Takes in two players as [`EGFRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// Takes in two players as [`EGFRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur, if draws are possible.
 ///
@@ -367,13 +367,13 @@ pub fn expected_score(
 /// Calculates the expected outcome of a player in a rating period or tournament.
 ///
 /// Takes in a players as [`EGFRating`] and a list of opponents as a slice of Tuples of [`EGFRating`]s and [`EGFConfig`]s
-/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
 /// ---
 ///
-/// 📌 _**Important note:**_ The parameters intentionally work different from other expected_score_rating_period functions here.  
+/// 📌 _**Important note:**_ The parameters intentionally work different from other expected_score_rating_period functions here.\
 /// In most cases the config is not used, however it is required here, because of the handicaps that can change from game-to-game.
 ///
 /// ---

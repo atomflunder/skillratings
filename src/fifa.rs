@@ -1,12 +1,12 @@
-//! The FIFA Men's rating algorithm, officially called *The FIFA/Coca-Cola World Ranking*.  
+//! The FIFA Men's rating algorithm, officially called *The FIFA/Coca-Cola World Ranking*.\
 //! Used to rank men's national football (or soccer) teams in FIFA-recognised competitions since 2018.
 //!
-//! The algorithm is largely based on the Elo rating system, but with a few modifications specific to football (soccer).  
+//! The algorithm is largely based on the Elo rating system, but with a few modifications specific to football (soccer).\
 //! The main differences being an importance factor, that rates the importance of a given match,
 //! and a penalty-shootout factor that accounts for the fact that penalty shootouts are often more random than regular play.
 //!
 //! Please note that the FIFA Women's ranking algorithm works in a very different way, and is not implemented in this crate.
-//! This is due to the way the outcome and score of the match is taken into account in the calculations.  
+//! This is due to the way the outcome and score of the match is taken into account in the calculations.\
 //! For more information please see the [Wikipedia Article on FIFA Women's World Rankings](https://en.wikipedia.org/wiki/FIFA_Women%27s_World_Rankings).
 //!
 //! # Quickstart
@@ -144,7 +144,7 @@ pub struct FifaConfig {
     /// the match will still be treated as a normal draw for both teams, as it is not possible to draw on penalties.
     ///
     /// Please note that in some instances, games end with a winner after regular or extended time,
-    /// but still include a penalty shootout to determine the team that eventually will get to the next round.  
+    /// but still include a penalty shootout to determine the team that eventually will get to the next round.\
     /// These games should be treated as normal wins and defeats.
     ///
     /// Here, the default value is false.
@@ -310,8 +310,8 @@ pub fn fifa(
 ///
 /// ---
 ///
-/// 📌 _**Important note:**_ The parameters intentionally work different from other rating_period functions here.  
-/// In most cases the config is a separate parameter, because it holds static values that should not change from game-to-game.  
+/// 📌 _**Important note:**_ The parameters intentionally work different from other rating_period functions here.\
+/// In most cases the config is a separate parameter, because it holds static values that should not change from game-to-game.\
 /// Here, the config is in the tuple together with the results,
 /// because the circumstances of a match can, and will probably, change from game-to-game.
 /// Thus it would not make sense to have the config as its own separate parameter, disconnected from the game results.
@@ -395,7 +395,7 @@ pub fn fifa_rating_period(
 #[must_use]
 /// Calculates the expected score of two players based on their Fifa rating.
 ///
-/// Takes in two players as [`FifaRating`]s and returns the probability of victory for each player as a [`f64`] between 1.0 and 0.0.  
+/// Takes in two players as [`FifaRating`]s and returns the probability of victory for each player as a [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -422,7 +422,7 @@ pub fn expected_score(player_one: &FifaRating, player_two: &FifaRating) -> (f64,
 /// Calculates the expected outcome of a player in a rating period or tournament.
 ///
 /// Takes in a players as [`FifaRating`] and a list of opponents as a slice of [`FifaRating`]
-/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///

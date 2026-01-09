@@ -1,4 +1,4 @@
-//! The TrueSkill rating algorithm, developed by Microsoft for Halo 3.  
+//! The TrueSkill rating algorithm, developed by Microsoft for Halo 3.\
 //! Used in the Halo games, the Forza Games, Tom Clancy's: Rainbow Six Siege, and most Xbox Live games.
 //!
 //! Developed specifically for online games with multiple teams and multiple players.
@@ -23,12 +23,12 @@
 //!
 //! Whereas other algorithms might need more matches in the same circumstances.
 //!
-//! The drawback is that the calculations are complex, and thus players may find it unintuitive in certain scenarios.  
+//! The drawback is that the calculations are complex, and thus players may find it unintuitive in certain scenarios.\
 //! For example, players might gain rank(s) when losing a match due to the uncertainty value decreasing.
 //!
 //! # Quickstart
 //!
-//! This is the most basic example on how to use the TrueSkill Module.  
+//! This is the most basic example on how to use the TrueSkill Module.\
 //! Please take a look at the functions below to see more advanced use cases.
 //!
 //! ```
@@ -108,7 +108,7 @@ const MIN_DELTA: f64 = 0.0001;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The TrueSkill rating of a player.
 ///
-/// The default rating is 25.0.  
+/// The default rating is 25.0.\
 /// The default uncertainty is 25/3 ≈ 8.33.
 pub struct TrueSkillRating {
     /// The rating value (mu) of the TrueSkilLRating, by default 25.0.
@@ -172,13 +172,13 @@ impl From<WengLinRating> for TrueSkillRating {
 /// Constants used in the TrueSkill calculations.
 pub struct TrueSkillConfig {
     /// The probability of draws occurring in match.
-    /// The higher the probability, the bigger the updates to the ratings in a non-drawn outcome.  
-    /// By default set to `0.1`, meaning 10% chance of a draw.  
+    /// The higher the probability, the bigger the updates to the ratings in a non-drawn outcome.\
+    /// By default set to `0.1`, meaning 10% chance of a draw.\
     /// Increase or decrease the value to match the values occurring in your game.
     pub draw_probability: f64,
     /// The skill-class width, aka the number of difference in rating points
-    /// needed to have an 80% win probability against another player.  
-    /// By default set to (25 / 3) * 0.5 ≈ `4.167`.  
+    /// needed to have an 80% win probability against another player.\
+    /// By default set to (25 / 3) * 0.5 ≈ `4.167`.\
     /// If your game is more reliant on pure skill, decrease this value,
     /// if there are more random factors, increase it.
     pub beta: f64,
@@ -316,8 +316,8 @@ impl MultiTeamRatingSystem for TrueSkill {
 /// This algorithm uses some shortcuts to speed-up and simplify 1-vs-1 ratings. This is fine for 99.9% of use-cases,
 /// but if you need maximum precision or need custom weightings, consider using [`trueskill_multi_team`].
 ///
-/// **Caution regarding usage of TrueSkill**:  
-/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.  
+/// **Caution regarding usage of TrueSkill**:\
+/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.\
 /// If your project is commercial, you should use another rating system included here.
 ///
 /// # Examples
@@ -431,8 +431,8 @@ pub fn trueskill(
 ///
 /// Similar to [`trueskill`].
 ///
-/// **Caution regarding usage of TrueSkill**:  
-/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.  
+/// **Caution regarding usage of TrueSkill**:\
+/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.\
 /// If your project is commercial, you should use another rating system included here.
 ///
 /// # Examples
@@ -677,7 +677,7 @@ pub fn trueskill_two_teams(
 ///
 /// Weights are values between `0.0` and `1.0` that describe the contribution of a player to the team.
 /// A Weight of `1.0` means the Player has played the whole match, and values below `1.0` mean the Player has left the game early.
-/// A Weight of `0.0` means the Player has not played at all.  
+/// A Weight of `0.0` means the Player has not played at all.\
 /// **If you do not wish to use weights, pass in `None`.**
 ///
 /// Ties are represented by several teams having the same rank.
@@ -1172,7 +1172,7 @@ pub fn match_quality_multi_team(
 /// Calculates the expected outcome of two players based on TrueSkill.
 ///
 /// Takes in two players as [`TrueSkillRating`]s and a [`TrueSkillConfig`]
-/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -1228,7 +1228,7 @@ pub fn expected_score(
 /// Calculates the expected outcome of two teams based on TrueSkill.
 ///
 /// Takes in two teams as a Slice of [`TrueSkillRating`]s and a [`TrueSkillConfig`]
-/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -1299,7 +1299,7 @@ pub fn expected_score_two_teams(
 /// Calculates the expected outcome of multiple teams based on TrueSkill.
 ///
 /// Takes in multiple teams as Slices of [`TrueSkillRating`]s, a [`TrueSkillConfig`]
-/// and returns the probability of victory for each team as an [`f64`] between 1.0 and 0.0.  
+/// and returns the probability of victory for each team as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near `1 / Number of Teams` mean a draw is likely to occur.
 ///
@@ -1409,7 +1409,7 @@ pub fn expected_score_multi_team(
 /// Calculates the expected outcome of a player in a rating period or tournament.
 ///
 /// Takes in a players as [`TrueSkillRating`], a list of opponents as a slice of [`TrueSkillRating`] and a [`TrueSkillConfig`]
-/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///

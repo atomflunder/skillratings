@@ -1,4 +1,4 @@
-//! A bayesian approximation method for online ranking. Similar to TrueSkill, but based on a logistical distribution.  
+//! A bayesian approximation method for online ranking. Similar to TrueSkill, but based on a logistical distribution.\
 //! Used in games such as Rocket League.
 //!
 //! Developed by Ruby C. Weng and Chih-Jen Lin.
@@ -15,7 +15,7 @@
 //!
 //! # Quickstart
 //!
-//! This is the most basic example on how to use the Weng-Lin Module.  
+//! This is the most basic example on how to use the Weng-Lin Module.\
 //! Please take a look at the functions below to see more advanced use cases.
 //!
 //! ```
@@ -77,7 +77,7 @@ use std::cmp::Ordering;
 ///
 /// Similar to [`TrueSkillRating`].
 ///
-/// The default rating is 25.0.  
+/// The default rating is 25.0.\
 /// The default uncertainty is 25/3 ≈ 8.33.
 pub struct WengLinRating {
     /// The rating value (mu) of the WengLinRating, by default 25.0.
@@ -141,14 +141,14 @@ impl From<TrueSkillRating> for WengLinRating {
 /// Constants used in the Weng-Lin calculations.
 pub struct WengLinConfig {
     /// The skill-class width, aka the number of difference in rating points
-    /// needed to have a ~67% win probability against another player.  
-    /// By default set to 25 / 6 ≈ `4.167`.  
+    /// needed to have a ~67% win probability against another player.\
+    /// By default set to 25 / 6 ≈ `4.167`.\
     /// If your game is more reliant on pure skill, decrease this value,
     /// if there are more random factors, increase it.
     pub beta: f64,
     /// The lower ceiling of the sigma value, in the uncertainty calculations.
-    /// The lower this value, the lower the possible uncertainty values.  
-    /// By default set to 0.000_001.  
+    /// The lower this value, the lower the possible uncertainty values.\
+    /// By default set to 0.000_001.\
     /// Do not set this to a negative value.
     pub uncertainty_tolerance: f64,
 }
@@ -771,7 +771,7 @@ pub fn expected_score(
 /// Calculates the expected outcome of two teams based on the Bradley-Terry model.
 ///
 /// Takes in two teams as a Slice of [`WengLinRating`]s and a [`WengLinConfig`],
-/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 ///
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
@@ -929,7 +929,7 @@ pub fn expected_score_multi_team(teams: &[&[WengLinRating]], config: &WengLinCon
 /// Calculates the expected outcome of a player in a rating period or tournament.
 ///
 /// Takes in a players as [`WengLinRating`], a list of opponents as a slice of [`WengLinRating`] and a [`WengLinConfig`]
-/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
