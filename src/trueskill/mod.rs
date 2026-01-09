@@ -743,7 +743,8 @@ pub fn trueskill_two_teams(
 ///     &[1.0, 1.0, 1.0],
 /// ];
 ///
-/// let new_teams = trueskill_multi_team(&teams_and_ranks, &TrueSkillConfig::new(), Some(&weights)).unwrap();
+/// let new_teams =
+///     trueskill_multi_team(&teams_and_ranks, &TrueSkillConfig::new(), Some(&weights)).unwrap();
 ///
 /// assert_eq!(new_teams.len(), 3);
 ///
