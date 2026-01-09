@@ -191,7 +191,7 @@ impl SumFactor {
     }
 
     #[inline]
-    pub fn terms_len(&self) -> usize {
+    pub const fn terms_len(&self) -> usize {
         self.terms.len()
     }
 

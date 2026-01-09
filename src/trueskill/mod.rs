@@ -1494,7 +1494,7 @@ pub fn get_rank(player: &TrueSkillRating) -> f64 {
 }
 
 fn draw_margin(draw_probability: f64, beta: f64, total_players: f64) -> f64 {
-    inverse_cdf((draw_probability + 1.0) / 2.0, 0.0, 1.0) * total_players.sqrt() * beta
+    inverse_cdf(f64::midpoint(draw_probability, 1.0), 0.0, 1.0) * total_players.sqrt() * beta
 }
 
 fn team_sizes(teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)]) -> Vec<usize> {

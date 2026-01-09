@@ -27,7 +27,7 @@ jobs:
         run: cargo fmt --check
 
       - name: Run clippy
-        run: cargo clippy --all
+        run: cargo clippy --all -- -A warnings
 
       - name: Test crate
         run: cargo test --verbose
