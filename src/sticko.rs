@@ -1,11 +1,11 @@
-//! This is the Stephenson rating algorithm, nicknamed "Sticko" due to it being an improvement on the Glicko rating algorithm.  
+//! This is the Stephenson rating algorithm, nicknamed "Sticko" due to it being an improvement on the Glicko rating algorithm.\
 //!
 //! Allows for player advantages, and the winner of a chess outcome prediction competition.
 //!
 //! For the original Glicko algorithm, please see [`Glicko`](crate::glicko), or for the improved versions see [`Glicko-Boost`](crate::glicko_boost) or [`Glicko-2`](crate::glicko2).
 //!
 //! In 2012, the data prediction website [Kaggle](https://kaggle.com) hosted the "FIDE/Deloitte Chess Rating Challenge"
-//!  where competitors where asked to create a new, more accurate chess rating system.  
+//!  where competitors where asked to create a new, more accurate chess rating system.\
 //! The winner of the competition was Alec Stephenson, and this was the system he came up with.
 //!
 //! The main improvements over Glicko are three new configurable parameters found in [`StickoConfig`]:
@@ -19,7 +19,7 @@
 //!
 //! # Quickstart
 //!
-//! This is the most basic example on how to use the Sticko Module.  
+//! This is the most basic example on how to use the Sticko Module.\
 //! Please take a look at the functions below to see more advanced use cases.
 //!
 //! ```
@@ -166,37 +166,37 @@ impl From<GlickoBoostRating> for StickoRating {
 /// If the `h`, `beta`, `lambda` and `gamma` parameters are set to `0.0`,
 /// this will behave exactly like the [`Glicko`](crate::glicko::glicko) calculations.
 pub struct StickoConfig {
-    /// Controls player deviations across time.  
-    /// The higher this number, the higher the deviation is going to be.  
-    /// By default set to `10.0`.  
+    /// Controls player deviations across time.\
+    /// The higher this number, the higher the deviation is going to be.\
+    /// By default set to `10.0`.\
     /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
     /// Do not set this to a negative value.
     pub h: f64,
-    /// A bonus parameter, which gives a rating boost for just participating.  
-    /// Note that setting this to a positive number will create rating inflation over time.  
-    /// By default set to `0.0`.  
+    /// A bonus parameter, which gives a rating boost for just participating.\
+    /// Note that setting this to a positive number will create rating inflation over time.\
+    /// By default set to `0.0`.\
     /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
     /// Do not set this to a negative value.
     pub beta: f64,
-    /// The neighbourhood parameter, which shrinks player ratings towards their opponent.  
-    /// By default set to `2.0`.  
+    /// The neighbourhood parameter, which shrinks player ratings towards their opponent.\
+    /// By default set to `2.0`.\
     /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
     /// Do not set this to a negative value.
     pub lambda: f64,
-    /// The advantage parameter of the first player.  
+    /// The advantage parameter of the first player.\
     /// If your game is biased towards player one set this to a positive number,
-    /// or set this to a negative number if the second player has an advantage.  
+    /// or set this to a negative number if the second player has an advantage.\
     /// With this you could represent the advantage of playing white in chess,
-    /// or home-team advantage in sports like football and so on.  
-    /// In chess, a value of `30.0` seems to be about correct.  
-    /// By default set to `0.0`.  
+    /// or home-team advantage in sports like football and so on.\
+    /// In chess, a value of `30.0` seems to be about correct.\
+    /// By default set to `0.0`.\
     /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig), set this to `0.0`.
     pub gamma: f64,
     /// The c value describes how much the rating deviation should decay in each step.
-    /// The higher the value, the more the rating deviation will decay.  
+    /// The higher the value, the more the rating deviation will decay.\
     /// This is similar to the c value in [`GlickoConfig`](crate::glicko::GlickoConfig).
     /// Keep in mind this needs to be set lower than the c in the [`GlickoConfig`](crate::glicko::GlickoConfig)
-    /// if the h value here is not equal to zero.  
+    /// if the h value here is not equal to zero.\
     /// By default set to `10.0`.
     /// If you want to mimic the [`GlickoConfig`](crate::glicko::GlickoConfig) set this to `63.2`.
     pub c: f64,
@@ -411,13 +411,13 @@ pub fn sticko(
 ///
 /// ---
 ///
-/// 📌 _**Important note:**_ We need an added parameter in the results tuple here.    
+/// 📌 _**Important note:**_ We need an added parameter in the results tuple here.  \
 /// The boolean specifies if the player was playing as the first player, aka White in Chess.
-/// If set to `true` the player was playing as White, if set to `false` the player was playing as Black.  
+/// If set to `true` the player was playing as White, if set to `false` the player was playing as Black.\
 /// In the [`sticko`] function this is determined by the order of players that are input to the function, but we cannot do this here,
 /// and because it likely changes from game-to-game, we need a separate parameter controlling it.
 ///
-/// The colour you play in each game matters if the [`StickoConfig`] is set up with an advantage for the first player.  
+/// The colour you play in each game matters if the [`StickoConfig`] is set up with an advantage for the first player.\
 /// It makes sense to do so in Chess, or Sports with an home-team-advantage.
 ///
 /// ---
@@ -545,7 +545,7 @@ pub fn sticko_rating_period(
 /// Calculates the expected outcome of two players based on sticko.
 ///
 /// Takes in two players as [`StickoRating`]s and a [`StickoConfig`], which determines the advantage of player one,
-/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -593,18 +593,18 @@ pub fn expected_score(
 /// Calculates the expected outcome of a player in a rating period or tournament.
 ///
 /// Takes in a players as [`StickoRating`] and a list of opponents as a slice of [`StickoRating`]
-/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
 /// ---
 ///
-/// 📌 _**Important note:**_ The parameters intentionally work different from other expected_score_rating_period functions here.  
+/// 📌 _**Important note:**_ The parameters intentionally work different from other expected_score_rating_period functions here.\
 /// An additional config is used, because of the set advantage parameter that describes inherit imbalances, like playing White in Chess
 /// or a Football team playing at home.
 ///
 /// Because of those advantages, we also need a boolean which specifies if the player was playing as the first / advantaged player (e.g. White in Chess).
-/// If set to `true` the player was playing with the advantage, if set to `false` the player was with the disadvantage.  
+/// If set to `true` the player was playing with the advantage, if set to `false` the player was with the disadvantage.\
 ///
 /// If the config is set to not have any advantages, the boolean will not matter.
 ///

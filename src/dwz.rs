@@ -1,14 +1,14 @@
-//! The DWZ (Deutsche Wertungszahl) algorithm used in the german chess leagues alongside Elo.  
+//! The DWZ (Deutsche Wertungszahl) algorithm used in the german chess leagues alongside Elo.\
 //! DWZ continues to be enhanced over the years, while having similar scores to Elo.
 //!
-//! DWZ allows young players to rise and fall in the ranks more quickly, while more experienced players ratings are slower to change.  
+//! DWZ allows young players to rise and fall in the ranks more quickly, while more experienced players ratings are slower to change.\
 //! Overachieving players gain more rating while under-performing weak players do not lose rating points as quickly.
 //!
 //! These factors make DWZ more dynamic than Elo while producing accurate ratings more quickly.
 //!
 //! # Quickstart
 //!
-//! This is the most basic example on how to use the DWZ Module.  
+//! This is the most basic example on how to use the DWZ Module.\
 //! Please take a look at the functions below to see more advanced use cases.
 //!
 //! ```
@@ -58,7 +58,7 @@ use crate::{elo::EloRating, Outcomes, Rating, RatingPeriodSystem, RatingSystem};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The DWZ (Deutsche Wertungszahl) rating for a player.
 ///
-/// The age is the actual age of the player, if unsure or unavailable set this to `>25`.  
+/// The age is the actual age of the player, if unsure or unavailable set this to `>25`.\
 /// Converting from an `EloRating` or using `DWZRating::default()` will set the age to 26.
 ///
 /// The default rating is 1000.0.
@@ -73,7 +73,7 @@ pub struct DWZRating {
 
 impl DWZRating {
     #[must_use]
-    /// Initialise a new `DWZRating` with a rating of 1000.0, an index of 1 and the specified age.  
+    /// Initialise a new `DWZRating` with a rating of 1000.0, an index of 1 and the specified age.\
     /// The age is the actual age of the player, if unsure or unavailable set this to `>25`.
     pub const fn new(age: usize) -> Self {
         Self {
@@ -139,7 +139,7 @@ impl From<EloRating> for DWZRating {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-/// The error types that can occur when calculating a new DWZ Rating.  
+/// The error types that can occur when calculating a new DWZ Rating.\
 /// Only gets raised in the [`get_first_dwz`] function.
 pub enum GetFirstDWZError {
     /// The player has played less than 5 games.
@@ -212,7 +212,7 @@ impl RatingPeriodSystem for DWZ {
 /// we are calculating the DWZ rating for two players at once, like in the Elo calculation,
 /// to make it easier to see instant results.
 ///
-/// For the traditional way for calculating DWZ in a rating period or tournament, please see [`dwz_rating_period`].  
+/// For the traditional way for calculating DWZ in a rating period or tournament, please see [`dwz_rating_period`].\
 /// To get a first DWZ rating, please see [`get_first_dwz`].
 ///
 /// The outcome of the match is in the perspective of `player_one`.
@@ -365,7 +365,7 @@ pub fn dwz_rating_period(player: &DWZRating, results: &[(DWZRating, Outcomes)]) 
 #[must_use]
 /// Calculates the expected outcome of two players based on DWZ.
 ///
-/// Takes in two players as [`DWZRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// Takes in two players as [`DWZRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -402,7 +402,7 @@ pub fn expected_score(player_one: &DWZRating, player_two: &DWZRating) -> (f64, f
 /// Calculates the expected outcome of a player in a rating period or tournament.
 ///
 /// Takes in a players as [`DWZRating`] and a list of opponents as a slice of [`DWZRating`]
-/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///

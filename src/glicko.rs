@@ -1,4 +1,4 @@
-//! The Glicko algorithm, developed by Mark Glickman as an improvement on Elo.  
+//! The Glicko algorithm, developed by Mark Glickman as an improvement on Elo.\
 //! It is still being used in some games in favour Glicko-2, such as Pokémon Showdown, Chess.com and Quake Live.
 //!
 //! If you are looking for the updated Glicko-2 rating system, please see [`Glicko-2`](crate::glicko2).
@@ -10,7 +10,7 @@
 //!
 //! # Quickstart
 //!
-//! This is the most basic example on how to use the Glicko Module.  
+//! This is the most basic example on how to use the Glicko Module.\
 //! Please take a look at the functions below to see more advanced use cases.
 //!
 //! ```
@@ -63,7 +63,7 @@ use std::f64::consts::PI;
 ///
 /// For the Glicko-2 rating, please see [`Glicko2Rating`].
 ///
-/// The default rating is 1500.0.  
+/// The default rating is 1500.0.\
 /// The default deviation is 350.0.
 pub struct GlickoRating {
     /// The player's Glicko rating number, by default 1500.0.
@@ -145,7 +145,7 @@ impl From<StickoRating> for GlickoRating {
 /// Constants used in the Glicko calculations.
 pub struct GlickoConfig {
     /// The c value describes how much the rating deviation should decay in each step.
-    /// The higher the value, the more the rating deviation will decay.  
+    /// The higher the value, the more the rating deviation will decay.\
     /// In [the paper](http://www.glicko.net/glicko/glicko.pdf) a value of
     /// `63.2` seems to be a suggested value, so that is the default here.
     pub c: f64,
@@ -313,8 +313,8 @@ pub fn glicko(
 #[must_use]
 /// The "traditional" way of calculating a [`GlickoRating`] of a player in a rating period.
 ///
-/// Note that in this case, all of the matches are considered to be played at once.  
-/// This means that the player will not get updated in-between matches, as you might expect.  
+/// Note that in this case, all of the matches are considered to be played at once.\
+/// This means that the player will not get updated in-between matches, as you might expect.\
 /// This will result in *slightly* different results than if you were to use the [`glicko`] function in a loop.
 ///
 /// Takes in a player as an [`GlickoRating`] and their results as a Slice of tuples containing the opponent as an [`GlickoRating`],
@@ -417,7 +417,7 @@ pub fn glicko_rating_period(
 #[must_use]
 /// Calculates the expected outcome of two players based on glicko.
 ///
-/// Takes in two players as [`GlickoRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// Takes in two players as [`GlickoRating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -451,7 +451,7 @@ pub fn expected_score(player_one: &GlickoRating, player_two: &GlickoRating) -> (
 /// Calculates the expected outcome of a player in a rating period or tournament.
 ///
 /// Takes in a players as [`GlickoRating`] and a list of opponents as a slice of [`GlickoRating`]
-/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -619,7 +619,7 @@ mod tests {
     }
 
     #[test]
-    /// This test is taken directly from the official glicko example.  
+    /// This test is taken directly from the official glicko example.\
     /// <http://www.glicko.net/glicko/glicko.pdf>
     /// The result will be slightly different from above,
     /// because the games in a rating period are considered to be played at the same time.
@@ -690,7 +690,7 @@ mod tests {
     }
 
     #[test]
-    /// This test is taken directly from the official glicko example.  
+    /// This test is taken directly from the official glicko example.\
     /// <http://www.glicko.net/glicko/glicko.pdf>
     fn test_expected_score() {
         let player_one = GlickoRating {
@@ -711,7 +711,7 @@ mod tests {
     }
 
     #[test]
-    /// This test is taken directly from the official glicko example.  
+    /// This test is taken directly from the official glicko example.\
     /// <http://www.glicko.net/glicko/glicko.pdf>
     fn test_confidence_interval() {
         let player = GlickoRating {
@@ -726,7 +726,7 @@ mod tests {
     }
 
     #[test]
-    /// This test is taken directly from the official glicko example.  
+    /// This test is taken directly from the official glicko example.\
     /// <http://www.glicko.net/glicko/glicko.pdf>
     fn test_decay_deviation() {
         let player = GlickoRating {

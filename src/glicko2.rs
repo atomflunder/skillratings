@@ -8,7 +8,7 @@
 //!
 //! # Quickstart
 //!
-//! This is the most basic example on how to use the Glicko-2 Module.  
+//! This is the most basic example on how to use the Glicko-2 Module.\
 //! Please take a look at the functions below to see more advanced use cases.
 //!
 //! ```
@@ -66,8 +66,8 @@ use std::f64::consts::PI;
 ///
 /// For the Glicko rating, please see [`GlickoRating`].
 ///
-/// The default rating is 1500.0.  
-/// The default deviation is 350.0.  
+/// The default rating is 1500.0.\
+/// The default deviation is 350.0.\
 /// The default volatility is 0.06.
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -160,11 +160,11 @@ impl From<StickoRating> for Glicko2Rating {
 pub struct Glicko2Config {
     /// The tau constant constrains the change in volatility over time.
     /// To cite Mark Glickman himself: "Reasonable choices are between 0.3 and 1.2".
-    /// Smaller values mean less change in volatility and vice versa.  
+    /// Smaller values mean less change in volatility and vice versa.\
     /// The default value here is `0.5`.
     pub tau: f64,
-    /// The convergence tolerance value, the smaller the value the more accurate the volatility calculations.  
-    /// The default value is `0.000_001`, as suggested in [the paper (page 3)](http://www.glicko.net/glicko/glicko2.pdf).  
+    /// The convergence tolerance value, the smaller the value the more accurate the volatility calculations.\
+    /// The default value is `0.000_001`, as suggested in [the paper (page 3)](http://www.glicko.net/glicko/glicko2.pdf).\
     /// Do not set this to a negative value.
     pub convergence_tolerance: f64,
 }
@@ -346,8 +346,8 @@ pub fn glicko2(
 #[must_use]
 /// The "traditional" way of calculating a [`Glicko2Rating`] of a player in a rating period.
 ///
-/// Note that in this case, all of the matches are considered to be played at once.  
-/// This means that the player will not get updated in-between matches, as you might expect.  
+/// Note that in this case, all of the matches are considered to be played at once.\
+/// This means that the player will not get updated in-between matches, as you might expect.\
 /// This will result in *slightly* different results than if you were to use the [`glicko2`] function in a loop.
 ///
 /// Takes in a player as an [`Glicko2Rating`] and their results as a Slice of tuples containing the opponent as an [`Glicko2Rating`],
@@ -460,7 +460,7 @@ pub fn glicko2_rating_period(
 
 /// Calculates the expected outcome of two players based on glicko-2.
 ///
-/// Takes in two players as [`Glicko2Rating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// Takes in two players as [`Glicko2Rating`]s and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -507,7 +507,7 @@ pub fn expected_score(player_one: &Glicko2Rating, player_two: &Glicko2Rating) ->
 /// Calculates the expected outcome of a player in a rating period or tournament.
 ///
 /// Takes in a players as [`Glicko2Rating`] and a list of opponents as a slice of [`Glicko2Rating`]
-/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///

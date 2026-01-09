@@ -8,7 +8,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Install Rust Nightly # Currently the --doctests flag is unstable and only available on the nightly toolchain
         run: rustup update nightly
       - name: Install cargo-llvm-cov

@@ -1,4 +1,4 @@
-name: Rust Project CI
+name: CI
 
 on:
   push:
@@ -9,35 +9,27 @@ env:
 
 jobs:
   ci:
-    name: CI
-    runs-on: ubuntu-latest
+    name: Run CI on ${{ matrix.os }} - ${{ matrix.toolchain }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        toolchain:
-          - stable
-          - beta
-          - nightly
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        toolchain: [stable, beta, nightly]
     steps:
-      - uses: actions/checkout@v3
-      - name: Update rust
-        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - uses: actions/checkout@v6
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy, rustfmt
 
-      - name: Build crate
-        run: cargo build --release --verbose
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Run clippy
+        run: cargo clippy --all
+        env:
+          RUSTFLAGS: ""
 
       - name: Test crate
         run: cargo test --verbose
-
-      - name: Build docs
-        run: cargo doc --verbose
-
-      - name: Publish dry run
-        run: |
-          cargo check --verbose
-          cargo package --verbose
-          cargo publish --dry-run --verbose
-
-      - name: Run clippy
-        run: |
-          rustup component add clippy
-          cargo clippy --workspace

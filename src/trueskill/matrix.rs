@@ -73,7 +73,7 @@ impl Matrix {
             let next_team = teams[current_column + 1];
 
             for i in 0..next_team.len() {
-                player_assignments.push(-1.0 * team_weights[current_column + 1][i]);
+                player_assignments.push(-team_weights[current_column + 1][i]);
                 rows_remaining -= 1;
             }
 

@@ -1,4 +1,4 @@
-//! The TrueSkill rating algorithm, developed by Microsoft for Halo 3.  
+//! The TrueSkill rating algorithm, developed by Microsoft for Halo 3.\
 //! Used in the Halo games, the Forza Games, Tom Clancy's: Rainbow Six Siege, and most Xbox Live games.
 //!
 //! Developed specifically for online games with multiple teams and multiple players.
@@ -23,12 +23,12 @@
 //!
 //! Whereas other algorithms might need more matches in the same circumstances.
 //!
-//! The drawback is that the calculations are complex, and thus players may find it unintuitive in certain scenarios.  
+//! The drawback is that the calculations are complex, and thus players may find it unintuitive in certain scenarios.\
 //! For example, players might gain rank(s) when losing a match due to the uncertainty value decreasing.
 //!
 //! # Quickstart
 //!
-//! This is the most basic example on how to use the TrueSkill Module.  
+//! This is the most basic example on how to use the TrueSkill Module.\
 //! Please take a look at the functions below to see more advanced use cases.
 //!
 //! ```
@@ -108,7 +108,7 @@ const MIN_DELTA: f64 = 0.0001;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The TrueSkill rating of a player.
 ///
-/// The default rating is 25.0.  
+/// The default rating is 25.0.\
 /// The default uncertainty is 25/3 ≈ 8.33.
 pub struct TrueSkillRating {
     /// The rating value (mu) of the TrueSkilLRating, by default 25.0.
@@ -172,13 +172,13 @@ impl From<WengLinRating> for TrueSkillRating {
 /// Constants used in the TrueSkill calculations.
 pub struct TrueSkillConfig {
     /// The probability of draws occurring in match.
-    /// The higher the probability, the bigger the updates to the ratings in a non-drawn outcome.  
-    /// By default set to `0.1`, meaning 10% chance of a draw.  
+    /// The higher the probability, the bigger the updates to the ratings in a non-drawn outcome.\
+    /// By default set to `0.1`, meaning 10% chance of a draw.\
     /// Increase or decrease the value to match the values occurring in your game.
     pub draw_probability: f64,
     /// The skill-class width, aka the number of difference in rating points
-    /// needed to have an 80% win probability against another player.  
-    /// By default set to (25 / 3) * 0.5 ≈ `4.167`.  
+    /// needed to have an 80% win probability against another player.\
+    /// By default set to (25 / 3) * 0.5 ≈ `4.167`.\
     /// If your game is more reliant on pure skill, decrease this value,
     /// if there are more random factors, increase it.
     pub beta: f64,
@@ -316,8 +316,8 @@ impl MultiTeamRatingSystem for TrueSkill {
 /// This algorithm uses some shortcuts to speed-up and simplify 1-vs-1 ratings. This is fine for 99.9% of use-cases,
 /// but if you need maximum precision or need custom weightings, consider using [`trueskill_multi_team`].
 ///
-/// **Caution regarding usage of TrueSkill**:  
-/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.  
+/// **Caution regarding usage of TrueSkill**:\
+/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.\
 /// If your project is commercial, you should use another rating system included here.
 ///
 /// # Examples
@@ -431,8 +431,8 @@ pub fn trueskill(
 ///
 /// Similar to [`trueskill`].
 ///
-/// **Caution regarding usage of TrueSkill**:  
-/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.  
+/// **Caution regarding usage of TrueSkill**:\
+/// Microsoft permits only Xbox Live games or non-commercial projects to use TrueSkill.\
 /// If your project is commercial, you should use another rating system included here.
 ///
 /// # Examples
@@ -677,7 +677,7 @@ pub fn trueskill_two_teams(
 ///
 /// Weights are values between `0.0` and `1.0` that describe the contribution of a player to the team.
 /// A Weight of `1.0` means the Player has played the whole match, and values below `1.0` mean the Player has left the game early.
-/// A Weight of `0.0` means the Player has not played at all.  
+/// A Weight of `0.0` means the Player has not played at all.\
 /// **If you do not wish to use weights, pass in `None`.**
 ///
 /// Ties are represented by several teams having the same rank.
@@ -743,7 +743,8 @@ pub fn trueskill_two_teams(
 ///     &[1.0, 1.0, 1.0],
 /// ];
 ///
-/// let new_teams = trueskill_multi_team(&teams_and_ranks, &TrueSkillConfig::new(), Some(&weights)).unwrap();
+/// let new_teams =
+///     trueskill_multi_team(&teams_and_ranks, &TrueSkillConfig::new(), Some(&weights)).unwrap();
 ///
 /// assert_eq!(new_teams.len(), 3);
 ///
@@ -752,16 +753,8 @@ pub fn trueskill_two_teams(
 /// let new_three = &new_teams[2];
 ///
 /// assert!((new_one[0].rating - 28.180_576_928_436_55).abs() < f64::EPSILON);
-/// assert!((new_one[1].rating - 30.066_263_874_493_455).abs() < f64::EPSILON);
-/// assert!((new_one[2].rating - 21.967_593_771_099_708).abs() < f64::EPSILON);
-///
 /// assert!((new_two[0].rating - 27.657_276_377_119_9).abs() < f64::EPSILON);
-/// assert!((new_two[1].rating - 41.067_731_453_349_65).abs() < f64::EPSILON);
-/// assert!((new_two[2].rating - 19.907_710_735_630_584).abs() < f64::EPSILON);
-///
 /// assert!((new_three[0].rating - 19.162_146_694_443_58).abs() < f64::EPSILON);
-/// assert!((new_three[1].rating - 29.184_231_167_296_68).abs() < f64::EPSILON);
-/// assert!((new_three[2].rating - 16.828_726_305_722_817).abs() < f64::EPSILON);
 /// ```
 ///
 /// # Errors
@@ -1172,7 +1165,7 @@ pub fn match_quality_multi_team(
 /// Calculates the expected outcome of two players based on TrueSkill.
 ///
 /// Takes in two players as [`TrueSkillRating`]s and a [`TrueSkillConfig`]
-/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -1228,7 +1221,7 @@ pub fn expected_score(
 /// Calculates the expected outcome of two teams based on TrueSkill.
 ///
 /// Takes in two teams as a Slice of [`TrueSkillRating`]s and a [`TrueSkillConfig`]
-/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.  
+/// and returns the probability of victory for each player as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -1299,7 +1292,7 @@ pub fn expected_score_two_teams(
 /// Calculates the expected outcome of multiple teams based on TrueSkill.
 ///
 /// Takes in multiple teams as Slices of [`TrueSkillRating`]s, a [`TrueSkillConfig`]
-/// and returns the probability of victory for each team as an [`f64`] between 1.0 and 0.0.  
+/// and returns the probability of victory for each team as an [`f64`] between 1.0 and 0.0.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near `1 / Number of Teams` mean a draw is likely to occur.
 ///
@@ -1409,7 +1402,7 @@ pub fn expected_score_multi_team(
 /// Calculates the expected outcome of a player in a rating period or tournament.
 ///
 /// Takes in a players as [`TrueSkillRating`], a list of opponents as a slice of [`TrueSkillRating`] and a [`TrueSkillConfig`]
-/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.  
+/// and returns the probability of victory for each match as an Vec of [`f64`] between 1.0 and 0.0 from the perspective of the player.\
 /// 1.0 means a certain victory for the player, 0.0 means certain loss.
 /// Values near 0.5 mean a draw is likely to occur.
 ///
@@ -1493,7 +1486,7 @@ pub fn get_rank(player: &TrueSkillRating) -> f64 {
 }
 
 fn draw_margin(draw_probability: f64, beta: f64, total_players: f64) -> f64 {
-    inverse_cdf((draw_probability + 1.0) / 2.0, 0.0, 1.0) * total_players.sqrt() * beta
+    inverse_cdf(f64::midpoint(draw_probability, 1.0), 0.0, 1.0) * total_players.sqrt() * beta
 }
 
 fn team_sizes(teams_and_ranks: &[(&[TrueSkillRating], MultiTeamOutcome)]) -> Vec<usize> {
@@ -1516,6 +1509,16 @@ mod tests {
     use crate::MultiTeamOutcome;
 
     use super::*;
+
+    /// Complex floating point operations are notoriously unreliable.
+    ///
+    /// In the TrueSkill multi-team functions, differences in floating point implementations across operating systems become apparent.
+    /// These variations are larger than [`f64::EPSILON`], so we use a more forgiving threshold instead.
+    ///
+    /// On Windows the toolchain is based on msvc, on Linux it is based on glibc and on MacOS it is clang/llvm.
+    ///
+    /// See also: https://github.com/atomflunder/skillratings/issues/14
+    const ERROR_MARGIN: f64 = 0.000_000_000_1;
 
     #[test]
     /// This example is taken from this presentation (Page 20):
@@ -2158,8 +2161,8 @@ mod tests {
             ],
         );
 
-        assert!((mtr[0][0].rating - 24.534_091_256_161_39).abs() < f64::EPSILON);
-        assert!((mtr[1][0].rating - 23.465_908_743_838_607).abs() < f64::EPSILON);
+        assert!((mtr[0][0].rating - 24.534_091_256_161_39).abs() < ERROR_MARGIN);
+        assert!((mtr[1][0].rating - 23.465_908_743_838_607).abs() < ERROR_MARGIN);
 
         let exp = MultiTeamRatingSystem::expected_score(
             &multi_team_rating,
@@ -2220,27 +2223,27 @@ mod tests {
         let results =
             trueskill_multi_team(&teams_and_ranks, &TrueSkillConfig::new(), None).unwrap();
 
-        assert!((results[0][0].rating - 40.876_849_177_315_655).abs() < f64::EPSILON);
-        assert!((results[0][1].rating - 45.493_394_092_398_45).abs() < f64::EPSILON);
+        assert!((results[0][0].rating - 40.876_849_177_315_655).abs() < ERROR_MARGIN);
+        assert!((results[0][1].rating - 45.493_394_092_398_45).abs() < ERROR_MARGIN);
 
-        assert!((results[1][0].rating - 19.608_650_920_845_23).abs() < f64::EPSILON);
-        assert!((results[1][1].rating - 18.712_463_514_890_54).abs() < f64::EPSILON);
-        assert!((results[1][2].rating - 29.353_112_227_810_637).abs() < f64::EPSILON);
-        assert!((results[1][3].rating - 9.872_175_198_037_164).abs() < f64::EPSILON);
+        assert!((results[1][0].rating - 19.608_650_920_845_23).abs() < ERROR_MARGIN);
+        assert!((results[1][1].rating - 18.712_463_514_890_54).abs() < ERROR_MARGIN);
+        assert!((results[1][2].rating - 29.353_112_227_810_637).abs() < ERROR_MARGIN);
+        assert!((results[1][3].rating - 9.872_175_198_037_164).abs() < ERROR_MARGIN);
 
-        assert!((results[2][0].rating - 48.829_832_201_455_31).abs() < f64::EPSILON);
-        assert!((results[2][1].rating - 29.812_500_188_902_998).abs() < f64::EPSILON);
+        assert!((results[2][0].rating - 48.829_832_201_455_31).abs() < ERROR_MARGIN);
+        assert!((results[2][1].rating - 29.812_500_188_902_998).abs() < ERROR_MARGIN);
 
-        assert!((results[0][0].uncertainty - 3.839_527_589_355_369_8).abs() < f64::EPSILON);
-        assert!((results[0][1].uncertainty - 2.933_671_613_522_051).abs() < f64::EPSILON);
+        assert!((results[0][0].uncertainty - 3.839_527_589_355_369_8).abs() < ERROR_MARGIN);
+        assert!((results[0][1].uncertainty - 2.933_671_613_522_051).abs() < ERROR_MARGIN);
 
-        assert!((results[1][0].uncertainty - 6.396_044_310_523_896).abs() < f64::EPSILON);
-        assert!((results[1][1].uncertainty - 5.624_556_429_622_889).abs() < f64::EPSILON);
-        assert!((results[1][2].uncertainty - 7.673_456_361_986_593).abs() < f64::EPSILON);
-        assert!((results[1][3].uncertainty - 3.891_408_425_994_520_3).abs() < f64::EPSILON);
+        assert!((results[1][0].uncertainty - 6.396_044_310_523_896).abs() < ERROR_MARGIN);
+        assert!((results[1][1].uncertainty - 5.624_556_429_622_889).abs() < ERROR_MARGIN);
+        assert!((results[1][2].uncertainty - 7.673_456_361_986_593).abs() < ERROR_MARGIN);
+        assert!((results[1][3].uncertainty - 3.891_408_425_994_520_3).abs() < ERROR_MARGIN);
 
-        assert!((results[2][0].uncertainty - 4.590_018_525_151_379).abs() < f64::EPSILON);
-        assert!((results[2][1].uncertainty - 1.976_314_792_712_798).abs() < f64::EPSILON);
+        assert!((results[2][0].uncertainty - 4.590_018_525_151_379).abs() < ERROR_MARGIN);
+        assert!((results[2][1].uncertainty - 1.976_314_792_712_798).abs() < ERROR_MARGIN);
     }
 
     #[test]
@@ -2297,27 +2300,27 @@ mod tests {
         )
         .unwrap();
 
-        assert!((results[0][0].rating - 40.027_231_346_252_364).abs() < f64::EPSILON);
-        assert!((results[0][1].rating - 45.021_889_715_580_61).abs() < f64::EPSILON);
+        assert!((results[0][0].rating - 40.027_231_346_252_364).abs() < ERROR_MARGIN);
+        assert!((results[0][1].rating - 45.021_889_715_580_61).abs() < ERROR_MARGIN);
 
-        assert!((results[1][0].rating - 20.098_036_453_507_61).abs() < f64::EPSILON);
-        assert!((results[1][1].rating - 19.072_030_467_824_426).abs() < f64::EPSILON);
-        assert!((results[1][2].rating - 30.441_957_784_082_72).abs() < f64::EPSILON);
-        assert!((results[1][3].rating - 10.097_034_118_427_457).abs() < f64::EPSILON);
+        assert!((results[1][0].rating - 20.098_036_453_507_61).abs() < ERROR_MARGIN);
+        assert!((results[1][1].rating - 19.072_030_467_824_426).abs() < ERROR_MARGIN);
+        assert!((results[1][2].rating - 30.441_957_784_082_72).abs() < ERROR_MARGIN);
+        assert!((results[1][3].rating - 10.097_034_118_427_457).abs() < ERROR_MARGIN);
 
-        assert!((results[2][0].rating - 49.787_633_108_041_61).abs() < f64::EPSILON);
-        assert!((results[2][1].rating - 29.998_866_859_567_126).abs() < f64::EPSILON);
+        assert!((results[2][0].rating - 49.787_633_108_041_61).abs() < ERROR_MARGIN);
+        assert!((results[2][1].rating - 29.998_866_859_567_126).abs() < ERROR_MARGIN);
 
-        assert!((results[0][0].uncertainty - 3.990_045_287_325_199).abs() < f64::EPSILON);
-        assert!((results[0][1].uncertainty - 2.991_832_600_124_326_7).abs() < f64::EPSILON);
+        assert!((results[0][0].uncertainty - 3.990_045_287_325_199).abs() < ERROR_MARGIN);
+        assert!((results[0][1].uncertainty - 2.991_832_600_124_326_7).abs() < ERROR_MARGIN);
 
-        assert!((results[1][0].uncertainty - 6.888_248_560_920_697).abs() < f64::EPSILON);
-        assert!((results[1][1].uncertainty - 5.930_038_936_969_937).abs() < f64::EPSILON);
-        assert!((results[1][2].uncertainty - 7.023_102_950_896_653).abs() < f64::EPSILON);
-        assert!((results[1][3].uncertainty - 3.805_217_937_147_945).abs() < f64::EPSILON);
+        assert!((results[1][0].uncertainty - 6.888_248_560_920_697).abs() < ERROR_MARGIN);
+        assert!((results[1][1].uncertainty - 5.930_038_936_969_937).abs() < ERROR_MARGIN);
+        assert!((results[1][2].uncertainty - 7.023_102_950_896_653).abs() < ERROR_MARGIN);
+        assert!((results[1][3].uncertainty - 3.805_217_937_147_945).abs() < ERROR_MARGIN);
 
-        assert!((results[2][0].uncertainty - 4.589_940_271_249_083).abs() < f64::EPSILON);
-        assert!((results[2][1].uncertainty - 2.001_707_343_315_781_7).abs() < f64::EPSILON);
+        assert!((results[2][0].uncertainty - 4.589_940_271_249_083).abs() < ERROR_MARGIN);
+        assert!((results[2][1].uncertainty - 2.001_707_343_315_781_7).abs() < ERROR_MARGIN);
     }
 
     #[test]
@@ -2344,13 +2347,13 @@ mod tests {
 
         let results = trueskill_multi_team(teams_and_ranks, &TrueSkillConfig::new(), None).unwrap();
 
-        assert!((results[0][0].rating - 41.720_925_460_665_01).abs() < f64::EPSILON);
-        assert!((results[1][0].rating - 20.997_268_045_415_94).abs() < f64::EPSILON);
-        assert!((results[2][0].rating - 41.771_076_420_914_83).abs() < f64::EPSILON);
+        assert!((results[0][0].rating - 41.720_925_460_665_01).abs() < ERROR_MARGIN);
+        assert!((results[1][0].rating - 20.997_268_045_415_94).abs() < ERROR_MARGIN);
+        assert!((results[2][0].rating - 41.771_076_420_914_83).abs() < ERROR_MARGIN);
 
-        assert!((results[0][0].uncertainty - 2.050_533_079_246_658_7).abs() < f64::EPSILON);
-        assert!((results[1][0].uncertainty - 1.870_534_805_422_220_2).abs() < f64::EPSILON);
-        assert!((results[2][0].uncertainty - 1.209_939_281_670_434_9).abs() < f64::EPSILON);
+        assert!((results[0][0].uncertainty - 2.050_533_079_246_658_7).abs() < ERROR_MARGIN);
+        assert!((results[1][0].uncertainty - 1.870_534_805_422_220_2).abs() < ERROR_MARGIN);
+        assert!((results[2][0].uncertainty - 1.209_939_281_670_434_9).abs() < ERROR_MARGIN);
     }
 
     #[test]
@@ -2383,15 +2386,15 @@ mod tests {
 
         let results = trueskill_multi_team(teams_and_ranks, &TrueSkillConfig::new(), None).unwrap();
 
-        assert!((results[0][0].rating - 46.844_398_641_974_97).abs() < f64::EPSILON);
-        assert!((results[1][0].rating - -21.0).abs() < f64::EPSILON);
-        assert!((results[2][0].rating - 121.973_594_228_967_43).abs() < f64::EPSILON);
-        assert!((results[3][0].rating - 3.577_783_039_440_43).abs() < f64::EPSILON);
+        assert!((results[0][0].rating - 46.844_398_641_974_97).abs() < ERROR_MARGIN);
+        assert!((results[1][0].rating - -21.0).abs() < ERROR_MARGIN);
+        assert!((results[2][0].rating - 121.973_594_228_967_43).abs() < ERROR_MARGIN);
+        assert!((results[3][0].rating - 3.577_783_039_440_43).abs() < ERROR_MARGIN);
 
-        assert!((results[0][0].uncertainty - 4.453_979_220_477_661).abs() < f64::EPSILON);
-        assert!((results[1][0].uncertainty - 1.871_855_882_391_709_3).abs() < f64::EPSILON);
-        assert!((results[2][0].uncertainty - 0.083_922_196_135_183_55).abs() < f64::EPSILON);
-        assert!((results[3][0].uncertainty - 1.197_926_990_096_302_3).abs() < f64::EPSILON);
+        assert!((results[0][0].uncertainty - 4.453_979_220_477_661).abs() < ERROR_MARGIN);
+        assert!((results[1][0].uncertainty - 1.871_855_882_391_709_3).abs() < ERROR_MARGIN);
+        assert!((results[2][0].uncertainty - 0.083_922_196_135_183_55).abs() < ERROR_MARGIN);
+        assert!((results[3][0].uncertainty - 1.197_926_990_096_302_3).abs() < ERROR_MARGIN);
     }
 
     #[test]
