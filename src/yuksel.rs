@@ -8,7 +8,7 @@
 //!    based on recent win/loss history.
 //!
 //! The recommended entry point is [`yuksel`] for zero-sum 1v1 updates (Algorithm 2),
-//! or [`yuksel_rating_update`] for incremental non-zero-sum updates (Algorithm 1).
+//! or [`yuksel_rating_period`] for batch updates over a rating period.
 //!
 //! # Quickstart
 //!
@@ -19,7 +19,10 @@
 //! };
 //!
 //! let player_one = YukselRating::new();
-//! let player_two = YukselRating { rating: 1700.0, ..YukselRating::new() };
+//! let player_two = YukselRating {
+//!     rating: 1700.0,
+//!     ..YukselRating::new()
+//! };
 //! let config = YukselConfig::new();
 //!
 //! let (new_one, new_two) = yuksel(&player_one, &player_two, &Outcomes::WIN, &config);
@@ -36,39 +39,27 @@ use std::f64::consts::PI;
 
 use crate::{Outcomes, Rating, RatingPeriodSystem, RatingSystem};
 
-/// The constant `q = ln(10) / 400`, used in Elo/Glicko derivative calculations (Eq 4).
-pub const Q: f64 = std::f64::consts::LN_10 / 400.0;
+/// `q = ln(10) / 400` (Eq 4).
+const Q: f64 = std::f64::consts::LN_10 / 400.0;
 
-
-/// Elo win probability for player `a` against player `b` (Eq 1).
-/// Returns the probability that player `a` wins.
-/// Satisfies `f_e(r_a, r_b) + f_e(r_b, r_a) = 1`.
-#[must_use]
-pub fn f_e(r_a: f64, r_b: f64) -> f64 {
+/// Elo win probability (Eq 1). Satisfies `f_e(a,b) + f_e(b,a) = 1`.
+fn f_e(r_a: f64, r_b: f64) -> f64 {
     1.0 / (1.0 + 10.0_f64.powf(-(r_a - r_b) / 400.0))
 }
 
-/// Glicko-style deviation scaling factor (Eq 4).
-/// Scales the contribution of a match by the rating deviation `φ`.
-/// `g(0) = 1` and `g(φ) → 0` as `φ → ∞`.
-#[must_use]
-pub fn g(phi: f64) -> f64 {
+/// Glicko deviation scaling factor (Eq 4). `g(0) = 1`, `g(φ) → 0` as `φ → ∞`.
+fn g(phi: f64) -> f64 {
     1.0 / (1.0 + 3.0 * Q * Q * phi * phi / (PI * PI)).sqrt()
 }
 
-/// Derivative of Elo's win probability with respect to `r_a` (Appendix A).
-/// `d/dr_a f_E(a,b) = q · f_E(a,b) · f_E(b,a)`
-#[must_use]
-pub fn df_e(r_a: f64, r_b: f64) -> f64 {
+/// Derivative of `f_e` w.r.t. `r_a` (Appendix A): `q · f_E(a,b) · f_E(b,a)`.
+fn df_e(r_a: f64, r_b: f64) -> f64 {
     let fe = f_e(r_a, r_b);
     Q * fe * (1.0 - fe)
 }
 
-/// Inverse of Elo's win probability function (Eq 26).
-/// Given a desired win probability `p` for a player with rating `r_a`,
-/// returns the opponent rating `r★` such that `f_E(a, ★) = p`.
-#[must_use]
-pub fn inverse_f_e(p: f64, r_a: f64) -> f64 {
+/// Inverse of `f_e` (Eq 26): opponent rating `r★` such that `f_E(a, ★) = p`.
+fn inverse_f_e(p: f64, r_a: f64) -> f64 {
     400.0_f64.mul_add((1.0 / p - 1.0).log10(), r_a)
 }
 
@@ -145,6 +136,7 @@ impl From<f64> for YukselRating {
     }
 }
 
+/// Configuration for the Yuksel rating system (Section 3).
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct YukselConfig {
@@ -161,6 +153,7 @@ pub struct YukselConfig {
 
 impl YukselConfig {
     #[must_use]
+    /// Creates a new `YukselConfig` with the paper's default values (α=2, Δr_max=350, s=1).
     pub const fn new() -> Self {
         Self {
             alpha: 2.0,
@@ -179,12 +172,7 @@ impl Default for YukselConfig {
 /// Update rating and running statistics (Algorithm 1, lines 8–14).
 /// Uses the OLD deviation (from `rating.v` / `rating.w_sum`) for the weight ω,
 /// because `rating` is an immutable reference to the state before this update.
-fn update_stats(
-    rating: &YukselRating,
-    new_d: f64,
-    dr: f64,
-    config: &YukselConfig,
-) -> YukselRating {
+fn update_stats(rating: &YukselRating, new_d: f64, dr: f64, config: &YukselConfig) -> YukselRating {
     let new_r = config.s_factor.mul_add(dr, rating.rating); // line 9
     let phi = rating.deviation(); // φ from OLD V/W
     let omega = g(config.alpha * phi); // line 10
@@ -202,30 +190,11 @@ fn update_stats(
     }
 }
 
-/// Incremental (non-zero-sum) rating update for player `a` after a game against
-/// opponent `b` with outcome `outcome` — Algorithm 1.
-/// Returns the updated rating for player `a` only. The opponent's rating is unchanged.
-///
-/// # Examples
-///
-/// ```
-/// use skillratings::{
-///     yuksel::{yuksel_rating_update, YukselConfig, YukselRating},
-///     Outcomes,
-/// };
-///
-/// let player = YukselRating::new();
-/// let opponent = YukselRating { rating: 1700.0, ..YukselRating::new() };
-/// let config = YukselConfig::new();
-///
-/// let new_player = yuksel_rating_update(&player, &opponent, &Outcomes::WIN, &config);
-/// assert!(new_player.rating > player.rating);
-/// ```
-#[must_use]
-pub fn yuksel_rating_update(
+/// Incremental non-zero-sum rating update — Algorithm 1.
+fn yuksel_rating_update(
     player_a: &YukselRating,
     player_b: &YukselRating,
-    outcome: &Outcomes,
+    outcome: Outcomes,
     config: &YukselConfig,
 ) -> YukselRating {
     let s = outcome.to_chess_points();
@@ -253,6 +222,7 @@ pub fn yuksel_rating_update(
 }
 
 /// Zero-sum rating update for two players after a game — Algorithm 2.
+///
 /// The rating change is symmetric: player `a` gains exactly what player `b` loses
 /// (scaled by `s_factor`). Recommended for production use.
 ///
@@ -265,7 +235,10 @@ pub fn yuksel_rating_update(
 /// };
 ///
 /// let player_one = YukselRating::new();
-/// let player_two = YukselRating { rating: 1700.0, ..YukselRating::new() };
+/// let player_two = YukselRating {
+///     rating: 1700.0,
+///     ..YukselRating::new()
+/// };
 /// let config = YukselConfig::new();
 ///
 /// let (new_one, new_two) = yuksel(&player_one, &player_two, &Outcomes::WIN, &config);
@@ -318,8 +291,14 @@ pub fn yuksel(
 /// ```
 /// use skillratings::yuksel::{expected_score, YukselRating};
 ///
-/// let player_one = YukselRating { rating: 1800.0, ..YukselRating::new() };
-/// let player_two = YukselRating { rating: 1500.0, ..YukselRating::new() };
+/// let player_one = YukselRating {
+///     rating: 1800.0,
+///     ..YukselRating::new()
+/// };
+/// let player_two = YukselRating {
+///     rating: 1500.0,
+///     ..YukselRating::new()
+/// };
 ///
 /// let (exp_one, exp_two) = expected_score(&player_one, &player_two);
 /// assert!((exp_one + exp_two - 1.0).abs() < 1e-10);
@@ -344,8 +323,20 @@ pub fn expected_score(player_one: &YukselRating, player_two: &YukselRating) -> (
 ///
 /// let player = YukselRating::new();
 /// let results = vec![
-///     (YukselRating { rating: 1400.0, ..YukselRating::new() }, Outcomes::WIN),
-///     (YukselRating { rating: 1600.0, ..YukselRating::new() }, Outcomes::LOSS),
+///     (
+///         YukselRating {
+///             rating: 1400.0,
+///             ..YukselRating::new()
+///         },
+///         Outcomes::WIN,
+///     ),
+///     (
+///         YukselRating {
+///             rating: 1600.0,
+///             ..YukselRating::new()
+///         },
+///         Outcomes::LOSS,
+///     ),
 /// ];
 /// let config = YukselConfig::new();
 ///
@@ -360,7 +351,7 @@ pub fn yuksel_rating_period(
     results
         .iter()
         .fold(*player, |current, (opponent, outcome)| {
-            yuksel_rating_update(&current, opponent, outcome, config)
+            yuksel_rating_update(&current, opponent, *outcome, config)
         })
 }
 
@@ -383,6 +374,7 @@ pub fn volatility_range(player: &YukselRating) -> (f64, f64) {
     (player.rating - margin, player.rating + margin)
 }
 
+/// Configuration for the Yuksel matchmaking system (Section 4).
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct YukselMatchConfig {
@@ -398,6 +390,7 @@ pub struct YukselMatchConfig {
 
 impl YukselMatchConfig {
     #[must_use]
+    /// Creates a new `YukselMatchConfig` with the paper's default values (n=5, λ=0.5, Δp=1/12).
     pub fn new() -> Self {
         Self {
             n: 5,
@@ -414,6 +407,7 @@ impl Default for YukselMatchConfig {
 }
 
 /// Desired win probability `p` for the next game (Eq 24/25).
+///
 /// When the player has played `m ≥ n` games, uses the full window (Eq 24).
 /// When `m < n`, uses the partial window (Eq 25).
 /// `wins` is the count of wins in the last `min(m, n)` games.
@@ -432,10 +426,7 @@ pub fn desired_win_probability(
         config.lambda.mul_add((2 * n + 1) as f64, -w) / (n + 1) as f64
     } else {
         // Eq 25
-        config
-            .lambda
-            .mul_add((n + games_played + 1) as f64, -w)
-            / (n + 1) as f64
+        config.lambda.mul_add((n + games_played + 1) as f64, -w) / (n + 1) as f64
     }
 }
 
@@ -484,14 +475,14 @@ pub fn opponent_rating_window(
 /// shuffle the slice within a window before calling this function, or use
 /// the simulation example for a complete demonstration.
 pub fn match_group(desired_ratings: &mut [(usize, f64)]) -> Vec<(usize, usize)> {
-    desired_ratings
-        .sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+    desired_ratings.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
     desired_ratings
         .chunks_exact(2)
         .map(|pair| (pair[0].0, pair[1].0))
         .collect()
 }
 
+/// Adapter for using the Yuksel system via the [`RatingSystem`] and [`RatingPeriodSystem`] traits.
 pub struct Yuksel {
     config: YukselConfig,
 }
@@ -669,7 +660,7 @@ mod tests {
         let b = YukselRating::new();
         let config = YukselConfig::new();
 
-        let new_a = yuksel_rating_update(&a, &b, &Outcomes::WIN, &config);
+        let new_a = yuksel_rating_update(&a, &b, Outcomes::WIN, &config);
         assert!(new_a.rating > a.rating);
     }
 
@@ -679,7 +670,7 @@ mod tests {
         let b = YukselRating::new();
         let config = YukselConfig::new();
 
-        let new_a = yuksel_rating_update(&a, &b, &Outcomes::LOSS, &config);
+        let new_a = yuksel_rating_update(&a, &b, Outcomes::LOSS, &config);
         assert!(new_a.rating < a.rating);
     }
 
@@ -709,7 +700,7 @@ mod tests {
                 Outcomes::LOSS
             };
 
-            player = yuksel_rating_update(&player, &opponent, &outcome, &config);
+            player = yuksel_rating_update(&player, &opponent, outcome, &config);
         }
 
         let error = (player.rating - actual_rating).abs();
@@ -758,8 +749,8 @@ mod tests {
             ..YukselConfig::new()
         };
 
-        let new_full = yuksel_rating_update(&a, &b, &Outcomes::WIN, &config_full);
-        let new_damped = yuksel_rating_update(&a, &b, &Outcomes::WIN, &config_damped);
+        let new_full = yuksel_rating_update(&a, &b, Outcomes::WIN, &config_full);
+        let new_damped = yuksel_rating_update(&a, &b, Outcomes::WIN, &config_damped);
 
         assert!(
             (new_full.rating - a.rating).abs() > (new_damped.rating - a.rating).abs(),
@@ -869,7 +860,10 @@ mod tests {
     fn test_desired_prob_all_wins() {
         let config = YukselMatchConfig::new();
         let p = desired_win_probability(5, 5, &config);
-        assert!(p < 0.5, "After all wins, desired prob should be < 0.5, got {p}");
+        assert!(
+            p < 0.5,
+            "After all wins, desired prob should be < 0.5, got {p}"
+        );
         assert!(p > 0.0, "Desired prob should remain positive, got {p}");
     }
 
@@ -877,7 +871,10 @@ mod tests {
     fn test_desired_prob_all_losses() {
         let config = YukselMatchConfig::new();
         let p = desired_win_probability(0, 5, &config);
-        assert!(p > 0.5, "After all losses, desired prob should be > 0.5, got {p}");
+        assert!(
+            p > 0.5,
+            "After all losses, desired prob should be > 0.5, got {p}"
+        );
         assert!(p < 1.0, "Desired prob should remain < 1, got {p}");
     }
 

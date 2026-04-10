@@ -52,16 +52,76 @@ pub fn rating_period_yuksel(c: &mut Criterion) {
     };
 
     let results = vec![
-        (YukselRating { rating: 291.1, ..YukselRating::new() }, Outcomes::WIN),
-        (YukselRating { rating: 391.1, ..YukselRating::new() }, Outcomes::DRAW),
-        (YukselRating { rating: 491.1, ..YukselRating::new() }, Outcomes::LOSS),
-        (YukselRating { rating: 591.1, ..YukselRating::new() }, Outcomes::WIN),
-        (YukselRating { rating: 691.1, ..YukselRating::new() }, Outcomes::DRAW),
-        (YukselRating { rating: 791.1, ..YukselRating::new() }, Outcomes::LOSS),
-        (YukselRating { rating: 891.1, ..YukselRating::new() }, Outcomes::WIN),
-        (YukselRating { rating: 991.1, ..YukselRating::new() }, Outcomes::DRAW),
-        (YukselRating { rating: 1091.1, ..YukselRating::new() }, Outcomes::LOSS),
-        (YukselRating { rating: 1191.1, ..YukselRating::new() }, Outcomes::LOSS),
+        (
+            YukselRating {
+                rating: 291.1,
+                ..YukselRating::new()
+            },
+            Outcomes::WIN,
+        ),
+        (
+            YukselRating {
+                rating: 391.1,
+                ..YukselRating::new()
+            },
+            Outcomes::DRAW,
+        ),
+        (
+            YukselRating {
+                rating: 491.1,
+                ..YukselRating::new()
+            },
+            Outcomes::LOSS,
+        ),
+        (
+            YukselRating {
+                rating: 591.1,
+                ..YukselRating::new()
+            },
+            Outcomes::WIN,
+        ),
+        (
+            YukselRating {
+                rating: 691.1,
+                ..YukselRating::new()
+            },
+            Outcomes::DRAW,
+        ),
+        (
+            YukselRating {
+                rating: 791.1,
+                ..YukselRating::new()
+            },
+            Outcomes::LOSS,
+        ),
+        (
+            YukselRating {
+                rating: 891.1,
+                ..YukselRating::new()
+            },
+            Outcomes::WIN,
+        ),
+        (
+            YukselRating {
+                rating: 991.1,
+                ..YukselRating::new()
+            },
+            Outcomes::DRAW,
+        ),
+        (
+            YukselRating {
+                rating: 1091.1,
+                ..YukselRating::new()
+            },
+            Outcomes::LOSS,
+        ),
+        (
+            YukselRating {
+                rating: 1191.1,
+                ..YukselRating::new()
+            },
+            Outcomes::LOSS,
+        ),
     ];
 
     let config = YukselConfig::new();
@@ -73,5 +133,10 @@ pub fn rating_period_yuksel(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, yuksel_benchmark, expected_yuksel, rating_period_yuksel);
+criterion_group!(
+    benches,
+    yuksel_benchmark,
+    expected_yuksel,
+    rating_period_yuksel
+);
 criterion_main!(benches);
