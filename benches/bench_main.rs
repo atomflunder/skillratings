@@ -7,4 +7,5 @@ criterion_main! {
     benchmarks::glicko2_bench::benches,
     benchmarks::trueskill_bench::benches,
     benchmarks::weng_lin_bench::benches,
+    benchmarks::yuksel_bench::benches,
 }
