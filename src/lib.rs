@@ -32,6 +32,7 @@
 //! - [EGF (European Go Federation Ratings)](https://docs.rs/skillratings/latest/skillratings/egf/)
 //! - [DWZ (Deutsche Wertungszahl)](https://docs.rs/skillratings/latest/skillratings/dwz/)
 //! - [Ingo](https://docs.rs/skillratings/latest/skillratings/ingo/)
+//! - [Yuksel](https://docs.rs/skillratings/latest/skillratings/yuksel/)
 //!
 //! Most of these are known from their usage in chess and various other games.\
 //! Click on the documentation for the modules linked above for more information about the specific rating algorithms, and their advantages and disadvantages.
@@ -63,7 +64,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = "0.28"
+//! skillratings = "0.29"
 //! ```
 //!
 //! ### Serde support
@@ -80,7 +81,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! skillratings = {version = "0.28", features = ["serde"]}
+//! skillratings = {version = "0.29", features = ["serde"]}
 //! ```
 //!
 //! ## Usage and Examples

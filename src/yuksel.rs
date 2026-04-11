@@ -18,13 +18,20 @@
 //!     Outcomes,
 //! };
 //!
+//! // Initialise a new player rating with a rating of 1500, a derivative sum value of 0,
+//! // a weighted sum of 1e-10, a weighted mean of 0 and a weighed variance of 0.
 //! let player_one = YukselRating::new();
+//! // Or you can initialise it with your own values of course.
+//! // Imagine these numbers being pulled from a database.
 //! let player_two = YukselRating {
 //!     rating: 1700.0,
 //!     ..YukselRating::new()
 //! };
+//!
+//! // The config allows you to specify certain values in the Yuksel calculation
 //! let config = YukselConfig::new();
 //!
+//! // The yuksel function will calculate the new ratings for both players and return them.
 //! let (new_one, new_two) = yuksel(&player_one, &player_two, &Outcomes::WIN, &config);
 //! ```
 //!
@@ -938,5 +945,63 @@ mod tests {
         let mut players = vec![(0, 1500.0), (1, 1600.0), (2, 1200.0)];
         let pairs = match_group(&mut players);
         assert_eq!(pairs.len(), 1);
+    }
+
+    #[test]
+    fn test_new_inits() {
+        let r = YukselRating::default();
+
+        assert!((r.rating - 1500.0).abs() < f64::EPSILON);
+        assert!(r.d < f64::EPSILON);
+        assert!((r.w_sum - 1e-10).abs() < f64::EPSILON);
+        assert!(r.r_mean < f64::EPSILON);
+        assert!(r.v < f64::EPSILON);
+
+        let c = YukselConfig::default();
+
+        assert!((c.alpha - 2.0).abs() < f64::EPSILON);
+        assert!((c.dr_max - 350.0).abs() < f64::EPSILON);
+        assert!((c.s_factor - 1.0).abs() < f64::EPSILON);
+
+        let mc = YukselMatchConfig::new();
+        assert!((mc.delta_p - 1.0 / 12.0).abs() < f64::EPSILON);
+        assert!((mc.lambda - 0.5).abs() < f64::EPSILON);
+        assert_eq!(mc.n, 5);
+    }
+
+    #[test]
+    fn test_traits() {
+        let player_one: YukselRating = Rating::new(Some(1532.0), None);
+        let player_two: YukselRating = Rating::new(Some(1532.0), None);
+
+        let rating_system: Yuksel = RatingSystem::new(YukselConfig::new());
+
+        assert!((player_one.rating() - 1532.0).abs() < f64::EPSILON);
+        assert_eq!(player_one.uncertainty(), Some(0.0));
+
+        let (new_player_one, new_player_two) =
+            RatingSystem::rate(&rating_system, &player_one, &player_two, &Outcomes::WIN);
+
+        let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
+
+        assert!((new_player_one.rating - 1_879.435_585_522_601_3).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 1_184.564_414_477_398_7).abs() < f64::EPSILON);
+
+        assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
+
+        let rating_period_system: Yuksel = RatingPeriodSystem::new(YukselConfig::new());
+        let exp_rp =
+            RatingPeriodSystem::expected_score(&rating_period_system, &player_one, &[player_two]);
+        assert!((exp1 - exp_rp[0]).abs() < f64::EPSILON);
+
+        let player_one: YukselRating = Rating::new(Some(1532.0), None);
+        let player_two: YukselRating = Rating::new(Some(1532.0), None);
+
+        let rating_period: Yuksel = RatingPeriodSystem::new(YukselConfig::new());
+
+        let new_player_one =
+            RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
+
+        assert!((new_player_one.rating - 1_879.435_585_522_601_5).abs() < f64::EPSILON);
     }
 }
