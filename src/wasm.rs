@@ -6,6 +6,8 @@
 //!
 //! All ratings are passed as JS objects `{ rating, uncertainty? }` and returned as such.
 
+#![cfg_attr(feature = "wasm", allow(missing_docs))]
+
 use wasm_bindgen::prelude::*;
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -13,12 +15,15 @@ use wasm_bindgen::prelude::*;
 /// Generic rating result as a JS-friendly struct.
 #[wasm_bindgen]
 pub struct WasmRating {
+    /// Numeric rating value.
     pub rating: f64,
+    /// Uncertainty / deviation value.
     pub uncertainty: f64,
 }
 
 #[wasm_bindgen]
 impl WasmRating {
+    /// Create a new WasmRating.
     #[wasm_bindgen(constructor)]
     pub fn new(rating: f64, uncertainty: f64) -> Self {
         Self {
@@ -31,16 +36,22 @@ impl WasmRating {
 /// A pair of ratings returned from a 1v1 match.
 #[wasm_bindgen]
 pub struct RatingPair {
+    /// Player 1 resulting rating.
     pub p1_rating: f64,
+    /// Player 1 resulting uncertainty.
     pub p1_uncertainty: f64,
+    /// Player 2 resulting rating.
     pub p2_rating: f64,
+    /// Player 2 resulting uncertainty.
     pub p2_uncertainty: f64,
 }
 
 /// Expected score pair.
 #[wasm_bindgen]
 pub struct ExpectedPair {
+    /// Expected probability for player 1.
     pub p1: f64,
+    /// Expected probability for player 2.
     pub p2: f64,
 }
 
