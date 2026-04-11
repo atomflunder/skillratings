@@ -623,11 +623,7 @@ mod tests {
         let change_a = new_a.rating - a.rating;
         let change_b = new_b.rating - b.rating;
 
-        assert!(
-            (change_a + change_b).abs() < 1e-10,
-            "Rating changes not zero-sum: {change_a} + {change_b} = {}",
-            change_a + change_b
-        );
+        assert!((change_a + change_b).abs() < 1e-10);
     }
 
     #[test]
@@ -963,7 +959,7 @@ mod tests {
         assert!((c.dr_max - 350.0).abs() < f64::EPSILON);
         assert!((c.s_factor - 1.0).abs() < f64::EPSILON);
 
-        let mc = YukselMatchConfig::new();
+        let mc = YukselMatchConfig::default();
         assert!((mc.delta_p - 1.0 / 12.0).abs() < f64::EPSILON);
         assert!((mc.lambda - 0.5).abs() < f64::EPSILON);
         assert_eq!(mc.n, 5);
