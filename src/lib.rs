@@ -383,6 +383,7 @@ pub mod sticko;
 pub mod trueskill;
 pub mod uscf;
 pub mod weng_lin;
+pub mod yuksel;
 
 /// The possible outcomes for a match: Win, Draw, Loss.
 ///
