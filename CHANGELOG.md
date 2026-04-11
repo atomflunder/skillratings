@@ -2,6 +2,10 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.29.0 - 2026-04-11
+
+- Add `yuksel` rating algorithm
+
 ## v0.28.1 - 2026-01-02
 
 - Internal restructuring and linting
