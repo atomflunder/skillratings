@@ -21,13 +21,15 @@ jobs:
           toolchain: stable
 
       - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        run: cargo install wasm-pack@0.13.1
 
       - name: Build WASM (bundler target)
         run: wasm-pack build --release --target bundler --features wasm
 
       - name: Build WASM (nodejs target)
-        run: wasm-pack build --release --target nodejs --features wasm --out-dir pkg-node
+        run: |
+          wasm-pack build --release --target nodejs --features wasm
+          mv pkg pkg-node
 
       - name: Upload pkg artifact
         uses: actions/upload-artifact@v4
