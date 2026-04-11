@@ -383,6 +383,10 @@ pub mod sticko;
 pub mod trueskill;
 pub mod uscf;
 pub mod weng_lin;
+pub mod yuksel;
+
+#[cfg(feature = "wasm")]
+pub mod wasm;
 
 /// The possible outcomes for a match: Win, Draw, Loss.
 ///
