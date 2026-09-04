@@ -1357,17 +1357,15 @@ pub fn expected_score_two_teams(
 ///
 /// assert!((exp.iter().sum::<f64>() - 1.0).abs() < f64::EPSILON);
 ///
-/// // Team one has a 6% chance of winning, Team two a 33% and Team three a 61% chance.
-/// assert!((exp[0] * 100.0 - 6.0).round().abs() < f64::EPSILON);
+/// // Team one has a 4% chance of winning, Team two a 33% and Team three a 62% chance.
+/// assert!((exp[0] * 100.0 - 4.0).round().abs() < f64::EPSILON);
 /// assert!((exp[1] * 100.0 - 33.0).round().abs() < f64::EPSILON);
-/// assert!((exp[2] * 100.0 - 61.0).round().abs() < f64::EPSILON);
+/// assert!((exp[2] * 100.0 - 62.0).round().abs() < f64::EPSILON);
 /// ```
 pub fn expected_score_multi_team(
     teams: &[&[TrueSkillRating]],
     config: &TrueSkillConfig,
 ) -> Vec<f64> {
-    let player_count = teams.iter().map(|t| t.len()).sum::<usize>() as f64;
-
     let mut win_probabilities = Vec::with_capacity(teams.len());
     let mut total_probability = 0.0;
 
@@ -1389,6 +1387,7 @@ pub fn expected_score_multi_team(
                 team_two.iter().map(|p| p.uncertainty.powi(2)).sum::<f64>();
 
             let delta = team_one_ratings - team_two_ratings;
+            let player_count = (team_one.len() + team_two.len()) as f64;
             let denom = (team_two_uncertainties
                 + player_count.mul_add(config.beta.powi(2), team_one_uncertainties))
             .sqrt();
@@ -2060,9 +2059,9 @@ mod tests {
         assert_eq!(
             exp,
             vec![
-                0.058_904_655_169_257_615,
+                0.043_664_806_383_361_32,
                 0.333_333_333_333_333_3,
-                0.607_762_011_497_409
+                0.623_001_860_283_305_4
             ]
         );
 

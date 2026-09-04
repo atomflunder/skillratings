@@ -2,6 +2,12 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.29.2 - 2026-09-04
+
+- Fix `expected_score_multi_team` function for trueskill
+  - The player_count was initialized incorrectly for >2 teams, which would yield incorrect results
+  - This function is not part of the original spec, but adapted from a common [community algorithm](https://github.com/sublee/trueskill/issues/1)
+
 ## v0.29.1 - 2026-09-04
 
 - Fix `trueskill` shortcut functions (`trueskill`, `trueskill_two_teams`, and `trueskill_rating_period`) to fold `tau` value into the dynamics value before computing `c` value
