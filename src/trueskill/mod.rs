@@ -358,7 +358,10 @@ pub fn trueskill(
             config.beta.powi(2),
             player_one
                 .uncertainty
-                .mul_add(player_one.uncertainty, player_two.uncertainty.powi(2)),
+                .mul_add(player_one.uncertainty, config.dynamics_factor.powi(2))
+                + player_two
+                    .uncertainty
+                    .mul_add(player_two.uncertainty, config.dynamics_factor.powi(2)),
         )
         .sqrt();
 
@@ -483,7 +486,10 @@ pub fn trueskill_rating_period(
         let c = 2.0f64
             .mul_add(
                 config.beta.powi(2),
-                player_uncertainty.mul_add(player_uncertainty, opponent.uncertainty.powi(2)),
+                player_uncertainty.mul_add(player_uncertainty, config.dynamics_factor.powi(2))
+                    + opponent
+                        .uncertainty
+                        .mul_add(opponent.uncertainty, config.dynamics_factor.powi(2)),
             )
             .sqrt();
 
@@ -575,10 +581,10 @@ pub fn trueskill_rating_period(
 ///     &TrueSkillConfig::new(),
 /// );
 ///
-/// assert!((team_one[0].rating - 29.698_800_676_796_665).abs() < f64::EPSILON);
-/// assert!((team_one[1].rating - 30.456_035_750_156_31).abs() < f64::EPSILON);
-/// assert!((team_two[0].rating - 27.574_109_105_332_1).abs() < f64::EPSILON);
-/// assert!((team_two[1].rating - 36.210_764_756_738_115).abs() < f64::EPSILON);
+/// assert!((team_one[0].rating - 29.697_835_243_395_81).abs() < f64::EPSILON);
+/// assert!((team_one[1].rating - 30.455_492_648_042_45).abs() < f64::EPSILON);
+/// assert!((team_two[0].rating - 27.574_848_289_829_2).abs() < f64::EPSILON);
+/// assert!((team_two[1].rating - 36.211_141_942_989_22).abs() < f64::EPSILON);
 /// ```
 pub fn trueskill_two_teams(
     team_one: &[TrueSkillRating],
@@ -597,8 +603,15 @@ pub fn trueskill_two_teams(
     let rating_one_sum: f64 = team_one.iter().map(|p| p.rating).sum();
     let rating_two_sum: f64 = team_two.iter().map(|p| p.rating).sum();
 
-    let uncertainty_one_sum: f64 = team_one.iter().map(|p| p.uncertainty.powi(2)).sum();
-    let uncertainty_two_sum: f64 = team_two.iter().map(|p| p.uncertainty.powi(2)).sum();
+    let dynamics_variance = config.dynamics_factor.powi(2);
+    let uncertainty_one_sum: f64 = team_one
+        .iter()
+        .map(|p| p.uncertainty.powi(2) + dynamics_variance)
+        .sum();
+    let uncertainty_two_sum: f64 = team_two
+        .iter()
+        .map(|p| p.uncertainty.powi(2) + dynamics_variance)
+        .sum();
 
     let c = total_players
         .mul_add(
@@ -1627,10 +1640,10 @@ mod tests {
             &TrueSkillConfig::new(),
         );
 
-        assert!((p1.rating - 28.282_523_394_245_658).abs() < f64::EPSILON);
+        assert!((p1.rating - 28.282_092_495_697_686).abs() < f64::EPSILON);
         assert!(((p1.uncertainty * 100.0).round() - 488.0).abs() < f64::EPSILON);
 
-        assert!((p2.rating - 29.931_612_181_339_364).abs() < f64::EPSILON);
+        assert!((p2.rating - 29.931_621_158_643_78).abs() < f64::EPSILON);
         assert!(((p2.uncertainty * 100.0).round() - 119.0).abs() < f64::EPSILON);
 
         let (p2, p1) = trueskill(
@@ -1640,10 +1653,10 @@ mod tests {
             &TrueSkillConfig::new(),
         );
 
-        assert!((p1.rating - 28.282_523_394_245_658).abs() < f64::EPSILON);
+        assert!((p1.rating - 28.282_092_495_697_686).abs() < f64::EPSILON);
         assert!(((p1.uncertainty * 100.0).round() - 488.0).abs() < f64::EPSILON);
 
-        assert!((p2.rating - 29.931_612_181_339_364).abs() < f64::EPSILON);
+        assert!((p2.rating - 29.931_621_158_643_78).abs() < f64::EPSILON);
         assert!(((p2.uncertainty * 100.0).round() - 119.0).abs() < f64::EPSILON);
 
         let p1 = trueskill_rating_period(
@@ -1652,7 +1665,7 @@ mod tests {
             &TrueSkillConfig::new(),
         );
 
-        assert!((p1.rating - 28.282_523_394_245_658).abs() < f64::EPSILON);
+        assert!((p1.rating - 28.282_092_495_697_686).abs() < f64::EPSILON);
         assert!(((p1.uncertainty * 100.0).round() - 488.0).abs() < f64::EPSILON);
     }
 
@@ -1685,6 +1698,8 @@ mod tests {
     #[allow(clippy::cognitive_complexity)]
     /// This test is taken from:
     /// <https://github.com/moserware/Skills/blob/master/UnitTests/TrueSkill/TrueSkillCalculatorTests.cs>
+    ///
+    /// Test results will differ slightly since 0.29.1, see the CHANGELOG.md file for more information.
     fn test_teams() {
         let player_one = TrueSkillRating {
             rating: 20.0,
@@ -1711,15 +1726,15 @@ mod tests {
             &TrueSkillConfig::new(),
         );
 
-        assert!((team_one[0].rating - 29.698_800_676_796_665).abs() < f64::EPSILON);
-        assert!((team_one[1].rating - 30.456_035_750_156_31).abs() < f64::EPSILON);
-        assert!((team_two[0].rating - 27.574_109_105_332_1).abs() < f64::EPSILON);
-        assert!((team_two[1].rating - 36.210_764_756_738_115).abs() < f64::EPSILON);
+        assert!((team_one[0].rating - 29.697_835_243_395_81).abs() < f64::EPSILON);
+        assert!((team_one[1].rating - 30.455_492_648_042_45).abs() < f64::EPSILON);
+        assert!((team_two[0].rating - 27.574_848_289_829_2).abs() < f64::EPSILON);
+        assert!((team_two[1].rating - 36.211_141_942_989_22).abs() < f64::EPSILON);
 
-        assert!((team_one[0].uncertainty - 7.007_955_406_085_773).abs() < f64::EPSILON);
-        assert!((team_one[1].uncertainty - 5.594_025_202_259_947).abs() < f64::EPSILON);
-        assert!((team_two[0].uncertainty - 6.346_250_279_230_62).abs() < f64::EPSILON);
-        assert!((team_two[1].uncertainty - 4.767_945_180_134_836).abs() < f64::EPSILON);
+        assert!((team_one[0].uncertainty - 7.008_084_799_163_885_5).abs() < f64::EPSILON);
+        assert!((team_one[1].uncertainty - 5.594_076_500_010_323).abs() < f64::EPSILON);
+        assert!((team_two[0].uncertainty - 6.346_334_041_296_793).abs() < f64::EPSILON);
+        assert!((team_two[1].uncertainty - 4.767_974_209_723_061).abs() < f64::EPSILON);
 
         let (team_two, team_one) = trueskill_two_teams(
             &[player_three, player_four],
@@ -1728,15 +1743,15 @@ mod tests {
             &TrueSkillConfig::new(),
         );
 
-        assert!((team_one[0].rating - 29.698_800_676_796_665).abs() < f64::EPSILON);
-        assert!((team_one[1].rating - 30.456_035_750_156_31).abs() < f64::EPSILON);
-        assert!((team_two[0].rating - 27.574_109_105_332_1).abs() < f64::EPSILON);
-        assert!((team_two[1].rating - 36.210_764_756_738_115).abs() < f64::EPSILON);
+        assert!((team_one[0].rating - 29.697_835_243_395_81).abs() < f64::EPSILON);
+        assert!((team_one[1].rating - 30.455_492_648_042_45).abs() < f64::EPSILON);
+        assert!((team_two[0].rating - 27.574_848_289_829_2).abs() < f64::EPSILON);
+        assert!((team_two[1].rating - 36.211_141_942_989_22).abs() < f64::EPSILON);
 
-        assert!((team_one[0].uncertainty - 7.007_955_406_085_773).abs() < f64::EPSILON);
-        assert!((team_one[1].uncertainty - 5.594_025_202_259_947).abs() < f64::EPSILON);
-        assert!((team_two[0].uncertainty - 6.346_250_279_230_62).abs() < f64::EPSILON);
-        assert!((team_two[1].uncertainty - 4.767_945_180_134_836).abs() < f64::EPSILON);
+        assert!((team_one[0].uncertainty - 7.008_084_799_163_885_5).abs() < f64::EPSILON);
+        assert!((team_one[1].uncertainty - 5.594_076_500_010_323).abs() < f64::EPSILON);
+        assert!((team_two[0].uncertainty - 6.346_334_041_296_793).abs() < f64::EPSILON);
+        assert!((team_two[1].uncertainty - 4.767_974_209_723_061).abs() < f64::EPSILON);
 
         let player_one = TrueSkillRating {
             rating: 15.0,
@@ -1763,15 +1778,15 @@ mod tests {
             &TrueSkillConfig::new(),
         );
 
-        assert!((team_one[0].rating - 21.571_213_060_731_655).abs() < f64::EPSILON);
-        assert!((team_one[1].rating - 23.696_619_260_051_385).abs() < f64::EPSILON);
-        assert!((team_two[0].rating - 23.356_662_026_148_804).abs() < f64::EPSILON);
-        assert!((team_two[1].rating - 29.075_310_476_318_872).abs() < f64::EPSILON);
+        assert!((team_one[0].rating - 21.570_276_210_812_217).abs() < f64::EPSILON);
+        assert!((team_one[1].rating - 23.696_092_237_502_587).abs() < f64::EPSILON);
+        assert!((team_two[0].rating - 23.356_896_314_861_434).abs() < f64::EPSILON);
+        assert!((team_two[1].rating - 29.075_442_308_188_84).abs() < f64::EPSILON);
 
-        assert!((team_one[0].uncertainty - 6.555_663_733_192_403).abs() < f64::EPSILON);
-        assert!((team_one[1].uncertainty - 5.417_723_612_401_869).abs() < f64::EPSILON);
-        assert!((team_two[0].uncertainty - 3.832_975_356_683_128).abs() < f64::EPSILON);
-        assert!((team_two[1].uncertainty - 2.930_957_525_591_959_5).abs() < f64::EPSILON);
+        assert!((team_one[0].uncertainty - 6.555_892_407_668_4).abs() < f64::EPSILON);
+        assert!((team_one[1].uncertainty - 5.417_811_179_292_122).abs() < f64::EPSILON);
+        assert!((team_two[0].uncertainty - 3.832_999_817_288_855_7).abs() < f64::EPSILON);
+        assert!((team_two[1].uncertainty - 2.930_967_653_795_901_7).abs() < f64::EPSILON);
 
         let (team_one, _) =
             trueskill_two_teams(&[player_one], &[], &Outcomes::WIN, &TrueSkillConfig::new());
@@ -2118,8 +2133,8 @@ mod tests {
 
         let (exp1, exp2) = RatingSystem::expected_score(&rating_system, &player_one, &player_two);
 
-        assert!((new_player_one.rating - 24.534_185_520_312_818).abs() < f64::EPSILON);
-        assert!((new_player_two.rating - 23.465_814_479_687_182).abs() < f64::EPSILON);
+        assert!((new_player_one.rating - 24.534_091_256_161_393).abs() < f64::EPSILON);
+        assert!((new_player_two.rating - 23.465_908_743_838_607).abs() < f64::EPSILON);
         assert!((exp1 + exp2 - 1.0).abs() < f64::EPSILON);
 
         let rating_period_system: TrueSkill = RatingPeriodSystem::new(TrueSkillConfig::new());
@@ -2135,7 +2150,7 @@ mod tests {
         let new_player_one =
             RatingPeriodSystem::rate(&rating_period, &player_one, &[(player_two, Outcomes::WIN)]);
 
-        assert!((new_player_one.rating - 24.534_185_520_312_818).abs() < f64::EPSILON);
+        assert!((new_player_one.rating - 24.534_091_256_161_393).abs() < f64::EPSILON);
 
         let player_one: TrueSkillRating = Rating::new(Some(24.0), Some(2.0));
         let player_two: TrueSkillRating = Rating::new(Some(24.0), Some(2.0));
@@ -2145,8 +2160,8 @@ mod tests {
         let (new_team_one, new_team_two) =
             TeamRatingSystem::rate(&team_rating, &[player_one], &[player_two], &Outcomes::WIN);
 
-        assert!((new_team_one[0].rating - 24.534_185_520_312_818).abs() < f64::EPSILON);
-        assert!((new_team_two[0].rating - 23.465_814_479_687_182).abs() < f64::EPSILON);
+        assert!((new_team_one[0].rating - 24.534_091_256_161_393).abs() < f64::EPSILON);
+        assert!((new_team_two[0].rating - 23.465_908_743_838_607).abs() < f64::EPSILON);
 
         let (exp1, exp2) =
             TeamRatingSystem::expected_score(&rating_system, &[player_one], &[player_two]);
@@ -2431,5 +2446,46 @@ mod tests {
         );
 
         assert!(matches!(res, Err(WeightError::TeamAmount)));
+    }
+
+    #[test]
+    fn test_full_vs_shortcut() {
+        let player_one = TrueSkillRating {
+            rating: 38.0,
+            uncertainty: 3.0,
+        };
+        let player_two = TrueSkillRating {
+            rating: 38.0,
+            uncertainty: 3.0,
+        };
+
+        let new_full = trueskill_multi_team(
+            &[
+                (&[player_one], MultiTeamOutcome::new(1)),
+                (&[player_two], MultiTeamOutcome::new(2)),
+            ],
+            &TrueSkillConfig::new(),
+            None,
+        )
+        .unwrap();
+
+        let new_two = trueskill_two_teams(
+            &[player_one],
+            &[player_two],
+            &Outcomes::WIN,
+            &TrueSkillConfig::new(),
+        );
+
+        let new_1v1 = trueskill(
+            &player_one,
+            &player_two,
+            &Outcomes::WIN,
+            &TrueSkillConfig::new(),
+        );
+
+        assert!((new_full[0][0].rating - new_two.0[0].rating).abs() < ERROR_MARGIN);
+        assert!((new_full[1][0].rating - new_two.1[0].rating).abs() < ERROR_MARGIN);
+        assert!((new_full[0][0].rating - new_1v1.0.rating).abs() < ERROR_MARGIN);
+        assert!((new_full[1][0].rating - new_1v1.1.rating).abs() < ERROR_MARGIN);
     }
 }

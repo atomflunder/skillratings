@@ -2,6 +2,11 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.29.1 - 2026-09-04
+
+- Fix `trueskill` shortcut functions (`trueskill`, `trueskill_two_teams`, and `trueskill_rating_period`) to fold `tau` value into the dynamics value before computing `c` value
+  - This was a deliberate choice by the [Moserware](http://www.moserware.com/2010/03/computing-your-skill.html) paper I followed, but it yields a slightly different result than the original TrueSkill implementation, and it would differ from the `trueskill_multi_team` function
+
 ## v0.29.0 - 2026-04-11
 
 - Add `yuksel` rating algorithm
