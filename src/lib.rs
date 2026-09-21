@@ -386,6 +386,9 @@ pub mod uscf;
 pub mod weng_lin;
 pub mod yuksel;
 
+#[cfg(feature = "wasm")]
+pub mod wasm;
+
 /// The possible outcomes for a match: Win, Draw, Loss.
 ///
 /// Note that this is always from the perspective of player one.\
