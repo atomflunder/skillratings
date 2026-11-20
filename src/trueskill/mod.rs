@@ -1163,7 +1163,7 @@ pub fn match_quality_multi_team(
 
     let a_ta = rotated_a_matrix.clone() * a_matrix.clone() * config.beta.powi(2);
     let atsa = rotated_a_matrix.clone() * variance_matrix * a_matrix.clone();
-    let start = a_matrix * mean_matrix.transpose();
+    let start = mean_matrix.transpose() * a_matrix;
     let middle = a_ta.clone() + atsa;
 
     let end = rotated_a_matrix * mean_matrix;
