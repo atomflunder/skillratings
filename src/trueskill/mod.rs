@@ -2339,6 +2339,67 @@ mod tests {
     }
 
     #[test]
+    // The same test as above, but with a player in team 3 having a player with a weight of 0.0.
+    fn test_trueskill_multi_team_zero_weight() {
+        let t1p1 = TrueSkillRating {
+            rating: 40.0,
+            uncertainty: 4.0,
+        };
+        let t1p2 = TrueSkillRating {
+            rating: 45.0,
+            uncertainty: 3.0,
+        };
+
+        let t2p1 = TrueSkillRating {
+            rating: 20.0,
+            uncertainty: 7.0,
+        };
+        let t2p2 = TrueSkillRating {
+            rating: 19.0,
+            uncertainty: 6.0,
+        };
+        let t2p3 = TrueSkillRating {
+            rating: 30.0,
+            uncertainty: 9.0,
+        };
+        let t2p4 = TrueSkillRating {
+            rating: 10.0,
+            uncertainty: 4.0,
+        };
+
+        let t3p1 = TrueSkillRating {
+            rating: 50.0,
+            uncertainty: 5.0,
+        };
+        let t3p2 = TrueSkillRating {
+            rating: 30.0,
+            uncertainty: 2.0,
+        };
+        let t3p3 = TrueSkillRating {
+            rating: 32.0,
+            uncertainty: 2.0,
+        };
+
+        let t1 = [t1p1, t1p2];
+        let t2 = [t2p1, t2p2, t2p3, t2p4];
+        let t3 = [t3p1, t3p2, t3p3];
+
+        let teams_and_ranks = [
+            (&t1[..], MultiTeamOutcome::new(0)),
+            (&t2[..], MultiTeamOutcome::new(1)),
+            (&t3[..], MultiTeamOutcome::new(1)),
+        ];
+        let results = trueskill_multi_team(
+            &teams_and_ranks,
+            &TrueSkillConfig::new(),
+            Some(&[&[1.0, 1.0], &[1.0, 1.0, 1.0, 1.0], &[1.0, 1.0, 0.0]]),
+        )
+        .unwrap();
+
+        assert!((results[2][2].rating - 32.0).abs() < ERROR_MARGIN);
+    }
+
+    #[test]
     fn test_ffa() {
         let p1 = TrueSkillRating {
             rating: 41.023,
