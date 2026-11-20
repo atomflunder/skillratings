@@ -169,6 +169,12 @@ impl SumFactor {
 
     pub fn up(&self, index: usize) -> f64 {
         let coeff = self.coeffs[index];
+        if coeff == 0.0 {
+            return self.terms[index]
+                .borrow_mut()
+                .update_message(self.id, Gaussian::default());
+        }
+
         let mut coeffs = Vec::new();
         for (x, c) in self.coeffs.iter().enumerate() {
             if coeff == 0.0 {
