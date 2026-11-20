@@ -265,7 +265,7 @@ pub fn fifa(
         outcome.to_chess_points()
     };
     let outcome2 = if config.penalties {
-        if outcome == &Outcomes::WIN {
+        if outcome == &Outcomes::LOSS {
             0.75
         } else {
             0.5
