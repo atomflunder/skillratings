@@ -2,6 +2,12 @@
 
 This is a broad overview of the changes that have been made over the lifespan of this library.
 
+## v0.29.3 - 2026-11-20
+
+- Fix zero-weight TrueSkill players
+- Fix multi-team TrueSkill match quality
+- Fix inverted FIFA penalty shootout score
+
 ## v0.29.2 - 2026-09-04
 
 - Fix `expected_score_multi_team` function for trueskill
