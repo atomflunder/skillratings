@@ -103,6 +103,10 @@ impl Matrix {
     pub fn determinant(&self) -> f64 {
         assert_eq!(self.rows, self.cols, "Matrix must be square");
 
+        if self.rows == 0 {
+            return 1.0;
+        }
+
         if self.rows == 1 {
             return self.get(0, 0);
         }
